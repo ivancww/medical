@@ -27,6 +27,10 @@ jobs:
           node --check claim-engine.js
           node --check sw.js
           node --check tests/claim-engine-regression.js
+          grep -q "readyClaimBlock" app.js
+          grep -q "concernReflection" app.js
+          grep -q "premiumBlock" app.js
+          grep -q '\$\$(\x27.option-card\x27)' app.js
       - name: Verify PWA and fixed contracts
         run: |
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');if(!sw.includes('claim-engine.js'))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
