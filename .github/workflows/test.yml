@@ -69,6 +69,8 @@ jobs:
           grep -q "concernReflection" app.js
           grep -q "premiumBlock" app.js
           grep -q "planFeaturesBlock" app.js
+          grep -q "claimCaseBlock" app.js
+          grep -q "實際索償個案暫未發布" app.js
           grep -q "Simple Claim Illustration" docs/PRODUCT-RULES.md
       - name: Verify PWA and fixed contracts
         run: |
