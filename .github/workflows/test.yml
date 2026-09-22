@@ -42,8 +42,8 @@ jobs:
           }
           if(!datasets.plans.length) throw Error('Official Plans is empty');
           if(!datasets.claimRules.length) throw Error('Official Claim Rules is empty');
-          if(!datasets.claimCases.length) throw Error('Official Claim Cases is empty');
-          if(!datasets.premiumSettings.length) throw Error('Official Premium Settings is empty');
+          if(!datasets.claimCases.length) console.log('Claim Cases empty: R04 remains blocked until an authoritative case is published');
+          if(!datasets.premiumSettings.length) console.log('Premium Settings empty: use retained premium datasets; do not fabricate premiums');
           NODE
 
   static-contract:
