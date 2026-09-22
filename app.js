@@ -1,7 +1,7 @@
 const OFFICIAL_API='https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec';
 const CRM_AI_API='https://script.google.com/macros/s/AKfycbzPIlJHqcGWDMeJd_Tc_tpDz-r-vVW9lNXBiVXnD2o0ulVNoGkUHy-Ve3rAxnsWh9dhUQ/exec';
 const CACHE_KEY='ava.medical.official.v1',OVERRIDE_KEY='ava.medical.user.overrides.v1';
-const state={official:null,journey:null,index:0,answers:{},mode:'use',draftText:{},intake:null};
+const state={official:null,journey:null,index:0,answers:{},mode:'use',draftText:{},intake:null,medicalGrowthRate:6,medicalCost:200000,fundingAmount:600000};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 function setStatus(t,cls=''){const e=$('#status');e.textContent=t;e.className='status '+cls}
 function cache(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch{return null}}
@@ -14,7 +14,7 @@ function allPages(){return state.official?.pages||[]}
 function pageId(p){return p.page_id||p.pageId||''}
 function pageName(p){return p.page_name||p.pageName||p.title||pageId(p)}
 function isFixed(p){return p.is_fixed===true||String(p.is_fixed).toUpperCase()==='TRUE'}
-function journeyPages(j){const ps=allPages();const prefix=j==='ready'?'R':'N';let x=ps.filter(p=>pageId(p).toUpperCase().startsWith(prefix));if(!x.length)x=ps.filter(p=>String(p.page_type||'').toLowerCase().includes(j));return x.sort((a,b)=>(+a.sort_order||+a.stepOrder||0)-(+b.sort_order||+b.stepOrder||0))}
+function journeyPages(j){const ps=allPages();const prefix=j==='ready'?'R':'N';let x=ps.filter(p=>pageId(p).toUpperCase().startsWith(prefix));if(!x.length)x=ps.filter(p=>String(p.page_type||'').toLowerCase().includes(j));x=x.sort((a,b)=>(+a.sort_order||+a.stepOrder||0)-(+b.sort_order||+b.stepOrder||0));if(j==='ready'){const r02=state.answers.R02||state.answers.r02||'';if(r02&&/no|none|沒有|無/i.test(String(r02)))x=x.filter(p=>pageId(p).toUpperCase()!=='R03')}return x}
 function optsFor(p){const id=pageId(p),type=p.option_group||p.page_type;return (state.official?.options||[]).filter(o=>{const g=o.option_group||o.pageId||'';return g===id||g===type}).sort((a,b)=>(+a.sort_order||+a.order||0)-(+b.sort_order||+b.order||0))}
 function textFor(p,k){const id=pageId(p),ov=overrides();return ov[id]?.[k]??p[k]??''}
 function renderHome(){$('#home').hidden=false;$('#journey').hidden=true;$('#admin').hidden=true}
@@ -26,12 +26,16 @@ function renderPage(){const ps=journeyPages(state.journey);if(!ps.length){$('#pa
  if(id.toUpperCase().includes('N03')||String(p.page_type).includes('medical_cost'))body+=costBlock();
  if(id.toUpperCase().includes('N04')||String(p.page_type).includes('inflation'))body+=inflationBlock();
  if(id.toUpperCase().includes('N06')||String(p.page_type).includes('funding_report'))body+=fundingReport();
- $('#pageCard').innerHTML=body;$$('.option-card').forEach(b=>b.onclick=()=>{state.answers[id]=b.dataset.key;renderPage()});applyEditMode()}
+ $('#pageCard').innerHTML=body;
+ $('.option-card').forEach(b=>b.onclick=()=>{state.answers[id]=b.dataset.key;if(id.toUpperCase()==='N07'&&/ready|保障|coverage/i.test(String(b.dataset.key)))startJourney('ready');else renderPage()});
+ if(id.toUpperCase()==='N04'){const r=$('#growthRate');if(r)r.oninput=()=>{state.medicalGrowthRate=+r.value;renderPage()}}
+ if(id.toUpperCase()==='N06'){const a=$('#fundingAmount');const m=$('#fundingMedicalCost');if(a)a.onchange=()=>{state.fundingAmount=Math.max(0,+a.value||0);renderPage()};if(m)m.onchange=()=>{state.medicalCost=Math.max(0,+m.value||0);renderPage()}}
+ applyEditMode()}
 function cfg(k,d){return state.official?.config?.[k]??d}
 function money(n){return new Intl.NumberFormat('en-HK',{style:'currency',currency:'HKD',maximumFractionDigits:0}).format(+n||0)}
 function costBlock(){return '<div class="options"><div class="option-card"><strong>腸胃鏡／日間內視鏡</strong><div class="metric">'+money(cfg('medical_cost_endoscopy_min',10000))+'–'+money(cfg('medical_cost_endoscopy_max',25000))+'</div></div><div class="option-card"><strong>通波仔</strong><div class="metric">'+money(cfg('medical_cost_pci_min',100000))+'–'+money(cfg('medical_cost_pci_max',160000))+'</div><small>部分支架／額外器材可能需要額外自費</small></div><div class="option-card"><strong>大型癌症治療情境</strong><div class="metric">'+money(cfg('medical_cost_cancer_min',200000))+'–'+money(cfg('medical_cost_cancer_max',500000))+'+</div><small>手術／化療／標靶／免疫治療等</small></div></div><p class="helper">私人醫療參考情境；實際費用因醫院、醫生、病情、治療方式、藥物及器材而異。</p>'}
-function inflationBlock(){const r=(+cfg('medical_inflation_default',6))/100,base=200000;return '<div class="options">'+[0,5,10,20].map(y=>'<div class="option-card"><strong>'+(y?y+'年後':'今日')+'</strong><div class="metric">'+money(base*Math.pow(1+r,y))+'</div></div>').join('')+'</div><p class="helper">基於 '+(r*100)+'% 年度醫療成本增長假設推算，並非實際未來醫療費用。</p>'}
-function fundingReport(){const fund=Object.values(state.answers).find(v=>String(v).startsWith('fund_'))||'尚未選擇';const cost=358000,asset=600000,pct=Math.min(100,cost/asset*100);return '<h3>Medical Funding Report</h3><p>資金來源：<strong>'+esc(fund)+'</strong></p><div class="bar"><span class="cost" style="width:'+pct+'%">醫療費 '+money(cost)+'</span><span class="remain" style="width:'+(100-pct)+'%">餘額 '+money(asset-cost)+'</span></div><p class="helper">示範資產 '+money(asset)+'；正式流程由使用者輸入模擬金額。</p>'}
+function inflationBlock(){const r=(Number.isFinite(state.medicalGrowthRate)?state.medicalGrowthRate:+cfg('medical_inflation_default',6));const base=state.medicalCost||200000;return '<label class="range-control"><strong>年度醫療成本增長假設：'+r.toFixed(1)+'%</strong><input id="growthRate" type="range" min="0" max="12" step="0.5" value="'+r+'"></label><div class="options">'+[0,5,10,20].map(y=>'<div class="option-card"><strong>'+(y?y+'年後':'今日')+'</strong><div class="metric">'+money(base*Math.pow(1+r/100,y))+'</div></div>').join('')+'</div><p class="helper">模擬假設，可調整 0–12%；並非實際未來醫療費用。</p>'}
+function fundingReport(){const fund=Object.values(state.answers).find(v=>String(v).startsWith('fund_'))||'尚未選擇';const cost=Math.max(0,+state.medicalCost||0),asset=Math.max(0,+state.fundingAmount||0),remaining=asset-cost,pct=asset>0?Math.min(100,cost/asset*100):100;return '<h3>Medical Funding Report</h3><div class="form-grid"><label>模擬醫療費<input id="fundingMedicalCost" inputmode="decimal" type="number" min="0" value="'+cost+'"></label><label>可用資金<input id="fundingAmount" inputmode="decimal" type="number" min="0" value="'+asset+'"></label></div><p>資金來源：<strong>'+esc(fund)+'</strong></p><div class="bar"><span class="cost" style="width:'+pct+'%">醫療費 '+money(cost)+'</span><span class="remain" style="width:'+(100-pct)+'%">'+(remaining>=0?'餘額 ':'資金差額 ')+money(Math.abs(remaining))+'</span></div><p class="helper">以上只按本次輸入的模擬金額計算，不代表總資產或實際未來醫療費。</p>'}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function setMode(m){state.mode=m;document.querySelector('.app-shell').dataset.avaMode=m;$('#modeBar').hidden=m==='use';$('#modeLabel').textContent=m[0].toUpperCase()+m.slice(1);applyEditMode()}
 function applyEditMode(){
