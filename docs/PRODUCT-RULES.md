@@ -17,7 +17,7 @@ Local-first: render valid Official cache immediately, run lightweight checkVersi
 ## Ready journey
 R01 Concern Setup → R02 Existing Medical (company medical / no medical only) → conditional R03 Company Medical Setup → R04 Real Claim Case → R05 Coverage Layers + company continuity reminder → R06 Plan claim/follow-up comparison → R07 Plan Coverage & Features → R08 Concern Reflection → R09 Premium/Health Program/Age/Discount → R10 one-click live presentation.
 
-Stable IDs, never visible-text branching. Claim calculations must be migrated and regression-checked from authorized medicalclaims rules before production acceptance; do not invent missing rules.
+Stable IDs, never visible-text branching. Customer-facing claim content uses a Simple Claim Illustration: Medical Cost → Company Medical → Personal Medical → You Pay. ELITE/WISE illustrate deductible-then-cover and FLEXI uses the Official approximate illustration rate (currently 85%). This is a communication illustration, not a guaranteed claim result. Detailed surgery classes, per-benefit limits and other claim-engine internals must not be exposed in the customer journey; relevant product conditions belong in R07.
 
 ## Not Ready journey
 N01 public/private/depends → N02 trade-offs → N03 current private medical-cost reference → N04 adjustable medical-cost growth illustration → N05 funding source → N06 one-click Medical Funding Report → N07 future arrangement; “了解醫療保障可以負擔幾多” may transition to Ready.
