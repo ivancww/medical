@@ -41,19 +41,13 @@ jobs:
             if(!ids.has(id)) throw Error('Official Pages missing '+id);
           }
           if(!datasets.plans.length) throw Error('Official Plans is empty');
-          if(!datasets.claimRules.length) throw Error('Official Claim Rules is empty');
-          if(datasets.claimRules.length<48) throw Error('Official Claim Rules expected at least 48 rows after parameter expansion, got '+datasets.claimRules.length);
-          const byId=new Map(datasets.claimRules.map(r=>[String(r.rule_id||''),r]));
-          const checks=[
-            ['WISE_deductible_8800','deductible','8800'],
-            ['FLEXI_smm','rate','0.85'],
-            ['FLEXI_smm','limit','120000'],
-            ['FLEXI_item2_major','limit','25000'],
-            ['FLEXI_item3_major','auto_rate','0.35'],
-            ['FLEXI_item4_complex','surgery_type','complex']
-          ];
-          for(const [id,key,want] of checks){const row=byId.get(id);if(!row)throw Error('Official Claim Rules missing '+id);if(String(row[key])!==want)throw Error(id+' '+key+' expected '+want+' got '+String(row[key]));}
-          console.log('Claim Rules parameter alignment PASS');
+          if(datasets.claimRules.length!==3) throw Error('Official Claim Rules expected 3 simplified illustration rows, got '+datasets.claimRules.length);
+          const byPlan=new Map(datasets.claimRules.map(r=>[String(r.plan_id||'').toUpperCase(),r]));
+          for(const id of ['ELITE','WISE','FLEXI']) if(!byPlan.has(id)) throw Error('Official Claim Rules missing '+id);
+          if(String(byPlan.get('ELITE').illustration_method)!=='deductible_then_cover') throw Error('ELITE illustration method invalid');
+          if(String(byPlan.get('WISE').illustration_method)!=='deductible_then_cover') throw Error('WISE illustration method invalid');
+          if(Number(byPlan.get('FLEXI').default_rate)!==0.85) throw Error('FLEXI default illustration rate must be 0.85');
+          console.log('Simple Claim Illustration contract PASS');
           if(!datasets.claimCases.length) console.log('Claim Cases empty: R04 remains blocked until an authoritative case is published');
           if(!datasets.premiumSettings.length) console.log('Premium Settings empty: use retained premium datasets; do not fabricate premiums');
           NODE
