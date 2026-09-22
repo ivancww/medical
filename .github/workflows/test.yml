@@ -1,0 +1,32 @@
+name: Medical Tests
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  claim-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run claim engine regression
+        run: node -e "require('./claim-engine.js'); require('./tests/claim-engine-regression.js').run()"
+  static-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: |
+          node --check app.js
+          node --check claim-engine.js
+          node --check sw.js
+          node --check tests/claim-engine-regression.js
+      - name: Verify PWA and fixed contracts
+        run: |
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');if(!sw.includes('claim-engine.js'))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
