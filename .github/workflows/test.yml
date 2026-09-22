@@ -14,6 +14,17 @@ jobs:
           node-version: '22'
       - name: Run claim engine regression
         run: node -e "require('./claim-engine.js'); require('./tests/claim-engine-regression.js').run()"
+  official-data-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Medical Official GAS
+        run: |
+          set -e
+          curl -fsSL --retry 2 --max-time 20 "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec?action=checkVersion" -o version.json
+          node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('version.json','utf8'));if(x.status&&x.status!=='success')throw Error(x.message||'Official API failed');if(x.version==null)throw Error('Official API missing version');console.log('Official version',x.version)"
+          curl -fsSL --retry 2 --max-time 20 "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec" -o official.json
+          node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('official.json','utf8'));const need=['pages','options'];for(const k of need){if(!Array.isArray(x[k]))throw Error('Official API missing '+k)};console.log('pages',x.pages.length,'options',x.options.length)"
+
   static-contract:
     runs-on: ubuntu-latest
     steps:
