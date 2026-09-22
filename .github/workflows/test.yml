@@ -23,7 +23,28 @@ jobs:
           curl -fsSL --retry 2 --max-time 20 "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec?action=checkVersion" -o version.json
           node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('version.json','utf8'));if(x.status&&x.status!=='success')throw Error(x.message||'Official API failed');if(x.version==null)throw Error('Official API missing version');console.log('Official version',x.version)"
           curl -fsSL --retry 2 --max-time 20 "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec" -o official.json
-          node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('official.json','utf8'));const need=['pages','options'];for(const k of need){if(!Array.isArray(x[k]))throw Error('Official API missing '+k)};console.log('pages',x.pages.length,'options',x.options.length)"
+          node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('official.json','utf8'));
+          const datasets={
+            pages:x.pages, options:x.options, plans:x.plans,
+            claimRules:x.claimRules||x.claim_rules,
+            claimCases:x.claimCases||x.claim_cases,
+            premiumSettings:x.premiumSettings||x.premium_settings
+          };
+          for(const [k,v] of Object.entries(datasets)){
+            if(!Array.isArray(v)) throw Error('Official API missing '+k);
+            console.log(k,v.length);
+          }
+          const ids=new Set(datasets.pages.map(p=>String(p.page_id||p.pageId||'').toUpperCase()));
+          for(const id of ['R01','R02','R03','R04','R05','R06','R07','R08','R09','R10','N01','N02','N03','N04','N05','N06','N07']){
+            if(!ids.has(id)) throw Error('Official Pages missing '+id);
+          }
+          if(!datasets.plans.length) throw Error('Official Plans is empty');
+          if(!datasets.claimRules.length) throw Error('Official Claim Rules is empty');
+          if(!datasets.claimCases.length) throw Error('Official Claim Cases is empty');
+          if(!datasets.premiumSettings.length) throw Error('Official Premium Settings is empty');
+          NODE
 
   static-contract:
     runs-on: ubuntu-latest
