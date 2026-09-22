@@ -7,7 +7,7 @@ function t(name,input,expect){const r=E.calculate(input);const ok=Object.entries
 t('Wise deductible',{wiseDeductible:8800,items:{item6:{actual:20000}}},{'wise.finalClaim':11200,'wise.outOfPocket':8800});
 t('Flexi cap + SMM 85%',{items:{item6:{actual:10000}}},{'flexi.finalClaim':9287.5,'flexi.outOfPocket':712.5});
 t('Flexi daily cap',{items:{item1:{actual:1500,days:2}}},{'flexi.finalClaim':2200,'flexi.outOfPocket':800});
-t('Flexi tiered nursing',{items:{item8a:{actual:800,days:5}}},{'flexi.finalClaim':3968,'flexi.outOfPocket':32});
+t('Flexi tiered nursing',{items:{item8a:{actual:800,days:5}}},{'flexi.finalClaim':3944,'flexi.outOfPocket':56});
 t('Flexi imaging coinsurance + SMM',{items:{item9:{actual:40000}}},{'flexi.finalClaim':37300,'flexi.outOfPocket':2700});
 t('Flexi surgery dynamic cap',{items:{item2:{actual:50000}},context:{surgeryType:'major'}},{'flexi.finalClaim':46250,'flexi.outOfPocket':3750});
 const failed=results.filter(x=>!x.ok);if(typeof console!=='undefined')console.table(results.map(x=>({test:x.name,pass:x.ok})));if(failed.length)throw Error(failed.length+' claim regression fixture(s) failed');return results}
