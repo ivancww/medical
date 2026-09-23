@@ -11,17 +11,17 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="app-shell" data-ava-mode="use">
+<div class="app-shell ava-shell" data-ava-mode="use">
 <header class="app-header"><div><div class="eyebrow">AVA MEDICAL</div><h1>成人醫療規劃</h1></div><div class="header-actions"><button id="editBtn" class="ava-button ava-button--secondary">編輯</button><button id="adminBtn" class="ava-button ava-button--secondary">Admin</button><a class="ava-button ava-button--secondary" href="https://ivancww.github.io/avaplatform/">返回 AVA</a></div></header>
 <div id="status" class="status" role="status">正在準備本機資料…</div>
 <nav id="modeBar" class="ava-mode-bar" hidden><strong id="modeLabel">Edit</strong><div><button id="previewBtn">Preview</button><button id="saveBtn">Save Local</button><button id="cancelBtn">Cancel</button></div></nav>
-<main id="main" class="workspace">
+<main id="main" class="workspace ava-front">
 <section id="home" class="concept">
 <p class="eyebrow">選擇對話方向</p><h2>今次想由邊度開始？</h2><p class="support">成人 Medical 分為 Ready 與 Not Ready；兩條 Journey 共用同一套 Official Data。</p>
 <div class="journey-grid"><button class="journey-card" data-journey="ready"><span>READY</span><strong>已經想了解醫療保障</strong><small>由需要、現有醫療、索償到計劃及保費</small></button><button class="journey-card" data-journey="notready"><span>NOT READY</span><strong>先了解醫療選擇與成本</strong><small>公立／私人、未來成本、資金來源及影響</small></button></div>
 </section>
 <section id="journey" hidden><div class="journey-top"><button id="backBtn" class="ava-button ava-button--secondary">← 返回</button><div id="progressText"></div></div><article id="pageCard" class="page-card"></article><div class="nav-actions"><button id="prevBtn" class="ava-button ava-button--secondary">上一步</button><button id="nextBtn" class="ava-button">下一步</button></div></section>
-<section id="admin" hidden><div class="admin-head"><div><p class="eyebrow">AVA STUDIO · MEDICAL</p><h2>Official Data 管理</h2></div><button id="adminClose" class="ava-button ava-button--secondary">返回 Frontstage</button></div>
+<section id="admin" class="ava-management" hidden><div class="admin-head"><div><p class="eyebrow">AVA STUDIO · MEDICAL</p><h2>Official Data 管理</h2></div><button id="adminClose" class="ava-button ava-button--secondary">返回 Frontstage</button></div>
 <div class="admin-grid"><article class="admin-card"><h3>Official Cloud</h3><p id="cloudInfo">—</p><button id="refreshBtn" class="ava-button">重新讀取 Official Data</button></article><article class="admin-card"><h3>新增資料</h3><p>AI Study 或手動輸入，最後都會進入確認。</p><div class="stack"><label class="ava-button upload">AI 自動讀取文件<input id="aiFile" type="file" accept=".pdf,image/*" hidden></label><button id="manualBtn" class="ava-button ava-button--secondary">手動輸入</button></div></article><article class="admin-card"><h3>資料集</h3><div id="datasetCounts"></div></article></div>
 <div id="intakePanel" class="intake-panel" hidden></div></section>
 </main></div>
