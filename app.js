@@ -12,7 +12,7 @@ async function jsonFetch(url,opts){const r=await fetch(url,opts);if(!r.ok)throw 
 async function bootstrap(){const localCandidate=cache(),local=isValidOfficialData(localCandidate)?localCandidate:null;if(local){state.official=local;setStatus('本機 Official Cache 已載入；正在檢查版本…');renderHome()}else setStatus('首次載入：正在讀取 Official Data…');
  try{const v=await jsonFetch(OFFICIAL_API+'?action=checkVersion');if(!local||String(local.version)!==String(v.version)){const full=await jsonFetch(OFFICIAL_API);state.official=full;saveCache(full);setStatus('Official Data 已更新至 '+(full.version||'最新版本'),'success')}else setStatus('Official Data 已是最新版本 '+v.version,'success');renderHome()}catch(e){setStatus(local?'雲端版本檢查失敗，暫用本機資料：'+e.message:'未能載入 Official Data：'+e.message,'error');if(!local)renderHome()}}
 function isEnabled(x){return x?.enabled===undefined||x.enabled===true||String(x.enabled).toUpperCase()==='TRUE'}
-function allPages(){return (state.official?.pages||[]).filter(isEnabled)}
+function allPages(){return (state.official?.pages||[]).filter(p=>isFixed(p)||isEnabled(p))}
 const PAGE_ID_MAP={ready_concern:'R01',ready_existing:'R02',ready_company:'R03',ready_case:'R04',ready_layers:'R05',ready_claim:'R06',ready_features:'R07',ready_reflection:'R08',ready_premium:'R09',ready_presentation:'R10',notready_choice:'N01',notready_tradeoff:'N02',notready_cost:'N03',notready_inflation:'N04',notready_funding:'N05',notready_report:'N06',notready_next:'N07'};
 function rawPageId(p){return p.page_id||p.pageId||''}
 function pageId(p){const id=String(rawPageId(p));return PAGE_ID_MAP[id.toLowerCase()]||id}
