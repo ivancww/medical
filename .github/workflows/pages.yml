@@ -1,0 +1,78 @@
+name: Deploy Medical to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Medical
+        uses: actions/checkout@v4
+
+      - name: Validate /medical/ deployment contract
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          html = Path("index.html").read_text()
+          app = Path("app.js").read_text()
+          service_worker = Path("sw.js").read_text()
+          manifest = json.loads(Path("manifest.json").read_text())
+
+          assert manifest["start_url"] == "/medical/"
+          assert manifest["scope"] == "/medical/"
+          assert manifest["display"] == "standalone"
+          assert 'href="manifest.json"' in html
+          assert "claim-engine.js" in html and "app.js" in html
+          assert 'href="styles.css"' in html
+          assert "serviceWorker.register('sw.js')" in app
+          assert "./index.html" in service_worker
+          assert "./manifest.json" in service_worker
+          assert "./app.js" in service_worker
+          assert "./claim-engine.js" in service_worker
+          assert "./styles.css" in service_worker
+          assert not re.search(r'(?:href|src)=["\']/[^/]', html)
+          print("Medical /medical/ deployment contract PASS")
+          PY
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out Medical
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Assemble Medical site
+        run: |
+          mkdir -p _site
+          cp index.html app.js claim-engine.js styles.css manifest.json sw.js _site/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
