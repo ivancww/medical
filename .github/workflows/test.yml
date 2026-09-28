@@ -1,0 +1,79 @@
+name: Medical Tests
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  claim-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run claim engine regression
+        run: node -e "require('./claim-engine.js'); require('./tests/claim-engine-regression.js').run()"
+  official-data-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Medical Official GAS
+        run: |
+          set -e
+          curl -fsSL --retry 2 --max-time 20 "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec?action=checkVersion" -o version.json
+          node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('version.json','utf8'));if(x.status&&x.status!=='success')throw Error(x.message||'Official API failed');if(x.version==null)throw Error('Official API missing version');console.log('Official version',x.version)"
+          curl -fsSL --retry 2 --max-time 20 "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec" -o official.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('official.json','utf8'));
+          const datasets={
+            pages:x.pages, options:x.options, plans:x.plans,
+            claimRules:x.claimRules||x.claim_rules,
+            claimCases:x.claimCases||x.claim_cases,
+            premiumSettings:x.premiumSettings||x.premium_settings
+          };
+          for(const [k,v] of Object.entries(datasets)){
+            if(!Array.isArray(v)) throw Error('Official API missing '+k);
+            console.log(k,v.length);
+          }
+          const ids=new Set(datasets.pages.map(p=>String(p.page_id||p.pageId||'').toUpperCase()));
+          for(const id of ['R01','R02','R03','R04','R05','R06','R07','R08','R09','R10','N01','N02','N03','N04','N05','N06','N07']){
+            if(!ids.has(id)) throw Error('Official Pages missing '+id);
+          }
+          if(!datasets.plans.length) throw Error('Official Plans is empty');
+          if(datasets.claimRules.length!==3) throw Error('Official Claim Rules expected 3 simplified illustration rows, got '+datasets.claimRules.length);
+          const byPlan=new Map(datasets.claimRules.map(r=>[String(r.plan_id||'').toUpperCase(),r]));
+          for(const id of ['ELITE','WISE','FLEXI']) if(!byPlan.has(id)) throw Error('Official Claim Rules missing '+id);
+          if(String(byPlan.get('ELITE').illustration_method)!=='deductible_then_cover') throw Error('ELITE illustration method invalid');
+          if(String(byPlan.get('WISE').illustration_method)!=='deductible_then_cover') throw Error('WISE illustration method invalid');
+          if(Number(byPlan.get('FLEXI').default_rate)!==0.85) throw Error('FLEXI default illustration rate must be 0.85');
+          console.log('Simple Claim Illustration contract PASS');
+          if(!datasets.claimCases.length) console.log('Claim Cases empty: R04 remains blocked until an authoritative case is published');
+          if(!datasets.premiumSettings.length) console.log('Premium Settings empty: use retained premium datasets; do not fabricate premiums');
+          NODE
+
+  static-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: |
+          node --check app.js
+          node --check claim-engine.js
+          node --check sw.js
+          node --check tests/claim-engine-regression.js
+          node --check tests/mother-contract-regression.js
+          grep -q "readyClaimBlock" app.js
+          grep -q "concernReflection" app.js
+          grep -q "premiumBlock" app.js
+          grep -q "planFeaturesBlock" app.js
+          grep -q "claimCaseBlock" app.js
+          grep -q "實際索償個案暫未發布" app.js
+          grep -q "Simple Claim Illustration" docs/PRODUCT-RULES.md
+          node tests/mother-contract-regression.js
+      - name: Verify PWA and fixed contracts
+        run: |
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');if(!sw.includes('claim-engine.js'))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
