@@ -4,7 +4,8 @@ const app=fs.readFileSync('app.js','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 const checks=[
   ['bare/frontend entries default to Frontstage', /function avaEntry\(\)\{[\s\S]*return value==='user'\?'user':'frontend'\}/.test(app)],
-  ['user entry opens the real Frontstage in Edit mode', /function renderEntry\(\)\{renderHome\(\);if\(state\.entry==='user'\)\{startJourney\('notready'\);setMode\('edit'\)\}\}/.test(app)],
+  ['user entry opens the real Frontstage in Edit mode without choosing a journey', /function renderEntry\(\)\{renderHome\(\);if\(state\.entry==='user'\)setMode\('edit'\)\}/.test(app)&&!/function renderEntry\(\)\{renderHome\(\);if\(state\.entry==='user'\)\{startJourney/.test(app)],
+  ['Ready and Not Ready remain explicit Frontstage choices', /data-journey="ready"/.test(index)&&/data-journey="notready"/.test(index)&&/startJourney\(b\.dataset\.journey\)/.test(app)],
   ['user mode does not create a workspace copy', !/userWorkspace|User Workspace|duplicated/i.test(index+app)],
   ['Preview and Save Local use the existing mode flow', /\$\('#previewBtn'\)\.onclick=\(\)=>setMode\('preview'\)/.test(app)&&/\$\('#saveBtn'\)\.onclick=saveOverrides/.test(app)],
   ['User overrides remain separate from Official cache', /CACHE_KEY='ava\.medical\.official\.v1',OVERRIDE_KEY='ava\.medical\.user\.overrides\.v1'/.test(app)&&/localStorage\.setItem\(OVERRIDE_KEY/.test(app)],
