@@ -44,8 +44,10 @@ jobs:
           assert "./index.html" in service_worker
           assert "./manifest.json" in service_worker
           assert "./app.js" in service_worker
+          assert "./medical-admin-auth.js" in service_worker
           assert "./claim-engine.js" in service_worker
           assert "./styles.css" in service_worker
+          assert "medical-admin-auth.js" in html
           assert not re.search(r'(?:href|src)=["\']/[^/]', html)
           print("Medical /medical/ deployment contract PASS")
           PY
@@ -66,7 +68,7 @@ jobs:
       - name: Assemble Medical site
         run: |
           mkdir -p _site
-          cp index.html app.js claim-engine.js styles.css manifest.json sw.js _site/
+          cp index.html app.js medical-admin-auth.js claim-engine.js styles.css manifest.json sw.js _site/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
