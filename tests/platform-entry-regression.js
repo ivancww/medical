@@ -2,9 +2,10 @@ const fs=require('fs');
 const index=fs.readFileSync('index.html','utf8');
 const app=fs.readFileSync('app.js','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
+const renderEntry=app.slice(app.indexOf('function renderEntry'),app.indexOf('function isEnabled'));
 const checks=[
-  ['bare/frontend entries default to Frontstage', /function avaEntry\(\)\{[\s\S]*return value==='user'\?'user':'frontend'\}/.test(app)],
-  ['user entry opens the real Frontstage in Edit mode without choosing a journey', /function renderEntry\(\)\{renderHome\(\);if\(state\.entry==='user'\)setMode\('edit'\)\}/.test(app)&&!/function renderEntry\(\)\{renderHome\(\);if\(state\.entry==='user'\)\{startJourney/.test(app)],
+  ['bare/frontend entries default to Frontstage', /function avaEntry\(\)\{[\s\S]*return \['user','admin'\]\.includes\(value\)\?value:'frontend'\}/.test(app)],
+  ['user entry opens the real Frontstage in Edit mode without choosing a journey', /renderHome\(\);if\(state\.entry==='user'\)setMode\('edit'\)/.test(renderEntry)&&!/startJourney/.test(renderEntry)],
   ['Ready and Not Ready remain explicit Frontstage choices', /data-journey="ready"/.test(index)&&/data-journey="notready"/.test(index)&&/startJourney\(b\.dataset\.journey\)/.test(app)],
   ['user mode does not create a workspace copy', !/userWorkspace|User Workspace|duplicated/i.test(index+app)],
   ['Preview and Save Local use the existing mode flow', /\$\('#previewBtn'\)\.onclick=\(\)=>setMode\('preview'\)/.test(app)&&/\$\('#saveBtn'\)\.onclick=saveOverrides/.test(app)],
