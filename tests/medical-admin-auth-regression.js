@@ -1,0 +1,17 @@
+const assert=require('assert');
+const fs=require('fs');
+const auth=fs.readFileSync('medical-admin-auth.js','utf8');
+const gas=fs.readFileSync('gas/MedicalAdminAuth.gs','utf8');
+const app=fs.readFileSync('app.js','utf8');
+assert.match(auth,/const APP_ID = "medical"/);
+assert.match(auth,/action: "exchangeAppLaunch"/);
+assert.match(auth,/clearLaunchFromUrl\(location\)/);
+assert.doesNotMatch(auth,/localStorage|sessionStorage|indexedDB/i);
+assert.match(app,/\['user','admin'\]\.includes\(value\)/);
+assert.match(app,/state\.entry==='admin'/);
+assert.match(app,/此管理入口需要由 AVA Studio 驗證後開啟/);
+assert.match(gas,/UrlFetchApp\.fetch/);
+assert.match(gas,/action: "verifyAppGrant"/);
+assert.match(gas,/MEDICAL_ADMIN_APP_ID = "medical"/);
+assert.match(gas,/no Medical Official write/);
+console.log('Medical Unified Admin Auth fail-closed contract checks passed');

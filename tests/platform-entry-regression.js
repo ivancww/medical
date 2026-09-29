@@ -10,9 +10,9 @@ const checks=[
   ['Preview and Save Local use the existing mode flow', /\$\('#previewBtn'\)\.onclick=\(\)=>setMode\('preview'\)/.test(app)&&/\$\('#saveBtn'\)\.onclick=saveOverrides/.test(app)],
   ['User overrides remain separate from Official cache', /CACHE_KEY='ava\.medical\.official\.v1',OVERRIDE_KEY='ava\.medical\.user\.overrides\.v1'/.test(app)&&/localStorage\.setItem\(OVERRIDE_KEY/.test(app)],
   ['Return to AVA remains persistent', /href="https:\/\/ivancww\.github\.io\/avaplatform\/">返回 AVA<\/a>/.test(index)],
-  ['Admin is not exposed as a capability', !/id="adminBtn"/.test(index)&&!/value==='admin'/.test(app)],
-  ['invalid entries safely fall back to Frontstage', /value==='user'\?'user':'frontend'/.test(app)],
-  ['installed PWA shell cache is refreshed', /ava-medical-shell-v3/.test(sw)],
+  ['Admin entry is explicit and authenticated', /\['user','admin'\]\.includes\(value\)/.test(app)&&/authorizeAdmin\(\)/.test(app)&&/MedicalAdminAuth\.hasGrant\(\)/.test(app)],
+  ['invalid entries safely fall back to Frontstage', /\['user','admin'\]\.includes\(value\)\?value:'frontend'/.test(app)],
+  ['installed PWA shell cache is refreshed', /ava-medical-shell-v4/.test(sw)&&/medical-admin-auth\.js/.test(sw)],
   ['fixed Official pages remain protected', /function allPages\(\)\{return \(state\.official\?\.pages\|\|\[\]\)\.filter\(p=>isFixed\(p\)\|\|isEnabled\(p\)\)\}/.test(app)]
 ];
 console.table(checks.map(([name,pass])=>({name,pass})));
