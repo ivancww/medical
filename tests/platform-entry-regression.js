@@ -13,7 +13,7 @@ const checks=[
   ['Return to AVA remains persistent', /href="https:\/\/ivancww\.github\.io\/avaplatform\/">返回 AVA<\/a>/.test(index)],
   ['Admin entry is explicit and authenticated', /\['user','admin'\]\.includes\(value\)/.test(app)&&/authorizeAdmin\(\)/.test(app)&&/MedicalAdminAuth\.hasGrant\(\)/.test(app)],
   ['invalid entries safely fall back to Frontstage', /\['user','admin'\]\.includes\(value\)\?value:'frontend'/.test(app)],
-  ['installed PWA shell cache is refreshed', /ava-medical-shell-v4/.test(sw)&&/medical-admin-auth\.js/.test(sw)],
+  ['installed PWA shell cache is refreshed', /const CACHE='ava-medical-shell'/.test(sw)&&/fetch\(event\.request\)/.test(sw)&&/product-data\.js/.test(sw)&&/medical-admin-auth\.js/.test(sw)&&/cache\.put\('\.\/index\.html'/.test(sw)&&/if\(url\.search\)return/.test(sw)&&/key\.startsWith\('ava-medical-shell'\)/.test(sw)],
   ['fixed Official pages remain protected', /function allPages\(\)\{return \(state\.official\?\.pages\|\|\[\]\)\.filter\(p=>isFixed\(p\)\|\|isEnabled\(p\)\)\}/.test(app)]
 ];
 console.table(checks.map(([name,pass])=>({name,pass})));
