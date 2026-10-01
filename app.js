@@ -4,7 +4,13 @@ const CACHE_KEY='ava.medical.official.v1',OVERRIDE_KEY='ava.medical.user.overrid
 const state={official:null,journey:null,index:0,answers:{},mode:'use',entry:'frontend',draftText:{},intake:null,adminAuthorized:false,adminStatus:'idle',medicalGrowthRate:6,medicalCost:200000,fundingAmount:600000,claimCost:100000,companyPaid:0,companyCoverage:80000,companyRate:100,wiseDeductible:8800,age:40};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 function avaEntry(){const value=new URLSearchParams(window.location.search).get('avaEntry');return ['user','admin'].includes(value)?value:'frontend'}
-function setEntry(){state.entry=avaEntry();$('.app-shell').dataset.avaEntry=state.entry;$('#editBtn').hidden=state.entry!=='user'}
+// Return context is navigation only; never copy launch credentials into this URL.
+function avaReturnUrl(entry=state.entry){
+ const url=new URL('https://ivancww.github.io/avaplatform/');
+ if(entry==='user'||entry==='admin')url.searchParams.set('avaSurface',entry);
+ return url.href;
+}
+function setEntry(){state.entry=avaEntry();$('.app-shell').dataset.avaEntry=state.entry;$('#editBtn').hidden=state.entry!=='user';$$('[data-ava-return]').forEach(link=>link.href=avaReturnUrl())}
 function setStatus(t,cls=''){const e=$('#status');e.textContent=t;e.className='status '+cls}
 function cache(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch{return null}}
 function isValidOfficialData(d){return !!d&&typeof d==='object'&&!Array.isArray(d)&&d.version!==undefined&&Array.isArray(d.pages)&&Array.isArray(d.options)}
