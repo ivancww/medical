@@ -73,6 +73,7 @@ jobs:
           node --check tests/medical-admin-auth-regression.js
           node --check tests/platform-entry-regression.js
           node --check tests/product-data-regression.js
+          node --check tests/automatic-update-regression.js
           grep -q "readyClaimBlock" app.js
           grep -q "concernReflection" app.js
           grep -q "premiumBlock" app.js
@@ -83,6 +84,7 @@ jobs:
           node tests/mother-contract-regression.js
           node tests/medical-admin-auth-regression.js
           node tests/platform-entry-regression.js
+          node tests/automatic-update-regression.js
       - name: Verify PWA and fixed contracts
         run: |
           node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js','product-data.js','ready-product.css'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
