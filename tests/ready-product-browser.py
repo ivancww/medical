@@ -23,12 +23,22 @@ PLANS = [
 TABLES = {
     **{f"尊顯{d}自付額": {"35": 10000 + d, "40": 12000 + d} for d in [0, 16000, 25000]},
     **{f"睿選{d}自付額": {"35": 5000 + d, "40": 6000 + d} for d in [0, 8800, 18000, 30000]},
+    "尊顯8800自付額": {"35": 9999},
+    "睿選16000自付額": {"35": 9999},
     "男靈活計劃": {"35": 7000, "40": 8000},
     "女靈活計劃": {"35": 6800, "40": 7800},
 }
 PAGES = [{"page_id": f"R{i:02}", "title": f"R{i:02}", "is_fixed": True, "sort_order": i} for i in range(1, 11)]
 PAGES += [{"page_id": f"N{i:02}", "title": f"N{i:02}", "is_fixed": True, "sort_order": i} for i in range(1, 8)]
 OFFICIAL = {"version": "fixture", "pages": PAGES, "options": [], "plans": PLANS, "claimRules": RULES, "premiumTables": TABLES, "premiumSettings": []}
+OFFICIAL["options"] = [
+    {"option_group": "R01", "option_id": "concern", "display_name": "Concern"},
+    {"option_group": "R02", "option_id": "no_medical", "display_name": "No medical"},
+    {"option_group": "N01", "option_id": "private", "display_name": "Private"},
+    {"option_group": "N02", "option_id": "cost", "display_name": "Cost"},
+    {"option_group": "N05", "option_id": "savings", "display_name": "Savings"},
+    {"option_group": "N07", "option_id": "future_insurance", "display_name": "Future insurance"},
+]
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -69,11 +79,36 @@ def run():
             context, page = open_page(browser, server.server_port)
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
+            check(page.locator("#appVersion").inner_text().startswith("v1.1.0 · build "), "Medical App Version/build is visible in the header")
+            check(page.locator("#status").is_hidden(), "Official Data technical status is hidden on customer Frontstage")
+            check(page.locator("#prevBtn").count() == 0 and page.locator("#backBtn").count() == 1, "bottom Previous is absent and top Back remains")
+            at(page, "R01")
+            page.locator(".option-card").first.click()
+            check(page.locator("#pageCard h2").inner_text() == "R02", "R01 simple single-choice directly advances")
+            page.locator(".option-card").first.click()
+            check(page.locator("#pageCard h2").inner_text() == "R04", "R02 simple single-choice directly advances with conditional routing")
             at(page, "R06")
             check(page.locator("#claimCostDirect").count() == 1 and page.locator("#claimCost").count() == 0, "R06 has one direct medical cost input")
             check(page.locator("#wiseDeductible").count() == 1 and page.locator("#eliteDeductible").count() == 1, "R06 has plan-owned deductible selectors")
             check(page.locator("#eliteDeductible option").count() == 3 and page.locator("#wiseDeductible option").count() == 4, "R06 deductible options follow product tables")
+            check(page.locator("#eliteDeductible").input_value() == "16000" and page.locator("#wiseDeductible").input_value() == "8800", "R06 preserves product defaults")
+            check(page.locator("#eliteDeductible option").all_text_contents() == ["HK$0", "HK$16,000", "HK$25,000"] and page.locator("#wiseDeductible option").all_text_contents() == ["HK$0", "HK$8,800", "HK$18,000", "HK$30,000"], "R06 customer-facing values are canonical")
+            check(page.evaluate("AVAMedicalProductData.lookupPremium(state.official, 'ELITE', {age: 35, deductible: 8800})") is None and page.evaluate("AVAMedicalProductData.lookupPremium(state.official, 'WISE', {age: 35, deductible: 16000})") is None, "premium lookup rejects cross-product deductibles")
+            check("尊耀醫療計劃" in page.locator("#eliteDeductible").locator("xpath=ancestor::article").last.inner_text() and "睿選醫療計劃" in page.locator("#wiseDeductible").locator("xpath=ancestor::article").last.inner_text(), "R06 selectors stay beside their own plan")
+            check(page.locator("label", has_text="尊耀／睿選示例自付額").count() == 0, "R06 has no obsolete shared deductible control")
             check(page.locator(".claim-result--deductible .claim-bar .customer:first-child").count() == 2, "deductible customer segment starts on left")
+            check(page.locator("[data-product-id='ELITE'] .claim-bar span").first.get_attribute("class") == "customer" and page.locator("[data-product-id='ELITE'] .claim-bar span").nth(1).get_attribute("class") == "plan", "Elite bar is customer then plan")
+            check(page.locator("[data-product-id='WISE'] .claim-bar span").first.get_attribute("class") == "customer" and page.locator("[data-product-id='WISE'] .claim-bar span").nth(1).get_attribute("class") == "plan", "Wise bar is customer then plan")
+            check(page.locator("[data-product-id='FLEXI'] .claim-bar span").first.get_attribute("class") == "plan" and page.locator("[data-product-id='FLEXI'] .claim-bar span").nth(1).get_attribute("class") == "customer", "Flexi bar is plan then customer")
+            check("自己" in page.locator("[data-product-id='ELITE'] .claim-bar").get_attribute("aria-label") and "計劃" in page.locator("[data-product-id='ELITE'] .claim-bar").get_attribute("aria-label"), "Elite accessibility order describes customer then plan")
+            check(page.locator("[data-product-id='FLEXI'] .claim-bar").get_attribute("aria-label").startswith("計劃"), "Flexi accessibility order describes plan first")
+            check(not page.locator("#nextBtn").is_hidden(), "R06 complex claim illustration keeps explicit Next")
+            page.locator("#eliteDeductible").select_option("0")
+            check(page.locator("#eliteDeductible").input_value() == "0" and "自己 HK$0" in page.locator("[data-product-id='ELITE'] .claim-bar-labels").inner_text(), "Elite zero deductible remains zero")
+            check(page.locator("#wiseDeductible").input_value() == "8800", "Elite zero does not alter Wise")
+            page.locator("#wiseDeductible").select_option("0")
+            check(page.locator("#wiseDeductible").input_value() == "0" and "自己 HK$0" in page.locator("[data-product-id='WISE'] .claim-bar-labels").inner_text(), "Wise zero deductible remains zero")
+            check(page.locator("#eliteDeductible").input_value() == "0", "Wise zero does not alter Elite")
             page.locator("#wiseDeductible").select_option("8800")
             check("91,200" in page.locator(".claim-result[data-product-id='WISE']").inner_text(), "Wise claim amount follows deductible")
             page.locator("#claimCostDirect").fill("1000")
@@ -93,6 +128,9 @@ def run():
             page.locator("#premiumAge").fill("35")
             page.locator("#premiumAge").dispatch_event("change")
             check("6,800" in page.locator("[data-product-id='FLEXI'].premium-result").inner_text(), "premium follows exact age")
+            page.locator("#premiumEliteDeductible").select_option("0")
+            page.locator("#premiumWiseDeductible").select_option("0")
+            check("10,000" in page.locator("[data-product-id='ELITE'].premium-result").inner_text() and "5,000" in page.locator("[data-product-id='WISE'].premium-result").inner_text(), "R09 prices verified zero-deductible tables by product")
             page.locator("#premiumEliteDeductible").select_option("25000")
             check("35,000" in page.locator("[data-product-id='ELITE'].premium-result").inner_text(), "Elite premium follows its own deductible")
             page.locator("#premiumWiseDeductible").select_option("30000")
@@ -136,7 +174,7 @@ def run():
             page.locator("#saveBtn").click()
             check(page.evaluate("JSON.parse(localStorage.getItem('ava.medical.user.overrides.v1')).R06.title") == "客戶示例", "Save Local writes User override")
             context.close()
-            for width in [390, 720, 820, 1180, 1500]:
+            for width in [390, 650, 720, 820, 1000, 1180, 1500]:
                 context, page = open_page(browser, server.server_port, width)
                 for page_id in ["R06", "R07", "R09"]:
                     at(page, page_id)

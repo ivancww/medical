@@ -20,6 +20,8 @@ const official={
     '睿選8800自付額':{'35':7064},
     '睿選18000自付額':{'35':5518},
     '睿選30000自付額':{'35':5024},
+    '睿選16000自付額':{'35':9999},
+    '尊顯8800自付額':{'35':9999},
     '男靈活計劃':{'35':7372.8},
     '女靈活計劃':{'35':7099.6}
   }
@@ -31,6 +33,9 @@ assert.deepEqual(P.deductibleOptions(official,'FLEXI'),[]);
 assert.equal(P.lookupPremium(official,'ELITE',{age:35,deductible:0}),21024);
 assert.equal(P.lookupPremium(official,'ELITE',{age:35,deductible:16000}),8612);
 assert.equal(P.lookupPremium(official,'ELITE',{age:35,deductible:25000}),8352);
+assert.equal(P.lookupPremium(official,'WISE',{age:35,deductible:0}),14592);
+assert.equal(P.lookupPremium(official,'ELITE',{age:35,deductible:8800}),null);
+assert.equal(P.lookupPremium(official,'WISE',{age:35,deductible:16000}),null);
 assert.equal(P.lookupPremium(official,'WISE',{age:35,deductible:18000}),5518);
 assert.equal(P.lookupPremium(official,'FLEXI',{age:35,gender:'male'}),7372.8);
 assert.equal(P.lookupPremium(official,'FLEXI',{age:35,gender:'female'}),7099.6);

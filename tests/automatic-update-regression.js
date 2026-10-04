@@ -113,7 +113,7 @@ async function runRegistrationContract(){
   };
   vm.runInNewContext(app.slice(start,end),context,{filename:'app-update-lifecycle.js'});
   await vm.runInNewContext('registerMedicalServiceWorker()',context);
-  assert.equal(calls[0][0],'./sw.js','registration uses the app-owned worker');
+  assert.equal(calls[0][0],'sw.js','registration uses the app-owned worker');
   assert.equal(calls[0][1].scope,'./','registration keeps the Medical scope');
   assert.equal(calls[0][1].updateViaCache,'none','registration disables HTTP cache for update discovery');
   assert.equal(calls[1],'update','startup explicitly checks for a newer worker');

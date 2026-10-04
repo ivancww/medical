@@ -1,6 +1,7 @@
 (function(root){
   'use strict';
   const PRODUCT_ORDER=['ELITE','WISE','FLEXI'];
+  const CANONICAL_DEDUCTIBLES={ELITE:[0,16000,25000],WISE:[0,8800,18000,30000],FLEXI:[]};
   const TABLE_PREFIXES={ELITE:['尊耀','尊顯'],WISE:['睿選'],FLEXI:['男靈活計劃','女靈活計劃']};
   const GENDER_KEYS={male:'男靈活計劃',female:'女靈活計劃'};
   function enabled(value){return value?.enabled===undefined||value.enabled===true||String(value.enabled).toUpperCase()==='TRUE'}
@@ -11,12 +12,12 @@
     return Object.entries(tables).filter(([key])=>TABLE_PREFIXES[id]?.some(prefix=>key.startsWith(prefix)));
   }
   function deductibleOptions(official,id){
-    if(id==='FLEXI')return [];
-    return tableEntries(official,id).map(([key])=>key.match(/(\d+)自付額$/)?.[1]).filter(Boolean).map(Number).filter(Number.isFinite).sort((a,b)=>a-b).filter((x,i,a)=>i===0||x!==a[i-1]);
+    return CANONICAL_DEDUCTIBLES[id]?[...CANONICAL_DEDUCTIBLES[id]]:[];
   }
   function premiumTable(official,id,deductible,gender){
     const tables=official?.premiumTables||official?.premium_tables||{};
-    const keys=id==='FLEXI'?[GENDER_KEYS[gender]]:tableEntries(official,id).map(([key])=>key).filter(key=>Number(key.match(/(\d+)自付額$/)?.[1])===Number(deductible));
+    const allowed=CANONICAL_DEDUCTIBLES[id]||[];
+    const keys=id==='FLEXI'?[GENDER_KEYS[gender]]:allowed.includes(Number(deductible))?tableEntries(official,id).map(([key])=>key).filter(key=>Number(key.match(/(\d+)自付額$/)?.[1])===Number(deductible)):[];
     for(const key of keys)if(tables[key]&&typeof tables[key]==='object')return tables[key];
     return null;
   }
