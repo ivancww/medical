@@ -23,6 +23,8 @@ PLANS = [
 TABLES = {
     **{f"尊顯{d}自付額": {"35": 10000 + d, "40": 12000 + d} for d in [0, 16000, 25000]},
     **{f"睿選{d}自付額": {"35": 5000 + d, "40": 6000 + d} for d in [0, 8800, 18000, 30000]},
+    "尊顯8800自付額": {"35": 9999},
+    "睿選16000自付額": {"35": 9999},
     "男靈活計劃": {"35": 7000, "40": 8000},
     "女靈活計劃": {"35": 6800, "40": 7800},
 }
@@ -73,7 +75,18 @@ def run():
             check(page.locator("#claimCostDirect").count() == 1 and page.locator("#claimCost").count() == 0, "R06 has one direct medical cost input")
             check(page.locator("#wiseDeductible").count() == 1 and page.locator("#eliteDeductible").count() == 1, "R06 has plan-owned deductible selectors")
             check(page.locator("#eliteDeductible option").count() == 3 and page.locator("#wiseDeductible option").count() == 4, "R06 deductible options follow product tables")
+            check(page.locator("#eliteDeductible").input_value() == "16000" and page.locator("#wiseDeductible").input_value() == "8800", "R06 preserves product defaults")
+            check(page.locator("#eliteDeductible option").all_text_contents() == ["HK$0", "HK$16,000", "HK$25,000"] and page.locator("#wiseDeductible option").all_text_contents() == ["HK$0", "HK$8,800", "HK$18,000", "HK$30,000"], "R06 customer-facing values are canonical")
+            check(page.evaluate("AVAMedicalProductData.lookupPremium(state.official, 'ELITE', {age: 35, deductible: 8800})") is None and page.evaluate("AVAMedicalProductData.lookupPremium(state.official, 'WISE', {age: 35, deductible: 16000})") is None, "premium lookup rejects cross-product deductibles")
+            check("尊耀醫療計劃" in page.locator("#eliteDeductible").locator("xpath=ancestor::article").last.inner_text() and "睿選醫療計劃" in page.locator("#wiseDeductible").locator("xpath=ancestor::article").last.inner_text(), "R06 selectors stay beside their own plan")
+            check(page.locator("label", has_text="尊耀／睿選示例自付額").count() == 0, "R06 has no obsolete shared deductible control")
             check(page.locator(".claim-result--deductible .claim-bar .customer:first-child").count() == 2, "deductible customer segment starts on left")
+            page.locator("#eliteDeductible").select_option("0")
+            check(page.locator("#eliteDeductible").input_value() == "0" and "自己 HK$0" in page.locator("[data-product-id='ELITE'] .claim-bar-labels").inner_text(), "Elite zero deductible remains zero")
+            check(page.locator("#wiseDeductible").input_value() == "8800", "Elite zero does not alter Wise")
+            page.locator("#wiseDeductible").select_option("0")
+            check(page.locator("#wiseDeductible").input_value() == "0" and "自己 HK$0" in page.locator("[data-product-id='WISE'] .claim-bar-labels").inner_text(), "Wise zero deductible remains zero")
+            check(page.locator("#eliteDeductible").input_value() == "0", "Wise zero does not alter Elite")
             page.locator("#wiseDeductible").select_option("8800")
             check("91,200" in page.locator(".claim-result[data-product-id='WISE']").inner_text(), "Wise claim amount follows deductible")
             page.locator("#claimCostDirect").fill("1000")
@@ -93,6 +106,9 @@ def run():
             page.locator("#premiumAge").fill("35")
             page.locator("#premiumAge").dispatch_event("change")
             check("6,800" in page.locator("[data-product-id='FLEXI'].premium-result").inner_text(), "premium follows exact age")
+            page.locator("#premiumEliteDeductible").select_option("0")
+            page.locator("#premiumWiseDeductible").select_option("0")
+            check("10,000" in page.locator("[data-product-id='ELITE'].premium-result").inner_text() and "5,000" in page.locator("[data-product-id='WISE'].premium-result").inner_text(), "R09 prices verified zero-deductible tables by product")
             page.locator("#premiumEliteDeductible").select_option("25000")
             check("35,000" in page.locator("[data-product-id='ELITE'].premium-result").inner_text(), "Elite premium follows its own deductible")
             page.locator("#premiumWiseDeductible").select_option("30000")

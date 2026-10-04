@@ -40,7 +40,7 @@ jobs:
           assert 'href="manifest.json"' in html
           assert "claim-engine.js" in html and "app.js" in html
           assert 'href="styles.css"' in html
-          assert "serviceWorker.register('sw.js')" in app
+          assert "serviceWorker.register('sw.js',{scope:'./',updateViaCache:'none'})" in app
           assert "./index.html" in service_worker
           assert "./manifest.json" in service_worker
           assert "./app.js" in service_worker

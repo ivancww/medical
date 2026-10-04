@@ -14,6 +14,7 @@ const checks=[
   ['Admin entry is explicit and authenticated', /\['user','admin'\]\.includes\(value\)/.test(app)&&/authorizeAdmin\(\)/.test(app)&&/MedicalAdminAuth\.hasGrant\(\)/.test(app)],
   ['invalid entries safely fall back to Frontstage', /\['user','admin'\]\.includes\(value\)\?value:'frontend'/.test(app)],
   ['installed PWA shell cache is refreshed', /const CACHE='ava-medical-shell'/.test(sw)&&/fetch\(event\.request\)/.test(sw)&&/product-data\.js/.test(sw)&&/medical-admin-auth\.js/.test(sw)&&/cache\.put\('\.\/index\.html'/.test(sw)&&/if\(url\.search\)return/.test(sw)&&/key\.startsWith\('ava-medical-shell'\)/.test(sw)],
+  ['Medical worker uses explicit uncached update discovery', /serviceWorker\.register\('sw\.js',\{scope:'\.\/',updateViaCache:'none'\}\)\.then\(registration=>registration\.update\(\)\)/.test(app)&&/controllerChangeReloaded/.test(app)],
   ['fixed Official pages remain protected', /function allPages\(\)\{return \(state\.official\?\.pages\|\|\[\]\)\.filter\(p=>isFixed\(p\)\|\|isEnabled\(p\)\)\}/.test(app)]
 ];
 console.table(checks.map(([name,pass])=>({name,pass})));
