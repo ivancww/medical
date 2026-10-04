@@ -3,6 +3,7 @@ const index=fs.readFileSync('index.html','utf8');
 const app=fs.readFileSync('app.js','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 const renderEntry=app.slice(app.indexOf('function renderEntry'),app.indexOf('function isEnabled'));
+const medicalUpdateContract=/navigator\.serviceWorker\.register\(\s*['"]sw\.js['"]/.test(app)&&/scope:\s*['"]\.\/['"]/.test(app)&&/updateViaCache:\s*['"]none['"]/.test(app)&&/registration\s*=>\s*registration\.update\(\)/.test(app)&&/addEventListener\(\s*['"]controllerchange['"]/.test(app)&&/refreshing/.test(app)&&/window\.location\.reload\(\)/.test(app);
 const checks=[
   ['bare/frontend entries default to Frontstage', /function avaEntry\(\)\{[\s\S]*return \['user','admin'\]\.includes\(value\)\?value:'frontend'\}/.test(app)],
   ['user entry opens the real Frontstage in Edit mode without choosing a journey', /renderHome\(\);if\(state\.entry==='user'\)setMode\('edit'\)/.test(renderEntry)&&!/startJourney/.test(renderEntry)],
@@ -19,7 +20,7 @@ const checks=[
   ['Admin entry is explicit and authenticated', /\['user','admin'\]\.includes\(value\)/.test(app)&&/authorizeAdmin\(\)/.test(app)&&/MedicalAdminAuth\.hasGrant\(\)/.test(app)],
   ['invalid entries safely fall back to Frontstage', /\['user','admin'\]\.includes\(value\)\?value:'frontend'/.test(app)],
   ['installed PWA shell cache is refreshed', /const CACHE='ava-medical-shell'/.test(sw)&&/fetch\(event\.request,\{cache:'no-store'\}\)/.test(sw)&&/product-data\.js/.test(sw)&&/app-build\.js/.test(sw)&&/medical-admin-auth\.js/.test(sw)&&/cache\.put\('\.\/index\.html'/.test(sw)&&/if\(url\.search\)return/.test(sw)&&/key\.startsWith\('ava-medical-shell'\)/.test(sw)],
-  ['Medical worker uses explicit uncached update discovery', /serviceWorker\.register\('sw\.js',\{scope:'\.\/',updateViaCache:'none'\}\)\.then\(registration=>registration\.update\(\)\)/.test(app)&&/controllerChangeReloaded/.test(app)],
+  ['Medical worker uses explicit uncached update discovery', medicalUpdateContract],
   ['fixed Official pages remain protected', /function allPages\(\)\{return \(state\.official\?\.pages\|\|\[\]\)\.filter\(p=>isFixed\(p\)\|\|isEnabled\(p\)\)\}/.test(app)]
 ];
 console.table(checks.map(([name,pass])=>({name,pass})));
