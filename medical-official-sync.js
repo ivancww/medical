@@ -2,17 +2,17 @@
   "use strict";
   const API = global.MedicalAdminAuth?.OFFICIAL_API || "";
   const DATASETS = Object.freeze([
-    { key: "pages", label: "Pages", id: ["page_id", "pageId", "id"], fields: ["title", "subtitle", "description", "enabled", "sort_order"] },
-    { key: "options", label: "Options", id: ["option_id", "optionKey", "id"], fields: ["display_name", "title", "subtitle", "description", "reflection_text", "enabled", "sort_order"] },
-    { key: "plans", label: "Plans / Features", id: ["plan_id", "id"], fields: ["plan_name", "title", "description", "enabled", "sort_order"] },
-    { key: "claimRules", label: "Claim Rules", id: ["rule_id", "claim_rule_id", "plan_id", "id"], fields: ["display_name", "description", "enabled", "default_rate", "max_benefit", "room_level", "follow_up_limit"] },
-    { key: "claimCases", label: "Claim Cases", id: ["case_id", "claim_case_id", "id"], fields: ["case_title", "condition_name", "treatment_name", "case_date", "medical_cost", "actual_reimbursement", "notes", "enabled", "verified"] },
-    { key: "premiumSettings", label: "Premium Settings", id: ["setting_id", "key", "id"], fields: ["value", "enabled", "description"] },
-    { key: "config", label: "Configuration", id: ["key", "config_key", "id"], fields: ["value", "enabled", "description"] }
+    { key: "pages", label: "Pages", id: ["page_id"], fields: ["page_name", "title", "subtitle", "enabled", "sort_order", "highlight_text"] },
+    { key: "options", label: "Options", id: ["option_id"], fields: ["display_name", "subtitle", "reflection_text", "enabled", "sort_order"] },
+    { key: "plans", label: "Plans / Features", id: ["record_id"], fields: ["plan_name", "category", "title", "description", "brochure_url", "enabled", "sort_order"] },
+    { key: "claimRules", label: "Claim Rules", id: ["plan_id"], fields: ["plan_name", "default_rate", "deductible_enabled", "note"] },
+    { key: "claimCases", label: "Claim Cases", id: ["case_id"], fields: ["case_title", "condition_name", "treatment_name", "medical_cost", "actual_reimbursement", "case_date", "source_type", "source_url", "verified", "enabled", "sort_order"] },
+    { key: "premiumSettings", label: "Premium Settings", id: ["setting_id"], fields: ["title", "description", "value", "start_date", "end_date", "enabled", "sort_order"] },
+    { key: "config", label: "Configuration", id: ["config_key"], fields: ["config_value", "description"] }
   ]);
   const READ_ONLY = Object.freeze(["premiumTables", "premium_tables"]);
   function definition(key) { return DATASETS.find(x => x.key === key) || null; }
-  function rows(official, key) { const value = official?.[key]; if (Array.isArray(value)) return value; if (value && typeof value === "object") return Object.entries(value).map(([id, record]) => ({ id, ...(record || {}) })); return []; }
+  function rows(official, key) { const value = official?.adminDatasets?.[key] ?? official?.[key]; if (Array.isArray(value)) return value; if (value && typeof value === "object") return Object.entries(value).map(([id, record]) => ({ id, ...(record || {}) })); return []; }
   function recordId(record, def) { return def.id.map(key => record?.[key]).find(value => value !== undefined && value !== null && String(value) !== "") ?? ""; }
   function editableFields(record, def) { return def.fields.filter(field => Object.prototype.hasOwnProperty.call(record || {}, field)); }
   function esc(value) { return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
@@ -37,7 +37,7 @@
         article.querySelectorAll("[data-field]").forEach(input => { const field = input.dataset.field, next = parseValue(source[field], input.value); if (JSON.stringify(next) !== JSON.stringify(source[field])) changes[field] = next; });
         if (!Object.keys(changes).length) { setMessage(panel, "沒有未儲存變更。", "helper"); return; }
         button.disabled = true; button.textContent = "Saving…"; setMessage(panel, "Saving：正在由 Medical GAS 驗證並寫入 Google Sheet…");
-        const result = await jsonFetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "updateOfficialRecord", appId: "medical", appGrant: global.MedicalAdminAuth.getGrant(), dataset: selected, recordId: String(recordId(source, def)), changes, expectedVersion: state.official?.version }) });
+        const result = await jsonFetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "updateOfficialRecord", appId: "medical", appGrant: global.MedicalAdminAuth.getGrant(), dataset: selected, recordId: String(recordId(source, def)), changes, expectedVersion: state.official?.revision || state.official?.version }) });
         const next = result.data || result.official; if (next) { state.official = next; onOfficialChanged?.(next); }
         setMessage(panel, `Saved / Synced：Google Sheet 已回讀確認（version ${result.version || state.official?.version || "—"}）。`, "success"); render();
       } catch (error) { setMessage(panel, error.message.includes("version") || error.message.includes("stale") ? "Conflict / stale-data error：請先 Refresh Official Data。" : `Save failed：${error.message}`, "error"); button.disabled = false; button.textContent = "Validate & Save Official"; }

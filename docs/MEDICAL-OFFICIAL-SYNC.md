@@ -11,18 +11,24 @@ Official write payload.
 
 | Dataset | Admin status | Allowed mutation fields |
 | --- | --- | --- |
-| Pages | Editable Official | `title`, `subtitle`, `description`, `enabled`, `sort_order` |
-| Options | Editable Official | display/description/reflection text, `enabled`, `sort_order` |
-| Plans / Features | Editable Official | plan display text, `enabled`, `sort_order` |
-| Claim Rules | Editable Official | verified descriptive/parameter fields in the allowlist |
-| Claim Cases | Editable Official | verified case content and publication flags; empty is valid |
-| Premium Settings | Editable Official | existing setting `value`, `enabled`, `description` fields only |
-| Config | Editable Official | existing setting `value`, `enabled`, `description` fields only |
-| Premium tables | Read-only until canonical row schema is verified | none |
+| Pages (`Pages`) | Editable Official | `page_name`, `title`, `subtitle`, `enabled`, `sort_order`, `highlight_text`; stable ID `page_id` |
+| Options (`Options`) | Editable Official | `display_name`, `subtitle`, `reflection_text`, `enabled`, `sort_order`; stable ID `option_id` |
+| Plans / Features (`Plans`) | Editable Official | `plan_name`, `category`, `title`, `description`, `brochure_url`, `enabled`, `sort_order`; stable ID `record_id` |
+| Claim Rules (`Claim_Rules`) | Editable Official | `plan_name`, `default_rate`, `deductible_enabled`, `note`; stable ID `plan_id` |
+| Claim Cases (`Claim_Cases`) | Editable Official | case content/publication fields; stable ID `case_id`; empty is valid |
+| Premium Settings (`Premium_Settings`) | Editable Official | `title`, `description`, `value`, dates, `enabled`, `sort_order`; stable ID `setting_id` |
+| Config (`Config`) | Editable Official | `config_value`, `description`; stable ID `config_key` |
+| Premium tables (11 age/value tabs) | Read-only | no explicit stable row ID; no targeted mutation contract |
 | Calculations, auth, service worker, Platform rules | Read-only / protected | none |
 
 The UI derives editable controls from fields actually present in the current
 Official row. It does not fabricate missing rows or Claim Cases.
+
+The canonical workbook discovered for this contract is spreadsheet
+`1G6JirabWJPrTtsdPuzzfyo-D-EPIbbdCM3HvFUW7ZCw` (title `成人醫療`). The
+existing GAS project must already have this ID, or set it as the existing
+project's `MEDICAL_OFFICIAL_SPREADSHEET_ID` Script Property; no new workbook
+is created.
 
 ## Write contract
 
@@ -36,12 +42,18 @@ Official row. It does not fabricate missing rows or Claim Cases.
   "dataset": "pages",
   "recordId": "stable-page-id",
   "changes": { "title": "..." },
-  "expectedVersion": "current-official-version"
+  "expectedVersion": "current-official-revision"
 }
 ```
 
 The GAS backend must verify `medicalVerifyAppGrant_(appGrant,
 "official-write")`, reject unsupported fields and stale versions, update only
-the addressed row, bump the Official revision, re-read the canonical payload,
+the addressed row, re-read the canonical payload and return its content
+revision,
 and return the persisted payload. The action must be merged into the existing
 production GAS `doPost`; it is not a second endpoint or a replacement project.
+
+The existing `doPost` router should dispatch `action ===
+"updateOfficialRecord"` to `medicalOfficialDataAction_(body)` alongside its
+existing read/auth actions. The existing error envelope and CORS/response
+wrapper remain owned by that router.
