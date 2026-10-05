@@ -49,8 +49,12 @@ const MEDICAL_OFFICIAL_DATASETS = Object.freeze({
   config: { sheet: "Config", ids: ["config_key"], fields: ["config_value", "description"], types: {} }
 });
 
-function output_(value) {
-  return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
+function output_(value, callback) {
+  const json = JSON.stringify(value);
+  if (callback && /^[A-Za-z_$][0-9A-Za-z_$]*(\.[A-Za-z_$][0-9A-Za-z_$]*)*$/.test(String(callback))) {
+    return ContentService.createTextOutput(String(callback) + "(" + json + ")").setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
 }
 
 function error_(message, code) {
@@ -59,14 +63,16 @@ function error_(message, code) {
 
 /** The single production GET router. */
 function doGet(e) {
+  const parameters = e && e.parameter || {};
+  const callback = parameters.callback || "";
   try {
-    const action = String(e && e.parameter && e.parameter.action || "");
-    if (action === "checkVersion") return output_(checkVersion_());
-    if (action === "getDataset") return output_(getDataset_(e.parameter.dataset));
-    if (!action) return output_(medicalFullBootstrap_());
-    return output_(error_("Unsupported action", "UNSUPPORTED_ACTION"));
+    const action = String(parameters.action || "");
+    if (action === "checkVersion") return output_(checkVersion_(), callback);
+    if (action === "getDataset") return output_(getDataset_(parameters.dataset), callback);
+    if (!action) return output_(medicalFullBootstrap_(), callback);
+    return output_(error_("Unsupported action", "UNSUPPORTED_ACTION"), callback);
   } catch (error) {
-    return output_(error_(error.message, error.code || "READ_FAILED"));
+    return output_(error_(error.message, error.code || "READ_FAILED"), callback);
   }
 }
 
@@ -97,7 +103,14 @@ function checkVersion_() {
 }
 
 function getDataset_(requested) {
-  const dataset = String(requested || "").toLowerCase();
+  const requestedDataset = String(requested || "").toLowerCase();
+  const dataset = {
+    claimrules: "claim_rules",
+    claimcases: "claim_cases",
+    premiumsettings: "premium_settings",
+    premiumtables: "premiums",
+    premium_tables: "premiums"
+  }[requestedDataset] || requestedDataset;
   const config = readKeyValueSheet_(medicalSheet_(AVA_MEDICAL.SHEETS.CONFIG));
   const version = String(config.data_version || AVA_MEDICAL.SCHEMA_VERSION);
   const data = {
@@ -111,7 +124,7 @@ function getDataset_(requested) {
     premiums: readPremiumTables_(medicalSpreadsheet_())
   };
   if (!Object.prototype.hasOwnProperty.call(data, dataset)) throw new Error("Unsupported dataset");
-  return { status: "success", version, dataset, data: data[dataset] };
+  return { status: "success", version, dataset: requestedDataset, data: data[dataset] };
 }
 
 function medicalFullBootstrap_() {
@@ -122,7 +135,7 @@ function medicalFullBootstrap_() {
     schemaVersion: AVA_MEDICAL.SCHEMA_VERSION,
     version: snapshot.version,
     generatedAt: new Date().toISOString(),
-    config: Object.keys(snapshot.config).sort().map(key => [key, snapshot.config[key]]),
+    config: snapshot.config,
     pages: snapshot.pages,
     options: snapshot.options,
     plans: snapshot.plans,
