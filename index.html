@@ -25,11 +25,13 @@
 <section id="admin" class="ava-management" hidden><div class="admin-head"><div><p class="eyebrow">AVA STUDIO · MEDICAL</p><h2>Official Data 管理</h2></div><button id="adminClose" class="ava-button ava-button--secondary">返回 Frontstage</button></div>
 <div class="admin-grid"><article class="admin-card"><h3>Official Cloud</h3><p id="cloudInfo">—</p><button id="refreshBtn" class="ava-button">重新讀取 Official Data</button></article><article class="admin-card"><h3>新增資料</h3><p>AI Study 或手動輸入，最後都會進入確認。</p><div class="stack"><label class="ava-button upload">AI 自動讀取文件<input id="aiFile" type="file" accept=".pdf,image/*" hidden></label><button id="manualBtn" class="ava-button ava-button--secondary">手動輸入</button></div></article><article class="admin-card"><h3>資料集</h3><div id="datasetCounts"></div></article></div>
 <div id="intakePanel" class="intake-panel" hidden></div></section>
+<section id="officialSyncPanel" class="intake-panel" hidden></section>
 <section id="adminGate" class="concept" hidden><p class="eyebrow">AVA STUDIO · MEDICAL</p><h2>管理入口未能驗證</h2><p id="adminGateMessage" class="support">此管理入口需要由 AVA Studio 驗證後開啟。</p><a class="ava-button ava-button--secondary" href="https://ivancww.github.io/avaplatform/">返回 AVA</a></section>
 </main></div>
 <script src="claim-engine.js"></script>
 <script src="product-data.js"></script>
 <script src="medical-admin-auth.js"></script>
+<script src="medical-official-sync.js"></script>
 <script src="app-build.js"></script>
 <script src="app.js"></script>
 </body></html>
