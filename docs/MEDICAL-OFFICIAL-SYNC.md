@@ -53,7 +53,10 @@ revision,
 and return the persisted payload. The action must be merged into the existing
 production GAS `doPost`; it is not a second endpoint or a replacement project.
 
-The existing `doPost` router should dispatch `action ===
-"updateOfficialRecord"` to `medicalOfficialDataAction_(body)` alongside its
-existing read/auth actions. The existing error envelope and CORS/response
-wrapper remain owned by that router.
+The existing `doPost` router should dispatch its parsed payload through
+`medicalOfficialPostAction_(payload)` before any legacy writer can run. That
+function routes `action === "updateOfficialRecord"` to
+`medicalOfficialDataAction_(payload)` and rejects any payload containing the
+old bulk keys (`config`, `pages`, `options`, `plans`, `claimRules`,
+`claimCases`, `premiumSettings`). The existing error envelope and CORS/
+response wrapper remain owned by the production router.

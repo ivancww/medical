@@ -10,14 +10,6 @@ const MEDICAL_OFFICIAL_DATASETS = Object.freeze({
   config: { sheet: "Config", ids: ["config_key"], fields: ["config_value", "description"], types: {} }
 });
 
-// Canonical read-only tables. They have age/value columns but no explicit
-// stable record-ID column, so they are not exposed to targeted mutation.
-const MEDICAL_OFFICIAL_PREMIUM_SHEETS = Object.freeze([
-  "女靈活計劃", "男靈活計劃", "睿選0自付額", "睿選8800自付額",
-  "睿選18000自付額", "睿選30000自付額", "尊顯0自付額", "尊顯16000自付額",
-  "尊顯25000自付額", "OPCEO16000自付額", "OPCEO25000自付額"
-]);
-
 function medicalOfficialDataAction_(body) {
   if (body.action !== "updateOfficialRecord") throw new Error("Unsupported Medical Official action");
   if (String(body.appId || "") !== String(MEDICAL_ADMIN_APP_ID)) throw new Error("Invalid Medical App ID");
@@ -67,54 +59,77 @@ function medicalOfficialRecordId_(row, ids) { for (const id of ids) if (row && r
 function medicalOfficialRow_(headers, row) { return headers.reduce((out, header, index) => { out[header] = medicalOfficialCell_(row[index]); return out; }, {}); }
 function medicalOfficialCell_(value) { return value instanceof Date ? Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd") : value; }
 function medicalOfficialSheet_(name) {
-  const id = PropertiesService.getScriptProperties().getProperty("MEDICAL_OFFICIAL_SPREADSHEET_ID");
-  if (!id) throw new Error("Medical Official Sheet is not configured");
-  const sheet = SpreadsheetApp.openById(id).getSheetByName(name);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   if (!sheet) throw new Error("Medical Official sheet tab not found: " + name);
   return sheet;
 }
 
-function medicalOfficialReadRows_(sheetName, idFields, warnings) {
-  const sheet = medicalOfficialSheet_(sheetName), values = sheet.getDataRange().getValues();
-  if (!values.length || !values[0].length) return [];
-  const headers = values[0].map(String), rows = [];
-  values.slice(1).forEach((row, offset) => {
-    if (row.every(value => value === "" || value === null)) return;
-    const record = medicalOfficialRow_(headers, row), id = medicalOfficialRecordId_(record, idFields);
-    if (!id) { warnings.push(sheetName + " row " + (offset + 2) + " skipped: missing stable ID"); return; }
-    rows.push(record);
-  });
+function medicalOfficialSort_(rows, key) {
+  if (typeof sortByOrder_ === "function") sortByOrder_(rows, key);
   return rows;
 }
 
-function medicalOfficialReadPremiumTable_(sheetName, warnings) {
-  const sheet = medicalOfficialSheet_(sheetName), values = sheet.getDataRange().getValues();
-  if (values.length < 2 || values[0].length < 2) return {};
-  const table = {};
-  values.slice(1).forEach((row, offset) => {
-    const age = row[0], premium = row[1];
-    if (age === "" || age === null) { warnings.push(sheetName + " row " + (offset + 2) + " skipped: missing age"); return; }
-    table[String(age)] = premium;
-  });
-  return table;
+function medicalOfficialReadObjects_(ss, sheetName, orderKey) {
+  const rows = readObjectSheet_(ss.getSheetByName(sheetName));
+  return medicalOfficialSort_(rows || [], orderKey);
 }
 
-function medicalOfficialSha256_(value) {
-  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value, Utilities.Charset.UTF_8);
+function medicalOfficialConfigRows_(config) {
+  return Object.keys(config || {}).sort().map(key => ({ config_key: key, config_value: normalizeValue_(config[key]) }));
+}
+
+function medicalOfficialStableStringify_(value) {
+  if (Array.isArray(value)) return "[" + value.map(medicalOfficialStableStringify_).join(",") + "]";
+  if (value && typeof value === "object") return "{" + Object.keys(value).sort().map(key => JSON.stringify(key) + ":" + medicalOfficialStableStringify_(value[key])).join(",") + "}";
+  return JSON.stringify(normalizeValue_(value));
+}
+
+function medicalOfficialRevision_(payload) {
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, medicalOfficialStableStringify_(payload), Utilities.Charset.UTF_8);
   return bytes.map(byte => { const hex = (byte < 0 ? byte + 256 : byte).toString(16); return hex.length === 1 ? "0" + hex : hex; }).join("");
 }
 
-/** One canonical model for Admin reads and Official write validation. */
+/**
+ * Canonical Medical Official snapshot. These are the production read helpers
+ * already used by doGet; this adapter intentionally does not reinterpret the
+ * workbook schema or maintain a parallel reader.
+ */
 function medicalOfficialReadSnapshot_() {
-  const warnings = [], datasets = {};
-  Object.entries(MEDICAL_OFFICIAL_DATASETS).forEach(([key, definition]) => { datasets[key] = medicalOfficialReadRows_(definition.sheet, definition.ids, warnings); });
-  const config = {};
-  datasets.config.forEach(row => { config[String(row.config_key)] = row.config_value; });
-  const premiumTables = {};
-  MEDICAL_OFFICIAL_PREMIUM_SHEETS.forEach(name => { premiumTables[name] = medicalOfficialReadPremiumTable_(name, warnings); });
-  const adminDatasets = Object.keys(datasets).reduce((out, key) => { out[key] = datasets[key]; return out; }, {});
-  const payload = { pages: datasets.pages, options: datasets.options, plans: datasets.plans, claimRules: datasets.claimRules, claimCases: datasets.claimCases, premiumSettings: datasets.premiumSettings, config, premiumTables, adminDatasets, warnings };
-  const revision = medicalOfficialSha256_(JSON.stringify(payload));
-  const versionRow = datasets.config.find(row => String(row.config_key) === "data_version");
-  return Object.assign({ success: true, version: String(versionRow ? versionRow.config_value : "unknown"), revision }, payload);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const config = readKeyValueSheet_(ss.getSheetByName(AVA_MEDICAL.SHEETS.CONFIG)) || {};
+  const pages = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PAGES, "sort_order");
+  const options = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.OPTIONS, "sort_order");
+  const plans = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PLANS, "sort_order");
+  const claimRules = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.CLAIM_RULES, "sort_order");
+  const claimCases = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.CLAIM_CASES, "sort_order");
+  const premiumSettings = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PREMIUM_SETTINGS, "sort_order");
+  const premiumTables = readPremiumTables_(ss) || {};
+  const adminDatasets = {
+    pages, options, plans, claimRules, claimCases, premiumSettings,
+    config: medicalOfficialConfigRows_(config)
+  };
+  const payload = { pages, options, plans, claimRules, claimCases, premiumSettings, premiumTables, config, adminDatasets };
+  const version = String(config.data_version || AVA_MEDICAL.SCHEMA_VERSION || "unknown");
+  return Object.assign({ success: true, version, revision: medicalOfficialRevision_(payload) }, payload);
+}
+
+/**
+ * The old doPost accepted arbitrary payload.pages/config/etc. and called the
+ * whole-sheet writers. It is not a compatibility path: it must be rejected
+ * before any legacy writer can run. The existing doPost should call this for
+ * any payload containing legacy bulk Official keys, then route the explicit
+ * updateOfficialRecord action to medicalOfficialDataAction_.
+ */
+function medicalOfficialRejectLegacyBulkWrite_(payload) {
+  const legacyKeys = ["config", "pages", "options", "plans", "claimRules", "claimCases", "premiumSettings"];
+  if (legacyKeys.some(key => Object.prototype.hasOwnProperty.call(payload || {}, key))) {
+    throw new Error("Legacy bulk Official write is disabled; use authenticated updateOfficialRecord");
+  }
+}
+
+/** Single deterministic Official branch for the existing doPost router. */
+function medicalOfficialPostAction_(payload) {
+  if (payload && payload.action === "updateOfficialRecord") return medicalOfficialDataAction_(payload);
+  medicalOfficialRejectLegacyBulkWrite_(payload);
+  throw new Error("Unsupported Medical POST action");
 }

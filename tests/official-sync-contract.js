@@ -10,7 +10,11 @@ assert.match(gas, /LockService\.getScriptLock/); assert.match(gas, /Stale Offici
 assert.match(gas, /Official field is read-only or unsupported/); assert.match(gas, /recordId/);
 assert.match(gas, /function medicalOfficialReadSnapshot_\(\)/);
 assert.doesNotMatch(gas, /read adapter is not wired/);
-assert.match(gas, /MEDICAL_OFFICIAL_PREMIUM_SHEETS/);
+assert.match(gas, /readKeyValueSheet_/); assert.match(gas, /readObjectSheet_/);
+assert.match(gas, /readPremiumTables_/); assert.match(gas, /sortByOrder_/);
+assert.match(gas, /medicalOfficialRejectLegacyBulkWrite_/);
+assert.match(gas, /medicalOfficialPostAction_/);
 assert.match(gas, /config_value/); assert.match(gas, /record_id/);
+assert.doesNotMatch(gas, /writeKeyValueSheet_\(|writeObjectSheet_\(/);
 assert.match(ui, /adminDatasets/); assert.match(ui, /revision \|\| state\.official\?\.version/);
 console.log('Medical Official bidirectional sync contract checks passed');
