@@ -1,0 +1,11 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const auth = fs.readFileSync('medical-admin-auth.js', 'utf8');
+const ui = fs.readFileSync('medical-official-sync.js', 'utf8');
+const gas = fs.readFileSync('gas/MedicalOfficialData.gs', 'utf8');
+assert.match(auth, /getGrant/); assert.match(ui, /updateOfficialRecord/); assert.match(ui, /expectedVersion/);
+assert.match(ui, /User Override/); assert.match(ui, /premiumTables/);
+assert.match(gas, /medicalVerifyAppGrant_\(body\.appGrant, "official-write"\)/);
+assert.match(gas, /LockService\.getScriptLock/); assert.match(gas, /Stale Official version/);
+assert.match(gas, /Official field is read-only or unsupported/); assert.match(gas, /recordId/);
+console.log('Medical Official bidirectional sync contract checks passed');

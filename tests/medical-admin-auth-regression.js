@@ -13,5 +13,6 @@ assert.match(app,/此管理入口需要由 AVA Studio 驗證後開啟/);
 assert.match(gas,/UrlFetchApp\.fetch/);
 assert.match(gas,/action: "verifyAppGrant"/);
 assert.match(gas,/MEDICAL_ADMIN_APP_ID = "medical"/);
-assert.match(gas,/no Medical Official write/);
+assert.match(auth,/getGrant/);
+assert.match(gas,/medicalVerifyAppGrant_/);
 console.log('Medical Unified Admin Auth fail-closed contract checks passed');

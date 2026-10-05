@@ -35,7 +35,8 @@
   }
 
   function clear() { appGrant = ""; }
+  function getGrant() { return appGrant; }
   function hasGrant() { return Boolean(appGrant); }
 
-  global.MedicalAdminAuth = Object.freeze({ APP_ID, OFFICIAL_API, launchTicket, exchangeAppLaunch, clear, hasGrant });
+  global.MedicalAdminAuth = Object.freeze({ APP_ID, OFFICIAL_API, launchTicket, exchangeAppLaunch, clear, hasGrant, getGrant });
 })(typeof window === "undefined" ? globalThis : window);
