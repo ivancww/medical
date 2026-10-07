@@ -168,7 +168,7 @@ function medicalExchangeAppLaunch_(launchTicket, appId) {
   });
   let payload;
   try { payload = JSON.parse(response.getContentText() || "{}"); } catch (_) { throw new Error("Invalid AVA Admin response"); }
-  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 || payload.success !== true || payload.appId !== MEDICAL_ADMIN_APP_ID || !payload.appGrant) {
+  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 || payload.success !== true || !payload.appGrant) {
     throw new Error("Invalid or expired AVA Admin launch");
   }
   return { success: true, appId: MEDICAL_ADMIN_APP_ID, appGrant: String(payload.appGrant), expiresAt: payload.expiresAt };
