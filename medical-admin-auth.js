@@ -23,25 +23,12 @@
 
   async function exchangeAdminSession(fetchImpl = global.fetch, location = global.location) {
     const ticket = launchTicket(location);
-    const nonce = launchNonce(location), opener = global.opener;
-    if (!ticket || !nonce || !opener) throw new Error("此管理入口必須由 AVA Studio 的安全視窗開啟。");
-    const browser = await new Promise((resolve, reject) => {
-      let settled = false;
-      const finish = (error, value) => { if (settled) return; settled = true; global.removeEventListener?.("message", onMessage); global.clearTimeout?.(timer); if (error) reject(error); else resolve(value); };
-      const timer = global.setTimeout(() => finish(new Error("AVA browser binding expired")), 120000);
-      const onMessage = event => {
-        const data = event?.data || {};
-        if (event.source !== opener || event.origin !== PLATFORM_ORIGIN || data.type !== "ava-admin-session-response") return;
-        if (data.appId !== APP_ID || data.launchTicket !== ticket || data.launchNonce !== nonce || !data.browserProof || data.contract !== "ava-admin-session-v1") return;
-        finish(null, data);
-      };
-      global.addEventListener?.("message", onMessage);
-      opener.postMessage({ type: "ava-admin-session-request", appId: APP_ID, launchTicket: ticket, launchNonce: nonce }, PLATFORM_ORIGIN);
-    });
+    const nonce = launchNonce(location);
+    if (!ticket || !nonce) throw new Error("此管理入口需要由 AVA Studio 驗證後開啟。");
     const response = await fetchImpl(OFFICIAL_API, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "exchangeAdminSession", launchTicket: ticket, launchNonce: nonce, browserProof: browser.browserProof, appId: APP_ID })
+      body: JSON.stringify({ action: "exchangeAdminSession", launchTicket: ticket, launchNonce: nonce, appId: APP_ID })
     });
     let payload;
     try { payload = await response.json(); } catch (_) { throw new Error("此管理入口需要由 AVA Studio 驗證後開啟。"); }
