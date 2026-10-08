@@ -149,12 +149,12 @@ function medicalFullBootstrap_() {
 /** AVA Platform Unified Admin launch-ticket exchange. */
 function medicalAdminAuthAction_(body) {
   if (body.action === "exchangeAdminSession") {
-    return medicalExchangeAdminSession_(body.launchTicket, body.appId, body.browserProof, body.launchNonce);
+    return medicalExchangeAdminSession_(body.launchTicket, body.appId, body.launchNonce);
   }
   throw new Error("Unsupported Medical Admin action");
 }
 
-function medicalExchangeAdminSession_(launchTicket, appId, browserProof, launchNonce) {
+function medicalExchangeAdminSession_(launchTicket, appId, launchNonce) {
   if (String(appId || "") !== MEDICAL_ADMIN_APP_ID || !String(launchTicket || "")) {
     throw new Error("Invalid Medical Admin launch");
   }
@@ -163,7 +163,7 @@ function medicalExchangeAdminSession_(launchTicket, appId, browserProof, launchN
   const response = UrlFetchApp.fetch(endpoint, {
     method: "post",
     contentType: "text/plain;charset=utf-8",
-    payload: JSON.stringify({ action: "exchangeAdminSession", launchTicket: String(launchTicket), browserProof: String(browserProof || ""), launchNonce: String(launchNonce || ""), appId: MEDICAL_ADMIN_APP_ID }),
+    payload: JSON.stringify({ action: "exchangeAdminSession", launchTicket: String(launchTicket), launchNonce: String(launchNonce || ""), appId: MEDICAL_ADMIN_APP_ID }),
     muteHttpExceptions: true
   });
   let payload;
