@@ -31,13 +31,13 @@
       records.querySelectorAll("[data-save-record]").forEach(button => button.onclick = () => saveRecord(button));
     }
     async function saveRecord(button) {
-      if (!global.MedicalAdminAuth?.hasGrant()) { setMessage(panel, "Permission Error：Medical Admin grant 不存在。", "error"); return; }
+      if (!global.MedicalAdminAuth?.hasSession()) { setMessage(panel, "Permission Error：AVA Admin session proof 不存在。", "error"); return; }
       const article = button.closest("[data-record-index]"), index = Number(article.dataset.recordIndex), def = definition(selected), source = rows(state.official, selected)[index], changes = {};
       try {
         article.querySelectorAll("[data-field]").forEach(input => { const field = input.dataset.field, next = parseValue(source[field], input.value); if (JSON.stringify(next) !== JSON.stringify(source[field])) changes[field] = next; });
         if (!Object.keys(changes).length) { setMessage(panel, "沒有未儲存變更。", "helper"); return; }
         button.disabled = true; button.textContent = "Saving…"; setMessage(panel, "Saving：正在由 Medical GAS 驗證並寫入 Google Sheet…");
-        const result = await jsonFetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "updateOfficialRecord", appId: "medical", appGrant: global.MedicalAdminAuth.getGrant(), dataset: selected, recordId: String(recordId(source, def)), changes, expectedVersion: state.official?.revision || state.official?.version }) });
+        const result = await jsonFetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "updateOfficialRecord", appId: "medical", adminSessionProof: global.MedicalAdminAuth.getSessionProof(), dataset: selected, recordId: String(recordId(source, def)), changes, expectedVersion: state.official?.revision || state.official?.version }) });
         const next = result.data || result.official; if (next) { state.official = next; onOfficialChanged?.(next); }
         setMessage(panel, `Saved / Synced：Google Sheet 已回讀確認（version ${result.version || state.official?.version || "—"}）。`, "success"); render();
       } catch (error) { setMessage(panel, error.message.includes("version") || error.message.includes("stale") ? "Conflict / stale-data error：請先 Refresh Official Data。" : `Save failed：${error.message}`, "error"); button.disabled = false; button.textContent = "Validate & Save Official"; }
