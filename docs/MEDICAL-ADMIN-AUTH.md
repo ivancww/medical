@@ -10,9 +10,10 @@ the existing Medical GAS project without replacing its read endpoint.
 
 The browser accepts `?avaEntry=admin` only as a route selector. It requires the
 short-lived, one-time `avaAdminLaunch` issued by AVA Studio. The Medical Official
-GAS endpoint exchanges that ticket and launch nonce server-to-server with the
-Platform using the `exchangeAdminSession` contract. No opener, `postMessage`, or
-browser proof is required; the signed AVA Admin Session Proof is held in memory only;
+GAS endpoint exchanges that ticket server-to-server with the Platform using the
+`exchangeAdminSession` contract. The App first completes the shared AVA Studio
+opener/postMessage handshake and receives a one-time browser proof; the signed
+AVA Admin Session Proof is held in memory only;
 it is not written to LocalStorage, IndexedDB, User backup, restore data, QR, or a
 URL. The launch query parameter is removed after a successful exchange.
 
