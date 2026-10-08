@@ -38,7 +38,7 @@ is created.
 {
   "action": "updateOfficialRecord",
   "appId": "medical",
-  "appGrant": "memory-only Medical App Grant",
+  "adminSessionProof": "memory-only AVA Admin Session Proof",
   "dataset": "pages",
   "recordId": "stable-page-id",
   "changes": { "title": "..." },
@@ -46,7 +46,7 @@ is created.
 }
 ```
 
-The GAS backend must verify `medicalVerifyAppGrant_(appGrant,
+The GAS backend must verify `medicalVerifyAdminSession_(adminSessionProof,
 "official-write")`, reject unsupported fields and stale versions, update only
 the addressed row, re-read the canonical payload and return its content
 revision,

@@ -13,7 +13,7 @@ const MEDICAL_OFFICIAL_DATASETS = Object.freeze({
 function medicalOfficialDataAction_(body) {
   if (body.action !== "updateOfficialRecord") throw new Error("Unsupported Medical Official action");
   if (String(body.appId || "") !== String(MEDICAL_ADMIN_APP_ID)) throw new Error("Invalid Medical App ID");
-  medicalVerifyAppGrant_(body.appGrant, "official-write");
+  medicalVerifyAdminSession_(body.adminSessionProof, "official-write");
   return medicalUpdateOfficialRecord_(body);
 }
 

@@ -17,7 +17,7 @@ const checks=[
   ['customer Frontstage hides Official Data status', /\$\('#status'\)\.hidden=state\.entry==='frontend'/.test(app)],
   ['Medical App version/build is separate from Official Data', /APP_VERSION='v1\.1\.0',APP_BUILD=window\.AVA_MEDICAL_BUILD\|\|'local'/.test(app)&&/id="appVersion"/.test(index)&&/app-build\.js/.test(index+sw)],
   ['bar direction is product-specific', /percentage\?\['plan',plan,'計劃'\]:\['customer',customer,'自己'\]/.test(app)&&/percentage\?\['customer',customer,'自己'\]:\['plan',plan,'計劃'\]/.test(app)],
-  ['Admin entry is explicit and authenticated', /\['user','admin'\]\.includes\(value\)/.test(app)&&/authorizeAdmin\(\)/.test(app)&&/MedicalAdminAuth\.hasGrant\(\)/.test(app)],
+  ['Admin entry is explicit and authenticated', /\['user','admin'\]\.includes\(value\)/.test(app)&&/authorizeAdmin\(\)/.test(app)&&/MedicalAdminAuth\.hasSession\(\)/.test(app)],
   ['invalid entries safely fall back to Frontstage', /\['user','admin'\]\.includes\(value\)\?value:'frontend'/.test(app)],
   ['installed PWA shell cache is refreshed', /const CACHE='ava-medical-shell'/.test(sw)&&/fetch\(event\.request,\{cache:'no-store'\}\)/.test(sw)&&/product-data\.js/.test(sw)&&/app-build\.js/.test(sw)&&/medical-admin-auth\.js/.test(sw)&&/cache\.put\('\.\/index\.html'/.test(sw)&&/if\(url\.search\)return/.test(sw)&&/key\.startsWith\('ava-medical-shell'\)/.test(sw)],
   ['Medical worker uses explicit uncached update discovery', medicalUpdateContract],
