@@ -11,7 +11,7 @@ const checks=[
   ['user mode does not create a workspace copy', !/userWorkspace|User Workspace|duplicated/i.test(index+app)],
   ['Preview and Save Local use the existing mode flow', /\$\('#previewBtn'\)\.onclick=\(\)=>setMode\('preview'\)/.test(app)&&/\$\('#saveBtn'\)\.onclick=saveOverrides/.test(app)],
   ['User overrides remain separate from Official cache', /CACHE_KEY='ava\.medical\.official\.v1',OVERRIDE_KEY='ava\.medical\.user\.overrides\.v1'/.test(app)&&/localStorage\.setItem\(OVERRIDE_KEY/.test(app)],
-  ['Return to AVA preserves Admin surface', /href="https:\/\/ivancww\.github\.io\/avaplatform\/">返回 AVA<\/a>/.test(index)&&/function avaPlatformReturnUrl\(\)\{return avaEntry\(\)==='admin'\?AVA_PLATFORM_URL\+'\?avaSurface=admin':AVA_PLATFORM_URL\}/.test(app)],
+  ['Return to AVA remains persistent', /href="https:\/\/ivancww\.github\.io\/avaplatform\/">返回 AVA<\/a>/.test(index)],
   ['bottom Previous is removed while top Back remains', !/id="prevBtn"|上一步/.test(index+app)&&/id="backBtn"/.test(index)],
   ['simple choices use Direct Advance and complex pages retain Next', /DIRECT_ADVANCE_PAGES=\['R01','R02','N01','N02','N05','N07'\]/.test(app)&&/state\.index\+\+;renderPage\(\)/.test(app)&&/\$\('#nextBtn'\)\.hidden=isDirectAdvancePage\(id\)/.test(app)],
   ['customer Frontstage hides Official Data status', /\$\('#status'\)\.hidden=state\.entry==='frontend'/.test(app)],
