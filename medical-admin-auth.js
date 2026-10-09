@@ -3,89 +3,98 @@
 
   const APP_ID = "medical";
   const PLATFORM_ORIGIN = "https://ivancww.github.io";
-  const BROWSER_CONTEXT_PREFIX = "ava-admin-session-v1:";
-  const EXCHANGE_TIMEOUT_MS = 15000;
   const OFFICIAL_API = "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec";
-  let adminSessionProof = "";
+  const EXCHANGE_TIMEOUT_MS = 15000;
+  const CONNECTOR_VERSION = "0.1.1";
+  const CONNECTOR_COMPATIBILITY = "ava-admin-session-v1";
+  const CONNECTOR_MODULE = "./ava-admin-connector.mjs?v=1.1.5";
+  let connectorPromise;
+  let connector;
 
   function launchTicket(location = global.location) {
     return new URLSearchParams(location?.search || "").get("avaAdminLaunch") || "";
   }
+
   function launchNonce(location = global.location) {
     return new URLSearchParams(location?.search || "").get("avaAdminLaunchNonce") || "";
   }
 
-  function clearLaunchFromUrl(location = global.location, history = global.history) {
-    if (!location || !history?.replaceState) return;
-    const url = new URL(location.href);
-    url.searchParams.delete("avaAdminLaunch");
-    url.searchParams.delete("avaAdminLaunchNonce");
-    history.replaceState({}, global.document?.title || "AVA Medical", url.pathname + (url.search ? url.search : "") + url.hash);
+  function userError(error) {
+    const messages = {
+      ADMIN_LAUNCH_REQUIRED: "此管理入口必須由 AVA Studio 的安全視窗開啟。",
+      ADMIN_BROWSER_BINDING_REQUIRED: "此管理入口必須由 AVA Studio 的安全視窗開啟。",
+      ADMIN_PARENT_CLOSED: "AVA Studio 視窗已關閉，請返回 AVA Studio 再開啟 Medical。",
+      ADMIN_BROWSER_BINDING_EXPIRED: "AVA Admin 瀏覽器驗證逾時，請返回 AVA Studio 再開啟 Medical。",
+      BROWSER_PROOF_INVALID: "AVA Admin 瀏覽器驗證無效，請返回 AVA Studio 再開啟 Medical。",
+      ADMIN_EXCHANGE_TIMEOUT: "AVA Admin 授權服務回應逾時，請返回 AVA Studio 再開啟 Medical。",
+      ADMIN_EXCHANGE_NETWORK: "暫時未能連接 AVA Admin 授權服務，請稍後再試。",
+      ADMIN_EXCHANGE_HTTP: "AVA Admin 授權服務拒絕此管理入口。",
+      ADMIN_EXCHANGE_RESPONSE: "AVA Admin 授權回應無效，請返回 AVA Studio 再開啟 Medical。",
+      ADMIN_UNAUTHORIZED: "此管理入口未能由 AVA Studio 授權。",
+      ADMIN_LAUNCH_REPLAY: "此管理入口已使用，請返回 AVA Studio 重新開啟 Medical。",
+      ADMIN_SESSION_CLEARED: "AVA Admin 授權已清除，請返回 AVA Studio 重新開啟 Medical。"
+    };
+    const safe = new Error(messages[error?.code] || "此管理入口需要由 AVA Studio 驗證後開啟。");
+    safe.code = error?.code || "ADMIN_UNAUTHORIZED";
+    safe.stage = error?.stage || "medical-admin";
+    return safe;
   }
 
-  function browserProofFromContext(ticket, nonce) {
-    let raw = "";
-    try { raw = String(global.name || ""); global.name = ""; } catch (_) { return null; }
-    if (!raw.startsWith(BROWSER_CONTEXT_PREFIX)) return null;
-    let data;
-    try { data = JSON.parse(raw.slice(BROWSER_CONTEXT_PREFIX.length)); }
-    catch (_) { throw new Error("AVA browser proof 無效。"); }
-    const expiry = Date.parse(data?.expiresAt || "");
-    if (data?.type !== "ava-admin-session-context" || data.appId !== APP_ID || data.launchTicket !== ticket || data.launchNonce !== nonce || !data.browserProof || data.contract !== "ava-admin-session-v1" || !Number.isFinite(expiry) || expiry <= Date.now()) {
-      throw new Error("AVA browser proof 無效或已過期。");
+  function loadConnector() {
+    if (!connectorPromise) {
+      connectorPromise = import(CONNECTOR_MODULE).then(module => {
+        connector = module.createAdminConnector({
+          appId: APP_ID,
+          gasEndpoint: OFFICIAL_API,
+          platformOrigin: PLATFORM_ORIGIN,
+          compatibility: CONNECTOR_COMPATIBILITY,
+          returnToAvaUrl: `${PLATFORM_ORIGIN}/avaplatform/?avaSurface=admin`,
+          windowObject: global,
+          locationObject: global.location,
+          historyObject: global.history,
+          fetchImpl: global.fetch,
+          timeoutMs: EXCHANGE_TIMEOUT_MS,
+          setTimeoutImpl: global.setTimeout,
+          clearTimeoutImpl: global.clearTimeout,
+          AbortControllerImpl: global.AbortController
+        });
+        return connector;
+      }).catch(error => { throw userError(error); });
     }
-    return data;
+    return connectorPromise;
   }
 
-  async function exchangeAdminSession(fetchImpl = global.fetch, location = global.location) {
-    const ticket = launchTicket(location);
-    const nonce = launchNonce(location), opener = global.opener;
-    if (!ticket || !nonce) throw new Error("此管理入口必須由 AVA Studio 的安全視窗開啟。");
-    const contextProof = browserProofFromContext(ticket, nonce);
-    if (!contextProof && !opener) throw new Error("此管理入口必須由 AVA Studio 的安全視窗開啟。");
-    const browser = contextProof || await new Promise((resolve, reject) => {
-      let settled = false;
-      const finish = (error, value) => { if (settled) return; settled = true; global.removeEventListener?.("message", onMessage); global.clearTimeout?.(timer); if (error) reject(error); else resolve(value); };
-      const timer = global.setTimeout(() => finish(new Error("AVA browser binding expired")), 15000);
-      const onMessage = event => {
-        const data = event?.data || {};
-        if (event.source !== opener || event.origin !== PLATFORM_ORIGIN || data.type !== "ava-admin-session-response") return;
-        if (data.appId !== APP_ID || data.launchTicket !== ticket || data.launchNonce !== nonce || !data.browserProof || data.contract !== "ava-admin-session-v1") return;
-        finish(null, data);
-      };
-      global.addEventListener?.("message", onMessage);
-      opener.postMessage({ type: "ava-admin-session-request", appId: APP_ID, launchTicket: ticket, launchNonce: nonce }, PLATFORM_ORIGIN);
-    });
-    const controller = typeof global.AbortController === "function" ? new global.AbortController() : null;
-    let exchangeTimer;
-    const exchangeRequest = fetchImpl(OFFICIAL_API, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "exchangeAdminSession", launchTicket: ticket, launchNonce: nonce, browserProof: browser.browserProof, appId: APP_ID }),
-      ...(controller ? { signal: controller.signal } : {})
-    });
-    const exchangeTimeout = new Promise((_, reject) => {
-      exchangeTimer = global.setTimeout(() => {
-        controller?.abort();
-        reject(new Error("AVA Admin 授權服務回應逾時，請返回 AVA Studio 再開啟 Medical。"));
-      }, EXCHANGE_TIMEOUT_MS);
-    });
-    let response;
-    try { response = await Promise.race([exchangeRequest, exchangeTimeout]); }
-    finally { global.clearTimeout?.(exchangeTimer); }
-    let payload;
-    try { payload = await response.json(); } catch (_) { throw new Error("此管理入口需要由 AVA Studio 驗證後開啟。"); }
-    if (!response.ok || payload.success !== true || payload.appId !== APP_ID || !payload.adminSessionProof || payload.contract !== "ava-admin-session-v1") {
-      throw new Error("此管理入口需要由 AVA Studio 驗證後開啟。");
-    }
-    adminSessionProof = String(payload.adminSessionProof);
-    clearLaunchFromUrl(location);
-    return { expiresAt: payload.expiresAt };
+  async function exchangeAdminSession() {
+    try { return await (await loadConnector()).initialize(); }
+    catch (error) { throw userError(error); }
   }
 
-  function clear() { adminSessionProof = ""; }
-  function getSessionProof() { return adminSessionProof; }
-  function hasSession() { return Boolean(adminSessionProof); }
+  async function authorizedRequest(request) {
+    try { return await (await loadConnector()).authorizedRequest(request); }
+    catch (error) { throw userError(error); }
+  }
 
-  global.MedicalAdminAuth = Object.freeze({ APP_ID, PLATFORM_ORIGIN, OFFICIAL_API, EXCHANGE_TIMEOUT_MS, launchTicket, launchNonce, exchangeAdminSession, clear, hasSession, getSessionProof, browserProofFromContext });
+  function clear() { connector?.clearSession(); }
+  function hasSession() { return Boolean(connector?.isAuthorized()); }
+  function getAuthorizationState() { return connector?.getAuthorizationState() || { status: "idle", appId: APP_ID, compatibility: CONNECTOR_COMPATIBILITY, connectorVersion: CONNECTOR_VERSION, expiresAt: null, error: null }; }
+  function getSessionProof() { return undefined; }
+
+  global.MedicalAdminAuth = Object.freeze({
+    APP_ID,
+    PLATFORM_ORIGIN,
+    OFFICIAL_API,
+    EXCHANGE_TIMEOUT_MS,
+    CONNECTOR_VERSION,
+    CONNECTOR_COMPATIBILITY,
+    CONNECTOR_MODULE,
+    launchTicket,
+    launchNonce,
+    exchangeAdminSession,
+    authorizedRequest,
+    clear,
+    hasSession,
+    getAuthorizationState,
+    getSessionProof,
+    loadConnector
+  });
 })(typeof window === "undefined" ? globalThis : window);

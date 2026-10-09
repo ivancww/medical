@@ -68,6 +68,7 @@ jobs:
           node --check claim-engine.js
           node --check sw.js
           node --check medical-admin-auth.js
+          node --check ava-admin-connector.mjs
           node --check tests/claim-engine-regression.js
           node --check tests/mother-contract-regression.js
           node --check tests/medical-admin-auth-regression.js
@@ -87,6 +88,7 @@ jobs:
           node tests/platform-entry-regression.js
           node tests/automatic-update-regression.js
           node tests/android-browser-context-regression.js
+          node tests/medical-connector-integration.js
       - name: Verify PWA and fixed contracts
         run: |
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js','product-data.js','ready-product.css'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js','ava-admin-connector.mjs','product-data.js','ready-product.css'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"

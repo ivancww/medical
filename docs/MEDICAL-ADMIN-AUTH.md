@@ -3,8 +3,10 @@
 Medical App ID: `medical`.
 
 Medical Admin keeps the existing authenticated route and owns the Official
-data editor. `medical-official-sync.js` edits only allowlisted Medical Official
-fields; User Overrides remain local and are never submitted to the Sheet.
+data editor. The App bundles the pinned same-origin AVA Unified Admin
+Connector (`ava-admin-connector.mjs`) and uses its authorization state.
+`medical-official-sync.js` edits only allowlisted Medical Official fields;
+User Overrides remain local and are never submitted to the Sheet.
 `gas/MedicalOfficialData.gs` is the checked-in mutation contract to merge into
 the existing Medical GAS project without replacing its read endpoint.
 
