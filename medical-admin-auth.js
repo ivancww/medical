@@ -4,6 +4,7 @@
   const APP_ID = "medical";
   const PLATFORM_ORIGIN = "https://ivancww.github.io";
   const BROWSER_CONTEXT_PREFIX = "ava-admin-session-v1:";
+  const EXCHANGE_TIMEOUT_MS = 15000;
   const OFFICIAL_API = "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec";
   let adminSessionProof = "";
 
@@ -55,11 +56,23 @@
       global.addEventListener?.("message", onMessage);
       opener.postMessage({ type: "ava-admin-session-request", appId: APP_ID, launchTicket: ticket, launchNonce: nonce }, PLATFORM_ORIGIN);
     });
-    const response = await fetchImpl(OFFICIAL_API, {
+    const controller = typeof global.AbortController === "function" ? new global.AbortController() : null;
+    let exchangeTimer;
+    const exchangeRequest = fetchImpl(OFFICIAL_API, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "exchangeAdminSession", launchTicket: ticket, launchNonce: nonce, browserProof: browser.browserProof, appId: APP_ID })
+      body: JSON.stringify({ action: "exchangeAdminSession", launchTicket: ticket, launchNonce: nonce, browserProof: browser.browserProof, appId: APP_ID }),
+      ...(controller ? { signal: controller.signal } : {})
     });
+    const exchangeTimeout = new Promise((_, reject) => {
+      exchangeTimer = global.setTimeout(() => {
+        controller?.abort();
+        reject(new Error("AVA Admin 授權服務回應逾時，請返回 AVA Studio 再開啟 Medical。"));
+      }, EXCHANGE_TIMEOUT_MS);
+    });
+    let response;
+    try { response = await Promise.race([exchangeRequest, exchangeTimeout]); }
+    finally { global.clearTimeout?.(exchangeTimer); }
     let payload;
     try { payload = await response.json(); } catch (_) { throw new Error("此管理入口需要由 AVA Studio 驗證後開啟。"); }
     if (!response.ok || payload.success !== true || payload.appId !== APP_ID || !payload.adminSessionProof || payload.contract !== "ava-admin-session-v1") {
@@ -74,5 +87,5 @@
   function getSessionProof() { return adminSessionProof; }
   function hasSession() { return Boolean(adminSessionProof); }
 
-  global.MedicalAdminAuth = Object.freeze({ APP_ID, PLATFORM_ORIGIN, OFFICIAL_API, launchTicket, launchNonce, exchangeAdminSession, clear, hasSession, getSessionProof, browserProofFromContext });
+  global.MedicalAdminAuth = Object.freeze({ APP_ID, PLATFORM_ORIGIN, OFFICIAL_API, EXCHANGE_TIMEOUT_MS, launchTicket, launchNonce, exchangeAdminSession, clear, hasSession, getSessionProof, browserProofFromContext });
 })(typeof window === "undefined" ? globalThis : window);

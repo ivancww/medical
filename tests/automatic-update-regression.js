@@ -86,6 +86,13 @@ async function runServiceWorkerContract(){
   assert.equal(fetchCalls.at(-1).options.cache,'no-store','online shell assets bypass HTTP cache');
   assert.equal(cacheData.get('ava-medical-shell').get(assetRequest.url).version,'B','new shell assets replace cached assets');
 
+  const releaseAsset={url:'https://ivancww.github.io/medical/medical-admin-auth.js?v=1.1.4',mode:'cors',method:'GET'};
+  const releaseEvent=deferredEvent();
+  await handlers.fetch({...releaseEvent,request:releaseAsset});
+  await releaseEvent.complete();
+  assert.equal(fetchCalls.at(-1).options.cache,'no-store','release-keyed Admin auth bypasses HTTP cache');
+  assert.equal(cacheData.get('ava-medical-shell').get(releaseAsset.url).version,'B','release-keyed Admin auth is cached coherently');
+
   networkMode='offline';
   const offlineNavigation=deferredEvent();
   offlineNavigation.request=navigation;
