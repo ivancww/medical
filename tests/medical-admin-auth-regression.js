@@ -28,6 +28,6 @@ assert.match(app,/if\(state\.entry==='admin'\)await initializeAdmin\(\);else awa
 console.log('Medical Admin authorization is not blocked by Official bootstrap and has a bounded browser timeout');
 
 assert.ok(app.includes("$$('[data-journey]').forEach"));
-assert.ok(!app.includes("$('[data-journey]').forEach"));
+assert.ok(!app.includes("setEntry();$('[data-journey]').forEach"));
 assert.match(app,/APP_VERSION='v1\.1\.2'/);
 console.log('Medical startup selector and release identity checks passed');
