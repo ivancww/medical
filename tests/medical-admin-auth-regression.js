@@ -22,3 +22,7 @@ assert.match(gas,/medicalVerifyAdminSession_/);
 assert.match(gas,/ava-admin-session-v1/);
 assert.match(gas,/browserProof/);
 console.log('Medical Unified Admin Auth fail-closed contract checks passed');
+assert.match(auth,/15000/);
+assert.match(app,/async function initializeAdmin\(\)\{await authorizeAdmin\(\);if\(state\.adminAuthorized\)\{await bootstrap\(\{render:false\}\);renderEntry\(\)\}\}/);
+assert.match(app,/if\(state\.entry==='admin'\)await initializeAdmin\(\);else await bootstrap\(\)/);
+console.log('Medical Admin authorization is not blocked by Official bootstrap and has a bounded browser timeout');
