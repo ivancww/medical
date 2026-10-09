@@ -29,5 +29,5 @@ console.log('Medical Admin authorization is not blocked by Official bootstrap an
 
 assert.ok(app.includes("$$('[data-journey]').forEach"));
 assert.ok(!app.includes("setEntry();$('[data-journey]').forEach"));
-assert.match(app,/APP_VERSION='v1\.1\.2'/);
+assert.match(app,/APP_VERSION='v1\.1\.3'/);
 console.log('Medical startup selector and release identity checks passed');
