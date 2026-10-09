@@ -3,6 +3,7 @@
 
   const APP_ID = "medical";
   const PLATFORM_ORIGIN = "https://ivancww.github.io";
+  const BROWSER_CONTEXT_PREFIX = "ava-admin-session-v1:";
   const OFFICIAL_API = "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec";
   let adminSessionProof = "";
 
@@ -21,11 +22,27 @@
     history.replaceState({}, global.document?.title || "AVA Medical", url.pathname + (url.search ? url.search : "") + url.hash);
   }
 
+  function browserProofFromContext(ticket, nonce) {
+    let raw = "";
+    try { raw = String(global.name || ""); global.name = ""; } catch (_) { return null; }
+    if (!raw.startsWith(BROWSER_CONTEXT_PREFIX)) return null;
+    let data;
+    try { data = JSON.parse(raw.slice(BROWSER_CONTEXT_PREFIX.length)); }
+    catch (_) { throw new Error("AVA browser proof 無效。"); }
+    const expiry = Date.parse(data?.expiresAt || "");
+    if (data?.type !== "ava-admin-session-context" || data.appId !== APP_ID || data.launchTicket !== ticket || data.launchNonce !== nonce || !data.browserProof || data.contract !== "ava-admin-session-v1" || !Number.isFinite(expiry) || expiry <= Date.now()) {
+      throw new Error("AVA browser proof 無效或已過期。");
+    }
+    return data;
+  }
+
   async function exchangeAdminSession(fetchImpl = global.fetch, location = global.location) {
     const ticket = launchTicket(location);
     const nonce = launchNonce(location), opener = global.opener;
-    if (!ticket || !nonce || !opener) throw new Error("此管理入口必須由 AVA Studio 的安全視窗開啟。");
-    const browser = await new Promise((resolve, reject) => {
+    if (!ticket || !nonce) throw new Error("此管理入口必須由 AVA Studio 的安全視窗開啟。");
+    const contextProof = browserProofFromContext(ticket, nonce);
+    if (!contextProof && !opener) throw new Error("此管理入口必須由 AVA Studio 的安全視窗開啟。");
+    const browser = contextProof || await new Promise((resolve, reject) => {
       let settled = false;
       const finish = (error, value) => { if (settled) return; settled = true; global.removeEventListener?.("message", onMessage); global.clearTimeout?.(timer); if (error) reject(error); else resolve(value); };
       const timer = global.setTimeout(() => finish(new Error("AVA browser binding expired")), 15000);
@@ -57,5 +74,5 @@
   function getSessionProof() { return adminSessionProof; }
   function hasSession() { return Boolean(adminSessionProof); }
 
-  global.MedicalAdminAuth = Object.freeze({ APP_ID, PLATFORM_ORIGIN, OFFICIAL_API, launchTicket, launchNonce, exchangeAdminSession, clear, hasSession, getSessionProof });
+  global.MedicalAdminAuth = Object.freeze({ APP_ID, PLATFORM_ORIGIN, OFFICIAL_API, launchTicket, launchNonce, exchangeAdminSession, clear, hasSession, getSessionProof, browserProofFromContext });
 })(typeof window === "undefined" ? globalThis : window);
