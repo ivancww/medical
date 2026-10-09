@@ -79,7 +79,7 @@ def run():
             context, page = open_page(browser, server.server_port)
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
-            check(page.locator("#appVersion").inner_text().startswith("v1.1.0 · build "), "Medical App Version/build is visible in the header")
+            check(page.locator("#appVersion").inner_text().startswith("v1.1.1 · build "), "Medical App Version/build is visible in the header")
             check(page.locator("#status").is_hidden(), "Official Data technical status is hidden on customer Frontstage")
             check(page.locator("#prevBtn").count() == 0 and page.locator("#backBtn").count() == 1, "bottom Previous is absent and top Back remains")
             at(page, "R01")
