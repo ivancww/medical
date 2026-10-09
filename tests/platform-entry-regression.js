@@ -15,7 +15,7 @@ const checks=[
   ['bottom Previous is removed while top Back remains', !/id="prevBtn"|上一步/.test(index+app)&&/id="backBtn"/.test(index)],
   ['simple choices use Direct Advance and complex pages retain Next', /DIRECT_ADVANCE_PAGES=\['R01','R02','N01','N02','N05','N07'\]/.test(app)&&/state\.index\+\+;renderPage\(\)/.test(app)&&/\$\('#nextBtn'\)\.hidden=isDirectAdvancePage\(id\)/.test(app)],
   ['customer Frontstage hides Official Data status', /\$\('#status'\)\.hidden=state\.entry==='frontend'/.test(app)],
-  ['Medical App version/build is separate from Official Data', /APP_VERSION='v1.1.1',APP_BUILD=window\.AVA_MEDICAL_BUILD\|\|'local'/.test(app)&&/id="appVersion"/.test(index)&&/app-build\.js/.test(index+sw)&&/app\.js\?v=1\.1\.1/.test(index)],
+  ['Medical App version/build is separate from Official Data', /APP_VERSION='v1.1.2',APP_BUILD=window\.AVA_MEDICAL_BUILD\|\|'local'/.test(app)&&/id="appVersion"/.test(index)&&/app-build\.js/.test(index+sw)&&/app\.js\?v=1\.1\.1/.test(index)],
   ['bar direction is product-specific', /percentage\?\['plan',plan,'計劃'\]:\['customer',customer,'自己'\]/.test(app)&&/percentage\?\['customer',customer,'自己'\]:\['plan',plan,'計劃'\]/.test(app)],
   ['Admin entry is explicit and authenticated', /\['user','admin'\]\.includes\(value\)/.test(app)&&/authorizeAdmin\(\)/.test(app)&&/MedicalAdminAuth\.hasSession\(\)/.test(app)],
   ['invalid entries safely fall back to Frontstage', /\['user','admin'\]\.includes\(value\)\?value:'frontend'/.test(app)],
