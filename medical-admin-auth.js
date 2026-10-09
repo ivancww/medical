@@ -28,7 +28,7 @@
     const browser = await new Promise((resolve, reject) => {
       let settled = false;
       const finish = (error, value) => { if (settled) return; settled = true; global.removeEventListener?.("message", onMessage); global.clearTimeout?.(timer); if (error) reject(error); else resolve(value); };
-      const timer = global.setTimeout(() => finish(new Error("AVA browser binding expired")), 120000);
+      const timer = global.setTimeout(() => finish(new Error("AVA browser binding expired")), 15000);
       const onMessage = event => {
         const data = event?.data || {};
         if (event.source !== opener || event.origin !== PLATFORM_ORIGIN || data.type !== "ava-admin-session-response") return;
