@@ -56,8 +56,8 @@ jobs:
           assert "medical-admin-auth.js" in html
           assert "medical-official-sync.js" in service_worker
           assert "ava-admin-connector.mjs" in service_worker
-          assert "medical-official-sync.js?v=1.1.7" in html
-          assert "app.js?v=1.1.7" in html
+          assert "medical-official-sync.js?v=1.1.8" in html
+          assert "app.js?v=1.1.8" in html
           assert not re.search(r'(?:href|src)=["\']/[^/]', html)
           print("Medical /medical/ deployment contract PASS")
           PY
