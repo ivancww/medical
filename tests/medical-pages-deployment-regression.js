@@ -25,7 +25,7 @@ const copiedAssets = assembleLine
   .split(/\s+/);
 for (const script of localScripts) assert.ok(copiedAssets.includes(script), `Pages artifact must include ${script}`);
 
-assert.match(serviceWorker, /['"]\.\/medical-official-sync\.js['"]/);
+assert.match(serviceWorker, /['"]\.\/medical-official-sync\.js(?:\?[^'" ]+)?['"]/);
 
 const context = {};
 context.window = context;
