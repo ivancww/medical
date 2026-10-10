@@ -13,8 +13,17 @@ const MEDICAL_OFFICIAL_DATASETS = Object.freeze({
 function medicalOfficialDataAction_(body) {
   if (body.action !== "updateOfficialRecord") throw new Error("Unsupported Medical Official action");
   if (String(body.appId || "") !== String(MEDICAL_ADMIN_APP_ID)) throw new Error("Invalid Medical App ID");
-  if (String(body.operation || "") !== "medical:official-write") throw new Error("Invalid Medical Official operation");
-  medicalVerifyAppGrant_(body.appGrant, "medical:official-write");
+  const hasAdminSessionProof = Boolean(String(body.adminSessionProof || ""));
+  const hasAppGrant = Boolean(String(body.appGrant || ""));
+  if (hasAdminSessionProof === hasAppGrant) throw new Error("Exactly one Medical Admin credential is required");
+  const operation = String(body.operation || "");
+  if (operation && operation !== "medical:official-write") throw new Error("Invalid Medical Official operation");
+  if (hasAdminSessionProof) {
+    medicalVerifyAdminSession_(body.adminSessionProof, "official-write");
+  } else {
+    if (operation !== "medical:official-write") throw new Error("Invalid Medical Official operation");
+    medicalVerifyAppGrant_(body.appGrant, operation);
+  }
   return medicalUpdateOfficialRecord_(body);
 }
 
