@@ -12,8 +12,9 @@ data editor. The App bundles the Medical AVA Legacy App Grant Connector
 (`ava-admin-connector.mjs`) and uses its authorization state.
 `medical-official-sync.js` edits only allowlisted Medical Official fields;
 User Overrides remain local and are never submitted to the Sheet.
-`gas/MedicalOfficialData.gs` is the checked-in mutation contract to merge into
-the existing Medical GAS project without replacing its read endpoint.
+`gas/MedicalOfficialData.gs` is the checked-in mutation-contract reference for
+the existing Medical GAS project. The complete production bundle remains
+`gas/MedicalProductionFinal.gs`.
 
 The browser accepts `?avaEntry=admin` only as a route selector. The existing
 V15 browser-bound frontend continues to use `exchangeAdminSession` with
