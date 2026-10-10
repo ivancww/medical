@@ -7,7 +7,7 @@
   const EXCHANGE_TIMEOUT_MS = 15000;
   const CONNECTOR_VERSION = "0.2.0";
   const CONNECTOR_COMPATIBILITY = "ava-legacy-app-grant-v1";
-  const CONNECTOR_MODULE = "./ava-admin-connector.mjs?v=1.2.0";
+  const CONNECTOR_MODULE = "./ava-admin-connector.mjs?v=1.1.7";
   let connectorPromise;
   let connector;
 
@@ -18,13 +18,13 @@
   function userError(error) {
     const messages = {
       ADMIN_LAUNCH_REQUIRED: "此管理入口必須由 AVA Studio 的安全視窗開啟。",
-      ADMIN_EXCHANGE_TIMEOUT: "AVA Admin 授權服務回應逾時，請返回 AVA Studio 再開啟 Medical。",
-      ADMIN_EXCHANGE_NETWORK: "暫時未能連接 AVA Admin 授權服務，請稍後再試。",
-      ADMIN_EXCHANGE_HTTP: "AVA Admin 授權服務拒絕此管理入口。",
-      ADMIN_EXCHANGE_RESPONSE: "AVA Admin 授權回應無效，請返回 AVA Studio 再開啟 Medical。",
+      ADMIN_EXCHANGE_TIMEOUT: "AVA 管理授權服務回應逾時，請返回 AVA Studio 再開啟 Medical。",
+      ADMIN_EXCHANGE_NETWORK: "暫時未能連接 AVA 管理授權服務，請稍後再試。",
+      ADMIN_EXCHANGE_HTTP: "AVA 管理授權服務拒絕此管理入口。",
+      ADMIN_EXCHANGE_RESPONSE: "AVA 管理授權回應無效，請返回 AVA Studio 再開啟 Medical。",
       ADMIN_UNAUTHORIZED: "此管理入口未能由 AVA Studio 授權。",
       ADMIN_LAUNCH_REPLAY: "此管理入口已使用，請返回 AVA Studio 重新開啟 Medical。",
-      ADMIN_SESSION_CLEARED: "AVA Admin 授權已清除，請返回 AVA Studio 重新開啟 Medical。"
+      ADMIN_SESSION_CLEARED: "AVA 管理授權已清除，請返回 AVA Studio 重新開啟 Medical。"
     };
     const safe = new Error(messages[error?.code] || "此管理入口需要由 AVA Studio 驗證後開啟。");
     safe.code = error?.code || "ADMIN_UNAUTHORIZED";

@@ -4,7 +4,7 @@
 - Compatibility contract: `ava-legacy-app-grant-v1`
 - Canonical source: Medical feature branch implementation
 - Vendored artifact: `ava-admin-connector.mjs`
-- Medical release: `v1.2.0`
+- Medical release: `v1.1.7`
 
 The vendored artifact is part of the Medical App Grant implementation and must
 remain aligned with the Medical GAS contract. Any future Connector change must

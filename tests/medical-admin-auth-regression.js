@@ -45,5 +45,5 @@ assert.match(official, /medicalVerifyAppGrant_\(body\.appGrant, operation\)/);
 assert.match(sync, /MedicalAdminAuth\.authorizedRequest/);
 assert.doesNotMatch(sync, /getSessionProof\(\)/);
 assert.match(app, /MedicalAdminAuth\.exchangeAppLaunch\(\)/);
-assert.match(app, /APP_VERSION='v1\.2\.0'/);
+assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.1\.7'/);
 console.log('Medical Legacy App Grant static contract checks passed');
