@@ -20,4 +20,6 @@ assert.match(gas, /medicalOfficialPostAction_/);
 assert.match(gas, /config_value/); assert.match(gas, /record_id/);
 assert.doesNotMatch(gas, /writeKeyValueSheet_\(|writeObjectSheet_\(/);
 assert.match(ui, /adminDatasets/); assert.match(ui, /revision \|\| state\.official\?\.version/);
+assert.match(ui, /validateMutationResult/); assert.match(ui, /result\.data/); assert.match(ui, /result\.recordId/);
+assert.match(gas, /revision: String\(snapshot\.revision \|\| ""\)/); assert.match(gas, /revision: snapshot\.revision/);
 console.log('Medical Official bidirectional sync contract checks passed');
