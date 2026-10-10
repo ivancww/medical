@@ -4,7 +4,7 @@ const auth = fs.readFileSync('medical-admin-auth.js', 'utf8');
 const ui = fs.readFileSync('medical-official-sync.js', 'utf8');
 const gas = fs.readFileSync('gas/MedicalOfficialData.gs', 'utf8');
 assert.match(auth, /getSessionProof/); assert.match(ui, /updateOfficialRecord/); assert.match(ui, /expectedVersion/);
-assert.match(ui, /User Override/); assert.match(ui, /premiumTables/);
+assert.match(ui, /使用者自訂內容/); assert.match(ui, /premiumTables/);
 assert.match(gas, /medicalVerifyAdminSession_\(body\.adminSessionProof, "official-write"\)/);
 assert.match(gas, /LockService\.getScriptLock/); assert.match(gas, /Stale Official version/);
 assert.match(gas, /Official field is read-only or unsupported/); assert.match(gas, /recordId/);

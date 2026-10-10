@@ -24,15 +24,15 @@
       ADMIN_LAUNCH_REQUIRED: "此管理入口必須由 AVA Studio 的安全視窗開啟。",
       ADMIN_BROWSER_BINDING_REQUIRED: "此管理入口必須由 AVA Studio 的安全視窗開啟。",
       ADMIN_PARENT_CLOSED: "AVA Studio 視窗已關閉，請返回 AVA Studio 再開啟 Medical。",
-      ADMIN_BROWSER_BINDING_EXPIRED: "AVA Admin 瀏覽器驗證逾時，請返回 AVA Studio 再開啟 Medical。",
-      BROWSER_PROOF_INVALID: "AVA Admin 瀏覽器驗證無效，請返回 AVA Studio 再開啟 Medical。",
-      ADMIN_EXCHANGE_TIMEOUT: "AVA Admin 授權服務回應逾時，請返回 AVA Studio 再開啟 Medical。",
-      ADMIN_EXCHANGE_NETWORK: "暫時未能連接 AVA Admin 授權服務，請稍後再試。",
-      ADMIN_EXCHANGE_HTTP: "AVA Admin 授權服務拒絕此管理入口。",
-      ADMIN_EXCHANGE_RESPONSE: "AVA Admin 授權回應無效，請返回 AVA Studio 再開啟 Medical。",
+      ADMIN_BROWSER_BINDING_EXPIRED: "AVA 管理中心瀏覽器驗證逾時，請返回 AVA Studio 再開啟 Medical。",
+      BROWSER_PROOF_INVALID: "AVA 管理中心瀏覽器驗證無效，請返回 AVA Studio 再開啟 Medical。",
+      ADMIN_EXCHANGE_TIMEOUT: "AVA 管理授權服務回應逾時，請返回 AVA Studio 再開啟 Medical。",
+      ADMIN_EXCHANGE_NETWORK: "暫時未能連接 AVA 管理授權服務，請稍後再試。",
+      ADMIN_EXCHANGE_HTTP: "AVA 管理授權服務拒絕此管理入口。",
+      ADMIN_EXCHANGE_RESPONSE: "AVA 管理授權回應無效，請返回 AVA Studio 再開啟 Medical。",
       ADMIN_UNAUTHORIZED: "此管理入口未能由 AVA Studio 授權。",
       ADMIN_LAUNCH_REPLAY: "此管理入口已使用，請返回 AVA Studio 重新開啟 Medical。",
-      ADMIN_SESSION_CLEARED: "AVA Admin 授權已清除，請返回 AVA Studio 重新開啟 Medical。"
+      ADMIN_SESSION_CLEARED: "AVA 管理授權已清除，請返回 AVA Studio 重新開啟 Medical。"
     };
     const safe = new Error(messages[error?.code] || "此管理入口需要由 AVA Studio 驗證後開啟。");
     safe.code = error?.code || "ADMIN_UNAUTHORIZED";

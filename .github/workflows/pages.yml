@@ -33,10 +33,12 @@ jobs:
           app = Path("app.js").read_text()
           service_worker = Path("sw.js").read_text()
           manifest = json.loads(Path("manifest.json").read_text())
+          release = json.loads(Path("release-version.json").read_text())
 
           assert manifest["start_url"] == "/medical/"
           assert manifest["scope"] == "/medical/"
           assert manifest["display"] == "standalone"
+          assert release["appVersion"] == "v1.1.6"
           assert 'href="manifest.json"' in html
           assert "claim-engine.js" in html and "app.js" in html
           assert "medical-official-sync.js" in html
@@ -47,12 +49,15 @@ jobs:
           assert "./manifest.json" in service_worker
           assert "./app.js" in service_worker
           assert "./app-build.js" in service_worker
+          assert "./release-version.json" in service_worker
           assert "./medical-admin-auth.js" in service_worker
           assert "./claim-engine.js" in service_worker
           assert "./styles.css" in service_worker
           assert "medical-admin-auth.js" in html
           assert "medical-official-sync.js" in service_worker
           assert "ava-admin-connector.mjs" in service_worker
+          assert "medical-official-sync.js?v=1.1.6" in html
+          assert "app.js?v=1.1.6" in html
           assert not re.search(r'(?:href|src)=["\']/[^/]', html)
           print("Medical /medical/ deployment contract PASS")
           PY
@@ -73,8 +78,17 @@ jobs:
       - name: Assemble Medical site
         run: |
           mkdir -p _site
-          cp index.html app.js medical-admin-auth.js medical-official-sync.js ava-admin-connector.mjs claim-engine.js styles.css ready-product.css product-data.js app-build.js manifest.json sw.js _site/
-          printf "window.AVA_MEDICAL_BUILD = '%s';\n" "$GITHUB_SHA" > _site/app-build.js
+          cp index.html app.js medical-admin-auth.js medical-official-sync.js ava-admin-connector.mjs claim-engine.js styles.css ready-product.css product-data.js app-build.js release-version.json manifest.json sw.js _site/
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          version = json.loads(Path("release-version.json").read_text())["appVersion"]
+          Path("_site/app-build.js").write_text(
+              f"window.AVA_MEDICAL_VERSION = {version!r};\n"
+              f"window.AVA_MEDICAL_BUILD = {os.environ['GITHUB_SHA']!r};\n"
+          )
+          PY
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

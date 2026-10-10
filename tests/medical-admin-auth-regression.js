@@ -36,6 +36,6 @@ assert.match(app, /MedicalAdminAuth\.hasSession\(\)/);
 assert.match(app, /此管理入口需要由 AVA Studio 驗證後開啟/);
 assert.match(app, /async function initializeAdmin\(\)\{await authorizeAdmin\(\);if\(state\.adminAuthorized\)\{await bootstrap\(\{render:false\}\);renderEntry\(\)\}\}/);
 assert.match(app, /if\(state\.entry==='admin'\)await initializeAdmin\(\);else await bootstrap\(\)/);
-assert.match(app, /APP_VERSION='v1\.1\.5'/);
+assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.1\.6'/);
 assert.match(auth, /15000/);
 console.log('Medical Connector integration and fail-closed contract checks passed');
