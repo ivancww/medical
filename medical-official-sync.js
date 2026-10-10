@@ -31,7 +31,7 @@
       records.querySelectorAll("[data-save-record]").forEach(button => button.onclick = () => saveRecord(button));
     }
     async function saveRecord(button) {
-      if (!global.MedicalAdminAuth?.hasSession()) { setMessage(panel, "Permission Error：AVA Admin session proof 不存在。", "error"); return; }
+      if (!global.MedicalAdminAuth?.hasSession()) { setMessage(panel, "Permission Error：AVA Admin App Grant 不存在或已過期。", "error"); return; }
       const article = button.closest("[data-record-index]"), index = Number(article.dataset.recordIndex), def = definition(selected), source = rows(state.official, selected)[index], changes = {};
       try {
         article.querySelectorAll("[data-field]").forEach(input => { const field = input.dataset.field, next = parseValue(source[field], input.value); if (JSON.stringify(next) !== JSON.stringify(source[field])) changes[field] = next; });

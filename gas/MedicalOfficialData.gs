@@ -13,7 +13,8 @@ const MEDICAL_OFFICIAL_DATASETS = Object.freeze({
 function medicalOfficialDataAction_(body) {
   if (body.action !== "updateOfficialRecord") throw new Error("Unsupported Medical Official action");
   if (String(body.appId || "") !== String(MEDICAL_ADMIN_APP_ID)) throw new Error("Invalid Medical App ID");
-  medicalVerifyAdminSession_(body.adminSessionProof, "official-write");
+  if (String(body.operation || "") !== "medical:official-write") throw new Error("Invalid Medical Official operation");
+  medicalVerifyAppGrant_(body.appGrant, "medical:official-write");
   return medicalUpdateOfficialRecord_(body);
 }
 
@@ -45,6 +46,8 @@ function medicalUpdateOfficialRecord_(body) {
       sheet.getRange(rowIndex + 1, column + 1).setValue(value);
     });
     const persisted = medicalOfficialReadSnapshot_();
+    const persistedRecord = (persisted.adminDatasets[dataset] || []).find(row => String(medicalOfficialRecordId_(row, definition.ids)) === stableId);
+    if (!persistedRecord || Object.entries(changes).some(([field, value]) => JSON.stringify(persistedRecord[field]) !== JSON.stringify(value))) throw new Error("Official read-after-write verification failed");
     return { success: true, dataset, recordId: stableId, version: persisted.version, revision: persisted.revision, data: persisted };
   } finally { lock.releaseLock(); }
 }
