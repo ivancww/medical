@@ -44,6 +44,6 @@ assert.match(css, /\.admin-tabs\{[^}]*overflow-x:auto/);
 assert.match(css, /\.admin-tab\{[^}]*min-height:44px/);
 assert.match(css, /@media\(max-width:650px\)\{\.admin-status-bar/);
 assert.match(app, /MedicalOfficialSync\.mount/);
-assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.1\.7'/);
+assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.1\.8'/);
 
 console.log('Medical Admin tabs, Chinese labels and unsaved-change guard regression passed');
