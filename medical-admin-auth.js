@@ -7,7 +7,7 @@
   const EXCHANGE_TIMEOUT_MS = 15000;
   const CONNECTOR_VERSION = "0.2.0";
   const CONNECTOR_COMPATIBILITY = "ava-legacy-app-grant-v1";
-  const CONNECTOR_MODULE = "./ava-admin-connector.mjs?v=1.1.7";
+  const CONNECTOR_MODULE = "./ava-admin-connector.mjs?v=1.1.8";
   let connectorPromise;
   let connector;
 
