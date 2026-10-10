@@ -35,8 +35,8 @@ assert.match(index, /id="cloudInfo"/);
 assert.match(index, /新增資料草稿/);
 assert.match(index, /AI 文件分析/);
 assert.match(index, /返回前台/);
-assert.match(index, /medical-official-sync\.js\?v=1\.1\.7/);
-assert.match(index, /app\.js\?v=1\.1\.7/);
+assert.match(index, /medical-official-sync\.js\?v=1\.1\.8/);
+assert.match(index, /app\.js\?v=1\.1\.8/);
 assert.doesNotMatch(index, /Official Cloud|Dataset Count|Official Data 管理|返回 Frontstage/);
 assert.doesNotMatch(ui, /Official Cloud|Dataset Count|Claim Rules|Claim Cases|Premium Settings|Configuration|Validate &amp; Save Official|User Override/);
 assert.doesNotMatch(auth, /AVA Admin 瀏覽器|AVA Admin 授權|AVA Admin 管理/);
@@ -44,6 +44,6 @@ assert.match(css, /\.admin-tabs\{[^}]*overflow-x:auto/);
 assert.match(css, /\.admin-tab\{[^}]*min-height:44px/);
 assert.match(css, /@media\(max-width:650px\)\{\.admin-status-bar/);
 assert.match(app, /MedicalOfficialSync\.mount/);
-assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.1\.7'/);
+assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.1\.8'/);
 
 console.log('Medical Admin tabs, Chinese labels and unsaved-change guard regression passed');

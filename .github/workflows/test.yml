@@ -82,6 +82,7 @@ jobs:
           node --check tests/android-browser-context-regression.js
           node --check tests/medical-gas-dual-contract-regression.js
           node --check tests/official-sync-contract.js
+          node --check tests/medical-official-write-confirmation.js
           grep -q "readyClaimBlock" app.js
           grep -q "concernReflection" app.js
           grep -q "premiumBlock" app.js
@@ -100,6 +101,7 @@ jobs:
           node tests/medical-connector-integration.js
           node tests/medical-gas-dual-contract-regression.js
           node tests/official-sync-contract.js
+          node tests/medical-official-write-confirmation.js
       - name: Verify PWA and fixed contracts
         run: |
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js?v=1.1.7','medical-official-sync.js?v=1.1.7','ava-admin-connector.mjs?v=1.1.7','product-data.js','ready-product.css','release-version.json'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js?v=1.1.7','medical-official-sync.js?v=1.1.7','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js?v=1.1.8','medical-official-sync.js?v=1.1.8','ava-admin-connector.mjs?v=1.1.8','product-data.js','ready-product.css','release-version.json'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js?v=1.1.8','medical-official-sync.js?v=1.1.8','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"

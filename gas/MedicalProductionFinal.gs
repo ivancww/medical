@@ -95,12 +95,13 @@ function doPost(e) {
 }
 
 function checkVersion_() {
-  const config = readKeyValueSheet_(medicalSheet_(AVA_MEDICAL.SHEETS.CONFIG));
+  const snapshot = medicalOfficialReadSnapshot_();
   return {
     status: "success",
     schemaVersion: AVA_MEDICAL.SCHEMA_VERSION,
-    version: String(config.data_version || AVA_MEDICAL.SCHEMA_VERSION),
-    config
+    version: String(snapshot.version || AVA_MEDICAL.SCHEMA_VERSION),
+    revision: String(snapshot.revision || ""),
+    config: snapshot.config
   };
 }
 
@@ -136,6 +137,7 @@ function medicalFullBootstrap_() {
     app: AVA_MEDICAL.APP,
     schemaVersion: AVA_MEDICAL.SCHEMA_VERSION,
     version: snapshot.version,
+    revision: snapshot.revision,
     generatedAt: new Date().toISOString(),
     config: snapshot.config,
     pages: snapshot.pages,

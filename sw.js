@@ -1,5 +1,5 @@
 const CACHE='ava-medical-shell';
-const ASSETS=['./','./index.html','./styles.css','./ready-product.css','./app.js?v=1.1.7','./medical-admin-auth.js?v=1.1.7','./medical-official-sync.js?v=1.1.7','./ava-admin-connector.mjs?v=1.1.7','./claim-engine.js','./product-data.js','./app-build.js','./release-version.json','./manifest.json'];
+const ASSETS=['./','./index.html','./styles.css','./ready-product.css','./app.js?v=1.1.8','./medical-admin-auth.js?v=1.1.8','./medical-official-sync.js?v=1.1.8','./ava-admin-connector.mjs?v=1.1.8','./claim-engine.js','./product-data.js','./app-build.js','./release-version.json','./manifest.json'];
 const cached=request=>caches.open(CACHE).then(cache=>cache.match(request));
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('ava-medical-shell')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
