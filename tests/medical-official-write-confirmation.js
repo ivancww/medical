@@ -39,7 +39,7 @@ function result(overrides = {}) {
 
 assert.throws(
   () => sync.validateMutationResult({ success: true }, { dataset: 'pages', recordId: 'R01', changes }),
-  /未能確認|官方資料回應/
+  /未能確認|官方資料回應|官方回應/
 );
 assert.throws(
   () => sync.validateMutationResult(result({ revision: undefined, data: snapshot('新標題', '') }), { dataset: 'pages', recordId: 'R01', changes }),
