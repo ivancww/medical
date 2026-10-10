@@ -1,7 +1,7 @@
 const OFFICIAL_API='https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec';
 const CRM_AI_API='https://script.google.com/macros/s/AKfycbzPIlJHqcGWDMeJd_Tc_tpDz-r-vVW9lNXBiVXnD2o0ulVNoGkUHy-Ve3rAxnsWh9dhUQ/exec';
 const CACHE_KEY='ava.medical.official.v1',OVERRIDE_KEY='ava.medical.user.overrides.v1';
-const APP_VERSION=window.AVA_MEDICAL_VERSION||'v1.1.7',APP_BUILD=window.AVA_MEDICAL_BUILD||'local';
+const APP_VERSION=window.AVA_MEDICAL_VERSION||'v1.1.8',APP_BUILD=window.AVA_MEDICAL_BUILD||'local';
 const AVA_PLATFORM_URL='https://ivancww.github.io/avaplatform/';
 const DIRECT_ADVANCE_PAGES=['R01','R02','N01','N02','N05','N07'];
 const state={official:null,journey:null,index:0,answers:{},mode:'use',entry:'frontend',draftText:{},intake:null,adminAuthorized:false,adminStatus:'idle',medicalGrowthRate:6,medicalCost:200000,fundingAmount:600000,claimCost:100000,companyPaid:0,companyCoverage:80000,companyRate:100,eliteDeductible:16000,wiseDeductible:8800,age:40,gender:'male',vitality:false,vhis:false,premiumMode:'annual',selectedPlan:'WISE'};
