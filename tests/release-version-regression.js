@@ -11,8 +11,8 @@ const connectorPin = fs.readFileSync('docs/MEDICAL-ADMIN-CONNECTOR-PIN.md', 'utf
 
 assert.equal(release.appVersion, 'v1.1.8');
 assert.equal(release.releaseType, 'admin-ui');
-assert.match(app, /window\.AVA_MEDICAL_VERSION\|\|'v1\.1\.7'/);
-assert.match(build, /AVA_MEDICAL_VERSION.*v1\.1\.7/);
+assert.match(app, /window\.AVA_MEDICAL_VERSION\|\|'v1\.1\.8'/);
+assert.match(build, /AVA_MEDICAL_VERSION.*v1\.1\.8/);
 assert.match(index, /medical-admin-auth\.js\?v=1\.1\.7/);
 assert.match(index, /medical-official-sync\.js\?v=1\.1\.7/);
 assert.match(index, /app\.js\?v=1\.1\.7/);
@@ -21,7 +21,7 @@ assert.match(sw, /medical-official-sync\.js\?v=1\.1\.7/);
 assert.match(sw, /release-version\.json/);
 assert.match(pages, /release-version\.json/);
 assert.match(pages, /AVA_MEDICAL_VERSION/);
-assert.match(connectorPin, /Medical release: `v1\.1\.7`/);
+assert.match(connectorPin, /Medical release: `v1\.1\.8`/);
 
-assert.match(build, /AVA_MEDICAL_VERSION.*v1\.1\.7/);
+assert.match(build, /AVA_MEDICAL_VERSION.*v1\.1\.8/);
 console.log('Medical frontend release identity v1.1.8 is consistent across source, build and PWA metadata');
