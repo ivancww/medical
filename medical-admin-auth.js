@@ -5,9 +5,9 @@
   const PLATFORM_ORIGIN = "https://ivancww.github.io";
   const OFFICIAL_API = "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec";
   const EXCHANGE_TIMEOUT_MS = 15000;
-  const CONNECTOR_VERSION = "0.1.1";
-  const CONNECTOR_COMPATIBILITY = "ava-admin-session-v1";
-  const CONNECTOR_MODULE = "./ava-admin-connector.mjs?v=1.1.5";
+  const CONNECTOR_VERSION = "0.2.0";
+  const CONNECTOR_COMPATIBILITY = "ava-legacy-app-grant-v1";
+  const CONNECTOR_MODULE = "./ava-admin-connector.mjs?v=1.1.7";
   let connectorPromise;
   let connector;
 
@@ -15,17 +15,9 @@
     return new URLSearchParams(location?.search || "").get("avaAdminLaunch") || "";
   }
 
-  function launchNonce(location = global.location) {
-    return new URLSearchParams(location?.search || "").get("avaAdminLaunchNonce") || "";
-  }
-
   function userError(error) {
     const messages = {
       ADMIN_LAUNCH_REQUIRED: "此管理入口必須由 AVA Studio 的安全視窗開啟。",
-      ADMIN_BROWSER_BINDING_REQUIRED: "此管理入口必須由 AVA Studio 的安全視窗開啟。",
-      ADMIN_PARENT_CLOSED: "AVA Studio 視窗已關閉，請返回 AVA Studio 再開啟 Medical。",
-      ADMIN_BROWSER_BINDING_EXPIRED: "AVA 管理中心瀏覽器驗證逾時，請返回 AVA Studio 再開啟 Medical。",
-      BROWSER_PROOF_INVALID: "AVA 管理中心瀏覽器驗證無效，請返回 AVA Studio 再開啟 Medical。",
       ADMIN_EXCHANGE_TIMEOUT: "AVA 管理授權服務回應逾時，請返回 AVA Studio 再開啟 Medical。",
       ADMIN_EXCHANGE_NETWORK: "暫時未能連接 AVA 管理授權服務，請稍後再試。",
       ADMIN_EXCHANGE_HTTP: "AVA 管理授權服務拒絕此管理入口。",
@@ -46,7 +38,6 @@
         connector = module.createAdminConnector({
           appId: APP_ID,
           gasEndpoint: OFFICIAL_API,
-          platformOrigin: PLATFORM_ORIGIN,
           compatibility: CONNECTOR_COMPATIBILITY,
           returnToAvaUrl: `${PLATFORM_ORIGIN}/avaplatform/?avaSurface=admin`,
           windowObject: global,
@@ -64,7 +55,7 @@
     return connectorPromise;
   }
 
-  async function exchangeAdminSession() {
+  async function exchangeAppLaunch() {
     try { return await (await loadConnector()).initialize(); }
     catch (error) { throw userError(error); }
   }
@@ -88,8 +79,7 @@
     CONNECTOR_COMPATIBILITY,
     CONNECTOR_MODULE,
     launchTicket,
-    launchNonce,
-    exchangeAdminSession,
+    exchangeAppLaunch,
     authorizedRequest,
     clear,
     hasSession,

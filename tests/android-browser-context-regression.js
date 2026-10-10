@@ -1,55 +1,24 @@
-const assert = require('assert/strict');
-
-const ORIGIN = 'https://ivancww.github.io';
-const expiry = () => new Date(Date.now() + 60000).toISOString();
-
-function fakeWindow(href, { name = '', opener = null } = {}) {
-  const listeners = new Set();
-  return {
-    location: { href },
-    history: { replaceState() {} },
-    name,
-    opener,
-    setTimeout,
-    clearTimeout,
-    addEventListener(_type, listener) { listeners.add(listener); },
-    removeEventListener(_type, listener) { listeners.delete(listener); },
-    emit(event) { for (const listener of [...listeners]) listener(event); }
-  };
-}
+const assert = require('node:assert/strict');
 
 async function run() {
-  const { createAdminConnector, ADMIN_CONTRACT, BROWSER_CONTEXT_PREFIX } = await import('../ava-admin-connector.mjs');
-  const ticket = 'ticket-1';
-  const nonce = 'nonce-1';
-  const location = { href: `https://ivancww.github.io/medical/?avaEntry=admin&avaAdminLaunch=${ticket}&avaAdminLaunchNonce=${nonce}` };
-  const context = { type: 'ava-admin-session-context', appId: 'medical', launchTicket: ticket, launchNonce: nonce, browserProof: 'proof-1', expiresAt: expiry(), contract: ADMIN_CONTRACT };
-  const browserWindow = fakeWindow(location.href, { name: BROWSER_CONTEXT_PREFIX + JSON.stringify(context) });
-  const calls = [];
-  const connector = createAdminConnector({
+  const { createAdminConnector } = await import('../ava-admin-connector.mjs');
+  const location = { href: 'https://ivancww.github.io/medical/?avaEntry=admin' };
+  const rejected = createAdminConnector({ appId: 'medical', gasEndpoint: 'https://gas.invalid/medical/exec', locationObject: location, fetchImpl: async () => { throw new Error('no network expected'); } });
+  await assert.rejects(rejected.initialize(), error => error.code === 'ADMIN_LAUNCH_REQUIRED');
+
+  const copied = { href: 'https://ivancww.github.io/medical/?avaEntry=admin&avaAdminLaunch=expired-ticket' };
+  let sent;
+  const copiedConnector = createAdminConnector({
     appId: 'medical',
     gasEndpoint: 'https://gas.invalid/medical/exec',
-    platformOrigin: ORIGIN,
-    windowObject: browserWindow,
-    locationObject: browserWindow.location,
-    historyObject: browserWindow.history,
-    fetchImpl: async (_url, options) => {
-      calls.push(JSON.parse(options.body));
-      return { ok: true, json: async () => ({ success: true, appId: 'medical', adminSessionProof: 'session-proof', expiresAt: expiry(), contract: ADMIN_CONTRACT }) };
-    }
+    locationObject: copied,
+    fetchImpl: async (_url, options) => { sent = JSON.parse(options.body); return { ok: true, json: async () => ({ success: false, error: 'Invalid or expired Admin launch' }) }; }
   });
-  await connector.initialize();
-  assert.equal(browserWindow.name, '', 'context proof is cleared before server exchange');
-  assert.deepEqual(calls[0], { action: 'exchangeAdminSession', appId: 'medical', launchTicket: ticket, launchNonce: nonce, browserProof: 'proof-1' });
-  assert.equal(connector.isAuthorized(), true);
-
-  const copiedLocation = { href: location.href };
-  const copied = fakeWindow(copiedLocation.href);
-  let copiedCalls = 0;
-  const copiedConnector = createAdminConnector({ appId: 'medical', gasEndpoint: 'https://gas.invalid/medical/exec', windowObject: copied, locationObject: copied.location, historyObject: copied.history, fetchImpl: async () => { copiedCalls += 1; throw new Error('copied URL must not call GAS'); } });
-  await assert.rejects(copiedConnector.initialize(), error => error.code === 'ADMIN_BROWSER_BINDING_REQUIRED');
-  assert.equal(copiedCalls, 0);
-  console.log('Medical Android browsing-context binding and copied-URL rejection passed');
+  await assert.rejects(copiedConnector.initialize(), error => error.code === 'ADMIN_UNAUTHORIZED');
+  assert.equal(sent.action, 'exchangeAppLaunch');
+  assert.equal(Object.keys(sent).includes('browserProof'), false);
+  assert.equal(Object.keys(sent).includes('launchNonce'), false);
+  console.log('Missing ticket, expired ticket and browser-context independence regressions passed');
 }
 
 run().catch(error => { console.error(error); process.exitCode = 1; });

@@ -11,6 +11,8 @@
 
 const MEDICAL_ADMIN_APP_ID = "medical";
 const AVA_PLATFORM_ADMIN_AUTH_URL_PROPERTY = "AVA_PLATFORM_ADMIN_AUTH_URL";
+const MEDICAL_ADMIN_SESSION_CONTRACT = "ava-admin-session-v1";
+const MEDICAL_APP_GRANT_CONTRACT = "ava-legacy-app-grant-v1";
 
 const AVA_MEDICAL = Object.freeze({
   APP: "AVA Medical",
@@ -84,7 +86,7 @@ function doPost(e) {
   try {
     const body = JSON.parse(e && e.postData && e.postData.contents || "{}");
     medicalOfficialRejectLegacyBulkWrite_(body);
-    if (body.action === "exchangeAdminSession") return output_(medicalAdminAuthAction_(body));
+    if (body.action === "exchangeAdminSession" || body.action === "exchangeAppLaunch") return output_(medicalAdminAuthAction_(body));
     if (body.action === "updateOfficialRecord") return output_(medicalOfficialPostAction_(body));
     throw new Error("Unsupported Medical POST action");
   } catch (error) {
@@ -146,14 +148,18 @@ function medicalFullBootstrap_() {
   };
 }
 
-/** AVA Platform Unified Admin launch-ticket exchange. */
+/** AVA Platform browser-bound and Legacy App Grant launch-ticket exchange. */
 function medicalAdminAuthAction_(body) {
   if (body.action === "exchangeAdminSession") {
     return medicalExchangeAdminSession_(body.launchTicket, body.appId, body.browserProof, body.launchNonce);
   }
+  if (body.action === "exchangeAppLaunch") {
+    return medicalExchangeAppLaunch_(body.launchTicket, body.appId);
+  }
   throw new Error("Unsupported Medical Admin action");
 }
 
+/** Existing V15 browser-bound Admin Session exchange. */
 function medicalExchangeAdminSession_(launchTicket, appId, browserProof, launchNonce) {
   if (String(appId || "") !== MEDICAL_ADMIN_APP_ID || !String(launchTicket || "")) {
     throw new Error("Invalid Medical Admin launch");
@@ -168,25 +174,67 @@ function medicalExchangeAdminSession_(launchTicket, appId, browserProof, launchN
   });
   let payload;
   try { payload = JSON.parse(response.getContentText() || "{}"); } catch (_) { throw new Error("Invalid AVA Admin response"); }
-  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 || payload.success !== true || payload.appId !== MEDICAL_ADMIN_APP_ID || !payload.adminSessionProof || payload.contract !== "ava-admin-session-v1") {
+  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 || payload.success !== true || payload.appId !== MEDICAL_ADMIN_APP_ID || !payload.adminSessionProof || payload.contract !== MEDICAL_ADMIN_SESSION_CONTRACT) {
     throw new Error("Invalid or expired AVA Admin launch");
   }
-  return { success: true, appId: MEDICAL_ADMIN_APP_ID, adminSessionProof: String(payload.adminSessionProof), expiresAt: payload.expiresAt, contract: "ava-admin-session-v1" };
+  return { success: true, appId: MEDICAL_ADMIN_APP_ID, adminSessionProof: String(payload.adminSessionProof), expiresAt: payload.expiresAt, contract: MEDICAL_ADMIN_SESSION_CONTRACT };
 }
 
-/** Canonical backend grant verification; no credential is stored here. */
-function medicalVerifyAdminSession_(adminSessionProof, operation) {
+function medicalExchangeAppLaunch_(launchTicket, appId) {
+  if (String(appId || "") !== MEDICAL_ADMIN_APP_ID || !String(launchTicket || "")) {
+    throw new Error("Invalid Medical Admin launch");
+  }
   const endpoint = PropertiesService.getScriptProperties().getProperty(AVA_PLATFORM_ADMIN_AUTH_URL_PROPERTY);
-  if (!endpoint || !String(adminSessionProof || "")) throw new Error("Medical Admin authorization is required");
+  if (!endpoint) throw new Error("Medical Admin authorization is not configured");
   const response = UrlFetchApp.fetch(endpoint, {
     method: "post",
     contentType: "text/plain;charset=utf-8",
-    payload: JSON.stringify({ action: "verifyAdminSession", adminSessionProof: String(adminSessionProof), appId: MEDICAL_ADMIN_APP_ID, operation: String(operation || "official-write") }),
+    payload: JSON.stringify({ action: "exchangeAppLaunch", launchTicket: String(launchTicket), appId: MEDICAL_ADMIN_APP_ID }),
     muteHttpExceptions: true
   });
   let payload;
   try { payload = JSON.parse(response.getContentText() || "{}"); } catch (_) { throw new Error("Invalid AVA Admin response"); }
-  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 || payload.success !== true || payload.appId !== MEDICAL_ADMIN_APP_ID || payload.operation !== String(operation || "official-write") || payload.contract !== "ava-admin-session-v1") {
+  const expiry = Date.parse(String(payload.expiresAt || ""));
+  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 || payload.success !== true || payload.appId !== MEDICAL_ADMIN_APP_ID || !payload.appGrant || payload.contract !== MEDICAL_APP_GRANT_CONTRACT || !Number.isFinite(expiry) || expiry <= Date.now()) {
+    throw new Error("Invalid or expired AVA Admin launch");
+  }
+  return { success: true, appId: MEDICAL_ADMIN_APP_ID, appGrant: String(payload.appGrant), expiresAt: String(payload.expiresAt), contract: MEDICAL_APP_GRANT_CONTRACT };
+}
+
+/** Canonical backend App Grant verification; no credential is stored here. */
+function medicalVerifyAppGrant_(appGrant, operation) {
+  const endpoint = PropertiesService.getScriptProperties().getProperty(AVA_PLATFORM_ADMIN_AUTH_URL_PROPERTY);
+  if (!endpoint || !String(appGrant || "")) throw new Error("Medical Admin authorization is required");
+  const response = UrlFetchApp.fetch(endpoint, {
+    method: "post",
+    contentType: "text/plain;charset=utf-8",
+    payload: JSON.stringify({ action: "verifyAppGrant", appGrant: String(appGrant), appId: MEDICAL_ADMIN_APP_ID, operation: String(operation || "official-write") }),
+    muteHttpExceptions: true
+  });
+  let payload;
+  try { payload = JSON.parse(response.getContentText() || "{}"); } catch (_) { throw new Error("Invalid AVA Admin response"); }
+  const expectedOperation = String(operation || "official-write");
+  const expiry = Date.parse(String(payload.expiresAt || ""));
+  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 || payload.success !== true || payload.appId !== MEDICAL_ADMIN_APP_ID || payload.operation !== expectedOperation || payload.contract !== MEDICAL_APP_GRANT_CONTRACT || !Number.isFinite(expiry) || expiry <= Date.now()) {
+    throw new Error("Invalid or expired Medical Admin authorization");
+  }
+  return payload;
+}
+
+/** Existing V15 browser-bound Admin Session verification. */
+function medicalVerifyAdminSession_(adminSessionProof, operation) {
+  const endpoint = PropertiesService.getScriptProperties().getProperty(AVA_PLATFORM_ADMIN_AUTH_URL_PROPERTY);
+  if (!endpoint || !String(adminSessionProof || "")) throw new Error("Medical Admin authorization is required");
+  const expectedOperation = String(operation || "official-write");
+  const response = UrlFetchApp.fetch(endpoint, {
+    method: "post",
+    contentType: "text/plain;charset=utf-8",
+    payload: JSON.stringify({ action: "verifyAdminSession", adminSessionProof: String(adminSessionProof), appId: MEDICAL_ADMIN_APP_ID, operation: expectedOperation }),
+    muteHttpExceptions: true
+  });
+  let payload;
+  try { payload = JSON.parse(response.getContentText() || "{}"); } catch (_) { throw new Error("Invalid AVA Admin response"); }
+  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 || payload.success !== true || payload.appId !== MEDICAL_ADMIN_APP_ID || payload.operation !== expectedOperation || payload.contract !== MEDICAL_ADMIN_SESSION_CONTRACT) {
     throw new Error("Invalid or expired Medical Admin authorization");
   }
   return payload;
@@ -315,7 +363,17 @@ function medicalOfficialReadSnapshot_() {
 function medicalOfficialDataAction_(body) {
   if (body.action !== "updateOfficialRecord") throw new Error("Unsupported Medical Official action");
   if (String(body.appId || "") !== MEDICAL_ADMIN_APP_ID) throw new Error("Invalid Medical App ID");
-  medicalVerifyAdminSession_(body.adminSessionProof, "official-write");
+  const hasAdminSessionProof = Boolean(String(body.adminSessionProof || ""));
+  const hasAppGrant = Boolean(String(body.appGrant || ""));
+  if (hasAdminSessionProof === hasAppGrant) throw new Error("Exactly one Medical Admin credential is required");
+  const operation = String(body.operation || "");
+  if (operation && operation !== "medical:official-write") throw new Error("Invalid Medical Official operation");
+  if (hasAdminSessionProof) {
+    medicalVerifyAdminSession_(body.adminSessionProof, "official-write");
+  } else {
+    if (operation !== "medical:official-write") throw new Error("Invalid Medical Official operation");
+    medicalVerifyAppGrant_(body.appGrant, operation);
+  }
   return medicalUpdateOfficialRecord_(body);
 }
 
@@ -347,6 +405,8 @@ function medicalUpdateOfficialRecord_(body) {
       sheet.getRange(rowIndex + 1, column + 1).setValue(value);
     });
     const persisted = medicalOfficialReadSnapshot_();
+    const persistedRecord = (persisted.adminDatasets[dataset] || []).find(row => String(medicalOfficialRecordId_(row, definition.ids)) === stableId);
+    if (!persistedRecord || Object.entries(changes).some(([field, value]) => JSON.stringify(persistedRecord[field]) !== JSON.stringify(value))) throw new Error("Official read-after-write verification failed");
     return { success: true, dataset, recordId: stableId, version: persisted.version, revision: persisted.revision, data: persisted };
   } finally {
     lock.releaseLock();
