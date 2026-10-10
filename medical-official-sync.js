@@ -19,6 +19,7 @@
     success: "已儲存並同步：Google 試算表已回讀確認（版本 {version}）。",
     conflict: "資料版本已過期，請先重新讀取官方資料。",
     failure: "儲存失敗：{message}",
+    confirmation: "官方資料回應未能確認相同記錄、欄位及版本；未更新本機快取。",
     invalidNumber: "數值格式不正確",
     unsaved: "目前分頁有未儲存的變更。切換分頁會放棄這些變更，是否繼續？",
     unknownField: "資料欄位"
@@ -42,6 +43,23 @@
   const READ_ONLY = Object.freeze(["premiumTables", "premium_tables"]);
   function definition(key) { return DATASETS.find(x => x.key === key) || null; }
   function rows(official, key) { const value = official?.adminDatasets?.[key] ?? official?.[key]; if (Array.isArray(value)) return value; if (value && typeof value === "object") return Object.entries(value).map(([id, record]) => ({ id, ...(record || {}) })); return []; }
+  function sameValue(left, right) { return JSON.stringify(left) === JSON.stringify(right); }
+  function validateMutationResult(result, { dataset, recordId: expectedRecordId, changes }) {
+    if (!result || result.success !== true) throw new Error(LABELS.confirmation);
+    if (String(result.dataset || "") !== String(dataset)) throw new Error("官方回應的資料分頁不一致。");
+    if (String(result.recordId || "") !== String(expectedRecordId)) throw new Error("官方回應的記錄識別碼不一致。");
+    const snapshot = result.data;
+    if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) throw new Error(LABELS.confirmation);
+    const revision = String(snapshot.revision || "");
+    if (!/^[a-f0-9]{64}$/i.test(revision) || String(result.revision || "") !== revision) throw new Error("官方回應缺少有效資料版本。");
+    const def = definition(dataset);
+    const persisted = rows(snapshot, dataset).find(record => String(recordId(record, def)) === String(expectedRecordId));
+    if (!persisted) throw new Error("官方回應未包含相同的已儲存記錄。");
+    for (const [field, value] of Object.entries(changes || {})) {
+      if (!sameValue(persisted[field], value)) throw new Error("官方回讀欄位與提交內容不一致：" + field);
+    }
+    return snapshot;
+  }
   function recordId(record, def) { return def.id.map(key => record?.[key]).find(value => value !== undefined && value !== null && String(value) !== "") ?? ""; }
   function editableFields(record, def) { return def.fields.filter(field => Object.prototype.hasOwnProperty.call(record || {}, field)); }
   function fieldLabel(field) { return FIELD_LABELS[field] || LABELS.unknownField; }
@@ -113,13 +131,16 @@
         article.querySelectorAll("[data-field]").forEach(input => { const field = input.dataset.field, next = parseValue(source[field], input.value); if (JSON.stringify(next) !== JSON.stringify(source[field])) changes[field] = next; });
         if (!Object.keys(changes).length) { setMessage(panel, LABELS.noChanges); return; }
         button.disabled = true; button.textContent = LABELS.saving; setMessage(panel, LABELS.savingHelp);
-        const result = await global.MedicalAdminAuth.authorizedRequest({ action: "updateOfficialRecord", operation: "medical:official-write", body: { dataset: selected, recordId: String(recordId(source, def)), changes, expectedVersion: state.official?.revision || state.official?.version } });
-        const next = result.data || result.official; if (next) { state.official = next; onOfficialChanged?.(next); }
-        render(); setMessage(panel, LABELS.success.replace("{version}", result.version || state.official?.version || "—"), "success");
+        const expectedRecordId = String(recordId(source, def));
+        const result = await global.MedicalAdminAuth.authorizedRequest({ action: "updateOfficialRecord", operation: "medical:official-write", body: { dataset: selected, recordId: expectedRecordId, changes, expectedVersion: state.official?.revision || state.official?.version } });
+        const next = validateMutationResult(result, { dataset: selected, recordId: expectedRecordId, changes });
+        state.official = next;
+        onOfficialChanged?.(next);
+        render(); setMessage(panel, LABELS.success.replace("{version}", result.version || next.version || "—"), "success");
       } catch (error) { const message = error.message.includes("version") || error.message.includes("stale") ? LABELS.conflict : LABELS.failure.replace("{message}", error.message); setMessage(panel, message, "error"); button.disabled = false; button.textContent = LABELS.save; }
     }
     render();
     return { render, select: key => { if (definition(key)) { selected = key; render(); } } };
   }
-  global.MedicalOfficialSync = Object.freeze({ API, LABELS, FIELD_LABELS, DATASETS, READ_ONLY, rows, definition, recordId, mount });
+  global.MedicalOfficialSync = Object.freeze({ API, LABELS, FIELD_LABELS, DATASETS, READ_ONLY, rows, definition, recordId, validateMutationResult, mount });
 })(typeof window === "undefined" ? globalThis : window);
