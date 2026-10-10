@@ -38,7 +38,7 @@ jobs:
           assert manifest["start_url"] == "/medical/"
           assert manifest["scope"] == "/medical/"
           assert manifest["display"] == "standalone"
-          assert release["appVersion"] == "v1.1.7"
+          assert release["appVersion"] == "v1.1.8"
           assert 'href="manifest.json"' in html
           assert "claim-engine.js" in html and "app.js" in html
           assert "medical-official-sync.js" in html
