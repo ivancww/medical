@@ -39,6 +39,7 @@ jobs:
           assert manifest["display"] == "standalone"
           assert 'href="manifest.json"' in html
           assert "claim-engine.js" in html and "app.js" in html
+          assert "medical-official-sync.js" in html
           assert "app-build.js" in html
           assert 'href="styles.css"' in html
           assert "serviceWorker.register('sw.js',{scope:'./',updateViaCache:'none'})" in app
@@ -50,6 +51,7 @@ jobs:
           assert "./claim-engine.js" in service_worker
           assert "./styles.css" in service_worker
           assert "medical-admin-auth.js" in html
+          assert "medical-official-sync.js" in service_worker
           assert "ava-admin-connector.mjs" in service_worker
           assert not re.search(r'(?:href|src)=["\']/[^/]', html)
           print("Medical /medical/ deployment contract PASS")
@@ -71,7 +73,7 @@ jobs:
       - name: Assemble Medical site
         run: |
           mkdir -p _site
-          cp index.html app.js medical-admin-auth.js ava-admin-connector.mjs claim-engine.js styles.css ready-product.css product-data.js app-build.js manifest.json sw.js _site/
+          cp index.html app.js medical-admin-auth.js medical-official-sync.js ava-admin-connector.mjs claim-engine.js styles.css ready-product.css product-data.js app-build.js manifest.json sw.js _site/
           printf "window.AVA_MEDICAL_BUILD = '%s';\n" "$GITHUB_SHA" > _site/app-build.js
 
       - name: Upload Pages artifact
