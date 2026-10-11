@@ -19,31 +19,62 @@ const expected = [
   ['premiumSettings', '保費設定'], ['config', '系統設定']
 ];
 
-assert.equal(JSON.stringify(sync.DATASETS.map(({ key, label }) => [key, label])), JSON.stringify(expected), 'Admin exposes the seven independent Chinese tabs');
+assert.equal(JSON.stringify(sync.DATASETS.map(({ key, label }) => [key, label])), JSON.stringify(expected), 'Medical keeps all seven App-owned Admin domains');
+assert.equal(JSON.stringify(sync.READ_ONLY), JSON.stringify(['premiumTables', 'premium_tables']), 'Medical premium tables remain read-only');
 assert.match(ui, /role="tablist"/);
 assert.match(ui, /role="tab"/);
+assert.match(ui, /role="tabpanel"/);
 assert.match(ui, /aria-selected/);
+assert.match(ui, /aria-hidden/);
+assert.match(ui, /data-sync-domain/);
+assert.match(ui, /data-record-select/);
+assert.match(ui, /selectedRecords/);
 assert.match(ui, /ArrowRight/);
 assert.match(ui, /ArrowLeft/);
 assert.match(ui, /event\.key === "Home"/);
+assert.match(ui, /event\.key === "End"/);
 assert.match(ui, /hasUnsavedChanges/);
-assert.match(ui, /目前分頁有未儲存的變更/);
+assert.match(ui, /目前記錄有未儲存的變更/);
+assert.match(ui, /global\.confirm/);
+assert.match(ui, /data-field-type="checkbox"/);
+assert.match(ui, /type === "number"/);
+assert.match(ui, /<textarea/);
+assert.match(ui, /其他欄位已保留/);
 assert.match(ui, /MedicalAdminAuth\.authorizedRequest/);
 assert.match(ui, /expectedVersion: state\.official\?\.revision \|\| state\.official\?\.version/);
+assert.match(ui, /payload|result\.success/);
+assert.match(ui, /read-after-write|回讀/);
+assert.match(index, /id="adminLabel"/);
 assert.match(index, /id="officialSyncPanel"/);
-assert.match(index, /id="cloudInfo"/);
-assert.match(index, /新增資料草稿/);
-assert.match(index, /AI 文件分析/);
-assert.match(index, /返回前台/);
-assert.match(index, /medical-official-sync\.js\?v=1\.1\.8/);
-assert.match(index, /app\.js\?v=1\.1\.8/);
-assert.doesNotMatch(index, /Official Cloud|Dataset Count|Official Data 管理|返回 Frontstage/);
-assert.doesNotMatch(ui, /Official Cloud|Dataset Count|Claim Rules|Claim Cases|Premium Settings|Configuration|Validate &amp; Save Official|User Override/);
-assert.doesNotMatch(auth, /AVA Admin 瀏覽器|AVA Admin 授權|AVA Admin 管理/);
-assert.match(css, /\.admin-tabs\{[^}]*overflow-x:auto/);
-assert.match(css, /\.admin-tab\{[^}]*min-height:44px/);
-assert.match(css, /@media\(max-width:650px\)\{\.admin-status-bar/);
+assert.match(index, /<details class="admin-system-info"><summary>系統資料<\/summary>/);
+assert.match(index, /返回 AVA/);
+assert.doesNotMatch(index, /class="admin-head"/);
+assert.doesNotMatch(index, /class="admin-status-bar"/);
+assert.match(index, /medical-official-sync\.js\?v=1\.1\.9/);
+assert.match(index, /app\.js\?v=1\.1\.9/);
+assert.doesNotMatch(auth, /Script Property|session proof|adminSessionProof/);
+assert.match(css, /\.admin-tabs\{[^}]*display:grid/);
+assert.match(css, /grid-template-columns:repeat\(7,minmax\(0,1fr\)\)/);
+assert.match(css, /\.admin-domain\[hidden\],\.sync-record\[hidden\]\{display:none!important\}/);
+assert.match(css, /\.admin-system-info summary/);
+assert.match(css, /@media\(max-width:760px\)/);
+assert.match(css, /@media\(max-width:430px\)/);
 assert.match(app, /MedicalOfficialSync\.mount/);
-assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.1\.8'/);
+assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.1\.9'/);
 
-console.log('Medical Admin tabs, Chinese labels and unsaved-change guard regression passed');
+const official = {
+  pages: [{ page_id: 'R01', title: 'Concern', enabled: true, unknown: { keep: true } }],
+  revision: 'a'.repeat(64)
+};
+assert.equal(sync.rows(official, 'pages').length, 1);
+assert.equal(sync.recordId(official.pages[0], sync.definition('pages')), 'R01');
+const mutation = {
+  success: true,
+  dataset: 'pages',
+  recordId: 'R01',
+  revision: official.revision,
+  data: { ...official, pages: [{ ...official.pages[0], title: 'Updated' }] }
+};
+assert.equal(sync.validateMutationResult(mutation, { dataset: 'pages', recordId: 'R01', changes: { title: 'Updated' } }).pages[0].unknown.keep, true, 'Unknown fields remain preserved in confirmed snapshots');
+
+console.log('Medical Saving V1.8 Admin workspace regression passed');
