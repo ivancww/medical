@@ -1,49 +1,46 @@
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const vm = require('node:vm');
-
-const index = fs.readFileSync('index.html', 'utf8');
-const app = fs.readFileSync('app.js', 'utf8');
-const ui = fs.readFileSync('medical-official-sync.js', 'utf8');
-const auth = fs.readFileSync('medical-admin-auth.js', 'utf8');
-const css = fs.readFileSync('styles.css', 'utf8');
-
-const context = {};
-context.window = context;
-context.globalThis = context;
-vm.runInNewContext(ui, context, { filename: 'medical-official-sync.js' });
-const sync = context.MedicalOfficialSync;
-const expected = [
-  ['pages', '頁面設定'], ['options', '選項設定'], ['plans', '產品及保障'],
-  ['claimRules', '理賠規則'], ['claimCases', '理賠案例'],
-  ['premiumSettings', '保費設定'], ['config', '系統設定']
-];
-
-assert.equal(JSON.stringify(sync.DATASETS.map(({ key, label }) => [key, label])), JSON.stringify(expected), 'Admin exposes the seven independent Chinese tabs');
-assert.match(ui, /role="tablist"/);
-assert.match(ui, /role="tab"/);
-assert.match(ui, /aria-selected/);
-assert.match(ui, /ArrowRight/);
-assert.match(ui, /ArrowLeft/);
-assert.match(ui, /event\.key === "Home"/);
-assert.match(ui, /hasUnsavedChanges/);
-assert.match(ui, /目前分頁有未儲存的變更/);
-assert.match(ui, /MedicalAdminAuth\.authorizedRequest/);
-assert.match(ui, /expectedVersion: state\.official\?\.revision \|\| state\.official\?\.version/);
-assert.match(index, /id="officialSyncPanel"/);
-assert.match(index, /id="cloudInfo"/);
-assert.match(index, /新增資料草稿/);
-assert.match(index, /AI 文件分析/);
-assert.match(index, /返回前台/);
-assert.match(index, /medical-official-sync\.js\?v=1\.1\.8/);
-assert.match(index, /app\.js\?v=1\.1\.8/);
-assert.doesNotMatch(index, /Official Cloud|Dataset Count|Official Data 管理|返回 Frontstage/);
-assert.doesNotMatch(ui, /Official Cloud|Dataset Count|Claim Rules|Claim Cases|Premium Settings|Configuration|Validate &amp; Save Official|User Override/);
-assert.doesNotMatch(auth, /AVA Admin 瀏覽器|AVA Admin 授權|AVA Admin 管理/);
-assert.match(css, /\.admin-tabs\{[^}]*overflow-x:auto/);
-assert.match(css, /\.admin-tab\{[^}]*min-height:44px/);
-assert.match(css, /@media\(max-width:650px\)\{\.admin-status-bar/);
-assert.match(app, /MedicalOfficialSync\.mount/);
-assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.1\.8'/);
-
-console.log('Medical Admin tabs, Chinese labels and unsaved-change guard regression passed');
+const assert = require("assert");
+const fs = require("fs");
+const vm = require("vm");
+const index = fs.readFileSync("index.html", "utf8");
+const app = fs.readFileSync("app.js", "utf8");
+const syncSource = fs.readFileSync("medical-official-sync.js", "utf8");
+const css = fs.readFileSync("styles.css", "utf8");
+const expected = ["pages", "options", "plans", "claimRules", "claimCases", "premiumSettings", "config"];
+const sandbox = { console, MedicalAdminAuth: {}, globalThis: null };
+sandbox.globalThis = sandbox;
+vm.runInNewContext(syncSource, sandbox);
+const sync = sandbox.MedicalOfficialSync;
+assert.deepEqual(sync.DATASETS.map(item => item.key), expected);
+assert.deepEqual(sync.READ_ONLY, ["premiumTables", "premium_tables"]);
+assert.match(syncSource, /role="tablist"/);
+assert.match(syncSource, /role="tab"/);
+assert.match(syncSource, /aria-selected=/);
+assert.match(syncSource, /role="tabpanel"/);
+assert.match(syncSource, /aria-hidden=/);
+assert.match(syncSource, /hidden/);
+assert.match(syncSource, /選擇記錄/);
+assert.match(syncSource, /updateOfficialRecord/);
+assert.match(syncSource, /expectedVersion/);
+assert.match(syncSource, /validateMutationResult/);
+assert.match(syncSource, /result\.data/);
+assert.match(syncSource, /不在此編輯器修改/);
+assert.match(index, /id="adminLabel"/);
+assert.match(index, /officialSyncPanel/);
+assert.match(index, /<details class="admin-system-info"><summary>系統資料<\\/summary>/);
+assert.match(index, /返回 AVA/);
+assert.doesNotMatch(index, /class="admin-head"/);
+assert.doesNotMatch(index, /class="admin-status-bar"/);
+assert.match(index, /v=1\.1\.9/);
+assert.match(app, /v1\.1\.9/);
+assert.match(css, /\.admin-tabs\s*\{/);
+assert.match(css, /grid-template-columns:\s*repeat\(7/);
+assert.match(css, /\.admin-domain\\[hidden\\]/);
+assert.match(css, /@media\\s*\\(max-width:\\s*1000px\\)/);
+assert.match(css, /@media\\s*\\(max-width:\\s*760px\\)/);
+assert.match(css, /@media\\s*\\(max-width:\\s*430px\\)/);
+const official = { revision: "a".repeat(64), adminDatasets: { pages: [{ page_id: "p1", page_name: "首頁", enabled: true, custom: "keep" }] } };
+assert.equal(sync.rows(official, "pages")[0].custom, "keep");
+const saved = sync.validateMutationResult({ success: true, dataset: "pages", recordId: "p1", revision: "b".repeat(64), data: { revision: "b".repeat(64), adminDatasets: { pages: [{ page_id: "p1", page_name: "更新", enabled: true, custom: "keep" }] } } }, { dataset: "pages", recordId: "p1", changes: { page_name: "更新" } });
+assert.equal(saved.adminDatasets.pages[0].custom, "keep");
+assert.throws(() => sync.validateMutationResult({ success: true, dataset: "pages", recordId: "p1", revision: "b".repeat(64), data: { revision: "b".repeat(64), adminDatasets: { pages: [{ page_id: "p1", page_name: "錯誤", enabled: true }] } } }, { dataset: "pages", recordId: "p1", changes: { page_name: "更新" } }));
+console.log("Medical Admin UI regression tests passed");
