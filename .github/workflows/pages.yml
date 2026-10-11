@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: \${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out Medical
         uses: actions/checkout@v4
@@ -85,8 +85,8 @@ jobs:
           from pathlib import Path
           version = json.loads(Path("release-version.json").read_text())["appVersion"]
           Path("_site/app-build.js").write_text(
-              f"window.AVA_MEDICAL_VERSION = {version!r};\\n"
-              f"window.AVA_MEDICAL_BUILD = {os.environ['GITHUB_SHA']!r};\\n"
+              f"window.AVA_MEDICAL_VERSION = {version!r};\n"
+              f"window.AVA_MEDICAL_BUILD = {os.environ['GITHUB_SHA']!r};\n"
           )
           PY
 
