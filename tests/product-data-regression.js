@@ -3,7 +3,7 @@ require('../product-data.js');
 const P=globalThis.AVAMedicalProductData;
 const official={
   plans:[
-    {plan_id:'ELITE',record_type:'PLAN',plan_name:'尊耀醫療計劃'},
+    {record_id:'ELITE',record_type:'PLAN',plan_name:'尊耀醫療計劃',brochure_url:'https://example.test/elite.pdf'},
     {plan_id:'WISE',record_type:'PLAN',plan_name:'睿選醫療計劃'},
     {plan_id:'FLEXI',record_type:'PLAN',plan_name:'靈活醫療計劃'}
   ],
@@ -27,6 +27,7 @@ const official={
   }
 };
 assert.deepEqual(P.getProductData(official).map(p=>p.id),['ELITE','WISE','FLEXI']);
+assert.equal(P.getProductData(official)[0].brochure_url,'https://example.test/elite.pdf');
 assert.deepEqual(P.deductibleOptions(official,'ELITE'),[0,16000,25000]);
 assert.deepEqual(P.deductibleOptions(official,'WISE'),[0,8800,18000,30000]);
 assert.deepEqual(P.deductibleOptions(official,'FLEXI'),[]);

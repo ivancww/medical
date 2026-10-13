@@ -95,7 +95,7 @@ def run():
             page.on("pageerror", lambda error: errors.append(str(error)))
 
             check(page.locator("#prevBtn").count() == 0 and page.locator("#backBtn").count() == 1, "top Back remains and bottom Previous is absent")
-            check(page.evaluate("journeyPages('ready').map(p=>pageId(p))") == ["R01", "R02", "R03", "R04", "R05", "R07", "R09", "R08"], "Ready order excludes R06 and R10")
+            check(page.evaluate("journeyPages('ready').map(p=>pageId(p))") == ["R01", "R02", "R03", "R04", "R05", "R07", "R09", "R08", "FINAL_SUMMARY"], "Ready order ends with the final summary and excludes R06/R10")
             at(page, "R01")
             page.locator(".option-card").first.click()
             check(page.locator("#pageCard h2").inner_text() == "R02", "R01 simple single-choice directly advances")
@@ -198,8 +198,9 @@ def run():
 
             at(page, "R08")
             check("除咗醫療費用之外，如果患上大病而需要停工休養，期間嘅生活費用又會由邊度嚟？" in page.locator("#pageCard").inner_text(), "P8 final reflection contains the bridge question")
-            check(page.evaluate("journeyPages('ready')[journeyPages('ready').length-1].page_id") == "R08", "P8 is the final Ready page")
-            check(page.locator("#nextBtn").is_hidden(), "P8 has no forward step after the final page")
+            check(page.evaluate("journeyPages('ready')[journeyPages('ready').length-1].page_id") == "FINAL_SUMMARY", "Final summary follows P8")
+            page.evaluate("state.index=journeyPages('ready').length-1; renderPage()")
+            check("你的醫療保障總結" in page.locator("#pageCard").inner_text() and "完成並返回 AVA" in page.locator("#pageCard").inner_text(), "Final Ready summary is customer-facing and has a completion path")
             page.evaluate("state.index=journeyPages('ready').findIndex(p=>pageId(p)==='R09'); renderPage(); state.claimCost=250000; state.planVisibility={ELITE:false,WISE:true,FLEXI:true}; state.wiseConditions={hospital:true,networkDoctor:false,preapproval:true}; renderPage()")
             page.locator("#backBtn").click()
             check(page.evaluate("pageId(journeyPages('ready')[state.index])") == "R07", "Back returns exactly one Ready step")
