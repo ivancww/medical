@@ -24,7 +24,8 @@ const AVA_MEDICAL = Object.freeze({
     PLANS: "Plans",
     CLAIM_RULES: "Claim_Rules",
     CLAIM_CASES: "Claim_Cases",
-    PREMIUM_SETTINGS: "Premium_Settings"
+    PREMIUM_SETTINGS: "Premium_Settings",
+    PLAN_COMPARISON: "Plan_Comparison"
   }),
   PREMIUM_SHEETS: Object.freeze([
     "女靈活計劃",
@@ -48,8 +49,11 @@ const MEDICAL_OFFICIAL_DATASETS = Object.freeze({
   claimRules: { sheet: "Claim_Rules", ids: ["plan_id"], fields: ["plan_name", "default_rate", "deductible_enabled", "note"], types: { default_rate: "number", deductible_enabled: "boolean" } },
   claimCases: { sheet: "Claim_Cases", ids: ["case_id"], fields: ["case_title", "condition_name", "treatment_name", "medical_cost", "actual_reimbursement", "case_date", "source_type", "source_url", "verified", "enabled", "sort_order"], types: { medical_cost: "number", actual_reimbursement: "number", verified: "boolean", enabled: "boolean", sort_order: "number" } },
   premiumSettings: { sheet: "Premium_Settings", ids: ["setting_id"], fields: ["title", "description", "value", "start_date", "end_date", "enabled", "sort_order"], types: { enabled: "boolean", sort_order: "number" } },
+  planComparison: { sheet: "Plan_Comparison", ids: ["comparison_id"], fields: ["item_key", "item_name", "plan_id", "condition_state", "main_value", "sub_value", "enabled", "sort_order", "source_name", "source_url", "verified", "notes"], types: { enabled: "boolean", sort_order: "number", verified: "boolean" } },
   config: { sheet: "Config", ids: ["config_key"], fields: ["config_value", "description"], types: {} }
 });
+
+const MEDICAL_PLAN_COMPARISON_HEADERS = Object.freeze(["comparison_id", "item_key", "item_name", "plan_id", "condition_state", "main_value", "sub_value", "enabled", "sort_order", "source_name", "source_url", "verified", "notes"]);
 
 function output_(value, callback) {
   const json = JSON.stringify(value);
@@ -112,7 +116,10 @@ function getDataset_(requested) {
     claimcases: "claim_cases",
     premiumsettings: "premium_settings",
     premiumtables: "premiums",
-    premium_tables: "premiums"
+    premium_tables: "premiums",
+    plancomparison: "plan_comparison",
+    comparisonitems: "plan_comparison",
+    comparison_items: "plan_comparison"
   }[requestedDataset] || requestedDataset;
   const config = readKeyValueSheet_(medicalSheet_(AVA_MEDICAL.SHEETS.CONFIG));
   const version = String(config.data_version || AVA_MEDICAL.SCHEMA_VERSION);
@@ -124,6 +131,7 @@ function getDataset_(requested) {
     claim_rules: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.CLAIM_RULES, "sort_order"),
     claim_cases: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.CLAIM_CASES, "sort_order"),
     premium_settings: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.PREMIUM_SETTINGS, "sort_order"),
+    plan_comparison: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.PLAN_COMPARISON, "sort_order"),
     premiums: readPremiumTables_(medicalSpreadsheet_())
   };
   if (!Object.prototype.hasOwnProperty.call(data, dataset)) throw new Error("Unsupported dataset");
@@ -146,6 +154,7 @@ function medicalFullBootstrap_() {
     claimRules: snapshot.claimRules,
     claimCases: snapshot.claimCases,
     premiumSettings: snapshot.premiumSettings,
+    planComparison: snapshot.planComparison,
     premiumTables: snapshot.premiumTables
   };
 }
@@ -252,6 +261,22 @@ function medicalSheet_(name) {
   return sheet;
 }
 
+/** Safe one-time setup: create the dedicated tab, or validate it in place. */
+function initializeMedicalPlanComparisonSheet_() {
+  const ss = medicalSpreadsheet_();
+  let sheet = ss.getSheetByName(AVA_MEDICAL.SHEETS.PLAN_COMPARISON);
+  if (!sheet) {
+    sheet = ss.insertSheet(AVA_MEDICAL.SHEETS.PLAN_COMPARISON);
+    sheet.getRange(1, 1, 1, MEDICAL_PLAN_COMPARISON_HEADERS.length).setValues([MEDICAL_PLAN_COMPARISON_HEADERS]);
+    return { created: true, sheet: AVA_MEDICAL.SHEETS.PLAN_COMPARISON, headers: MEDICAL_PLAN_COMPARISON_HEADERS.slice() };
+  }
+  const width = Math.max(sheet.getLastColumn(), MEDICAL_PLAN_COMPARISON_HEADERS.length);
+  const headers = sheet.getRange(1, 1, 1, width).getValues()[0].map(String);
+  const missing = MEDICAL_PLAN_COMPARISON_HEADERS.filter(header => !headers.includes(header));
+  if (missing.length) throw new Error("Plan_Comparison headers missing: " + missing.join(", "));
+  return { created: false, sheet: AVA_MEDICAL.SHEETS.PLAN_COMPARISON, headers };
+}
+
 function readKeyValueSheet_(sheet) {
   if (!sheet) return {};
   const values = sheet.getDataRange().getValues();
@@ -355,9 +380,10 @@ function medicalOfficialReadSnapshot_() {
   const claimRules = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.CLAIM_RULES, "sort_order");
   const claimCases = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.CLAIM_CASES, "sort_order");
   const premiumSettings = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PREMIUM_SETTINGS, "sort_order");
+  const planComparison = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PLAN_COMPARISON, "sort_order");
   const premiumTables = readPremiumTables_(ss) || {};
-  const adminDatasets = { pages, options, plans, claimRules, claimCases, premiumSettings, config: medicalOfficialConfigRows_(config) };
-  const payload = { pages, options, plans, claimRules, claimCases, premiumSettings, premiumTables, config, adminDatasets };
+  const adminDatasets = { pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, config: medicalOfficialConfigRows_(config) };
+  const payload = { pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, premiumTables, config, adminDatasets };
   const version = String(config.data_version || AVA_MEDICAL.SCHEMA_VERSION || "unknown");
   return Object.assign({ success: true, version, revision: medicalOfficialRevision_(payload) }, payload);
 }
@@ -432,7 +458,7 @@ function medicalOfficialRow_(headers, row) {
 
 /** Legacy bulk writes are rejected before any writer or compatibility branch. */
 function medicalOfficialRejectLegacyBulkWrite_(payload) {
-  const legacyKeys = ["config", "pages", "options", "plans", "claimRules", "claimCases", "premiumSettings"];
+  const legacyKeys = ["config", "pages", "options", "plans", "claimRules", "claimCases", "premiumSettings", "planComparison"];
   if (legacyKeys.some(key => Object.prototype.hasOwnProperty.call(payload || {}, key))) {
     throw new Error("Legacy bulk Official write is disabled; use authenticated updateOfficialRecord");
   }
