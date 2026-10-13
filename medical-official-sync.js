@@ -28,7 +28,7 @@
     { key: "claimRules", label: "理賠規則", description: "管理客戶展示用的理賠說明規則；詳細計算邏輯仍由 Medical 引擎負責。", id: ["plan_id"], fields: ["plan_name", "default_rate", "deductible_enabled", "note"] },
     { key: "claimCases", label: "理賠案例", description: "管理已核實的醫療費用、實際賠償及案例展示資料。", id: ["case_id"], fields: ["case_title", "condition_name", "treatment_name", "medical_cost", "actual_reimbursement", "case_date", "source_type", "source_url", "verified", "enabled", "sort_order"] },
     { key: "premiumSettings", label: "保費設定", description: "管理官方保費設定及其生效期間；保費表仍維持唯讀。", id: ["setting_id"], fields: ["title", "description", "value", "start_date", "end_date", "enabled", "sort_order"] },
-    { key: "planComparison", label: "P7 保障比較", description: "管理 P7 保障比較資料；只有已核實及啟用的記錄會顯示給客戶。", id: ["comparison_id"], fields: ["item_key", "item_name", "plan_id", "condition_state", "main_value", "sub_value", "enabled", "sort_order", "source_name", "source_url", "verified", "notes"] },
+    { key: "planComparison", label: "P7 保障比較", description: "管理 P7 保障比較資料；Official Sheet 以啟用狀態及可顯示內容控制發布，已核實狀態只作治理資料。", id: ["comparison_id"], fields: ["item_key", "item_name", "plan_id", "condition_state", "main_value", "sub_value", "enabled", "sort_order", "source_name", "source_url", "verified", "notes"] },
     { key: "config", label: "系統設定", description: "管理 Medical 官方設定鍵值；授權與技術資訊只在底部系統資料顯示。", id: ["config_key"], fields: ["config_value", "description"] }
   ]);
   const READ_ONLY = Object.freeze(["premiumTables", "premium_tables"]);
@@ -119,6 +119,10 @@
     function comparisonFiltersMarkup(data) {
       return '<div class="comparison-filter-tools" aria-label="P7 保障比較篩選"><span class="helper">篩選：</span>' + ["item_key", "plan_id", "condition_state"].map(field => '<label><span>' + esc(fieldLabel(field)) + '</span><select class="ava-input" data-comparison-filter="' + field + '"><option value="">全部</option>' + comparisonFilterOptions(field, data).map(value => '<option value="' + esc(value) + '" ' + (comparisonFilters[field] === value ? "selected" : "") + '>' + esc(value) + '</option>').join("") + '</select></label>').join("") + '</div>';
     }
+    function comparisonCreateMarkup() {
+      const fields = [['comparison_id','比較記錄識別碼','text'],['item_key','保障項目鍵值','text'],['item_name','保障項目名稱','text'],['plan_id','計劃識別碼','text'],['condition_state','條件狀態','text'],['main_value','主要保障值','textarea'],['sub_value','補充說明','textarea'],['enabled','啟用狀態','checkbox'],['sort_order','排序','number'],['source_name','資料來源名稱','textarea'],['source_url','資料來源連結','text'],['verified','已核實（治理資料）','checkbox'],['notes','內部備註','textarea']];
+      return '<details class="comparison-create" data-comparison-create><summary>新增 P7 Official 比較記錄</summary><p class="helper">新增會使用 authenticated Official write，並在成功 read-after-write 後才更新本機資料。</p><div class="form-grid admin-field-grid">'+fields.map(([field,label,type])=>type==='checkbox'?'<label class="admin-field admin-field--checkbox"><span>'+label+'</span><input type="checkbox" data-create-field="'+field+'" '+(['enabled','verified'].includes(field)?'checked':'')+'></label>':'<label class="admin-field"><span>'+label+'</span>'+(type==='textarea'?'<textarea class="ava-input" data-create-field="'+field+'"></textarea>':'<input class="ava-input" type="'+type+'" data-create-field="'+field+'">')+'</label>').join('')+'</div><div class="nav-actions"><button type="button" class="ava-button ava-button--primary" data-create-comparison>建立並發布</button></div></details>';
+    }
     function renderPanels() {
       panels.innerHTML = DATASETS.map(dataset => {
         const data = rows(state.official, dataset.key), active = dataset.key === selected;
@@ -127,12 +131,13 @@
         const selectedIndex = availableIndexes.includes(selectedRecords[dataset.key]) ? selectedRecords[dataset.key] : (availableIndexes[0] ?? -1);
         selectedRecords[dataset.key] = selectedIndex < 0 ? 0 : selectedIndex;
         const selector = entries.length ? '<div class="admin-record-tools"><label for="medical-record-select-' + dataset.key + '"><span>' + LABELS.selectRecord + '</span><select class="ava-input" id="medical-record-select-' + dataset.key + '" data-record-select="' + dataset.key + '">' + entries.map(entry => '<option value="' + entry.index + '" ' + (entry.index === selectedIndex ? "selected" : "") + '>' + esc(recordId(entry.record, dataset) || (LABELS.record + " " + (entry.index + 1))) + ' · ' + esc(humanRecordLabel(entry.record, dataset)) + '</option>').join("") + '</select></label><span class="helper">' + LABELS.selectedRecord + '：' + esc(recordId(data[selectedIndex] || {}, dataset) || (LABELS.record + " " + (selectedIndex + 1))) + '</span></div>' : "";
-        const body = entries.length ? (dataset.key === "planComparison" ? comparisonFiltersMarkup(data) : "") + selector + entries.map(entry => renderRecord(dataset.key, entry.record, entry.index, selectedIndex, entries.map(item => item.record))).join("") : (dataset.key === "planComparison" ? comparisonFiltersMarkup(data) : "") + '<div class="empty-official"><strong>' + LABELS.emptyTitle + '</strong><p>' + LABELS.emptyHelp + '</p></div>';
+        const body = (dataset.key === "planComparison" ? comparisonCreateMarkup() + comparisonFiltersMarkup(data) : "") + (entries.length ? selector + entries.map(entry => renderRecord(dataset.key, entry.record, entry.index, selectedIndex, entries.map(item => item.record))).join("") : '<div class="empty-official"><strong>' + LABELS.emptyTitle + '</strong><p>' + LABELS.emptyHelp + '</p></div>');
         return '<section id="' + ("medical-dataset-panel-" + dataset.key) + '" class="ava-card admin-domain" data-sync-domain="' + dataset.key + '" role="tabpanel" aria-labelledby="medical-dataset-tab-' + dataset.key + '" tabindex="-1" aria-hidden="' + (!active) + '" ' + (active ? "" : "hidden") + '><div class="admin-domain-heading"><div><span class="eyebrow">' + dataset.key + '</span><h2>' + esc(dataset.label) + '</h2><p class="helper">' + esc(dataset.description) + '</p></div><span class="admin-count">' + entries.length + ' / ' + data.length + ' 筆</span></div>' + body + '</section>';
       }).join("");
       panels.querySelectorAll("[data-record-select]").forEach(select => { select.onchange = () => switchRecord(select.dataset.recordSelect, select.value); });
       panels.querySelectorAll("[data-comparison-filter]").forEach(select => { select.onchange = () => { const field = select.dataset.comparisonFilter; if (hasUnsavedChanges(panel, "planComparison", selectedRecords.planComparison, state.official) && !(typeof global.confirm === "function" && global.confirm(LABELS.unsaved))) { select.value = comparisonFilters[field]; return; } comparisonFilters[field] = select.value; render(); }; });
       panels.querySelectorAll("[data-save-record]").forEach(button => { button.onclick = () => saveRecord(button); });
+      panels.querySelectorAll("[data-create-comparison]").forEach(button => { button.onclick = () => createComparison(button); });
     }
     function render() { renderTabs(); renderPanels(); }
     async function saveRecord(button) {
@@ -146,6 +151,21 @@
         const result = await global.MedicalAdminAuth.authorizedRequest({ action: "updateOfficialRecord", operation: "medical:official-write", body: { dataset, recordId: expectedRecordId, changes, expectedVersion: state.official?.revision || state.official?.version } });
         const next = validateMutationResult(result, { dataset, recordId: expectedRecordId, changes }); state.official = next; onOfficialChanged?.(next); render(); setMessage(panel, LABELS.success.replace("{version}", result.version || next.version || "—"), "success");
       } catch (error) { const message = error.message.includes("version") || error.message.includes("stale") ? LABELS.conflict : LABELS.failure.replace("{message}", error.message); setMessage(panel, message, "error"); button.disabled = false; button.removeAttribute("aria-busy"); button.textContent = LABELS.save; }
+    }
+    async function createComparison(button) {
+      if (!global.MedicalAdminAuth?.hasSession()) { setMessage(panel, LABELS.permission, "error"); return; }
+      const form = button.closest("[data-comparison-create]"), values = {};
+      try {
+        form.querySelectorAll("[data-create-field]").forEach(control => { const field = control.dataset.createField; values[field] = control.type === "checkbox" ? control.checked : control.value; });
+        const recordIdValue = String(values.comparison_id || "").trim();
+        if (!recordIdValue) throw new Error("比較記錄識別碼不可留空");
+        values.sort_order = Number(values.sort_order || 0);
+        if (!Number.isFinite(values.sort_order)) throw new Error(LABELS.invalidNumber);
+        const changes = {...values}; delete changes.comparison_id;
+        button.disabled = true; button.textContent = LABELS.saving; setMessage(panel, LABELS.savingHelp);
+        const result = await global.MedicalAdminAuth.authorizedRequest({ action: "createOfficialRecord", operation: "medical:official-write", body: { dataset: "planComparison", recordId: recordIdValue, changes, expectedVersion: state.official?.revision || state.official?.version } });
+        const next = validateMutationResult(result, { dataset: "planComparison", recordId: recordIdValue, changes }); state.official = next; onOfficialChanged?.(next); render(); setMessage(panel, LABELS.success.replace("{version}", result.version || next.version || "—"), "success");
+      } catch (error) { const message = error.message.includes("version") || error.message.includes("stale") ? LABELS.conflict : LABELS.failure.replace("{message}", error.message); setMessage(panel, message, "error"); button.disabled = false; button.textContent = "建立並發布"; }
     }
     render(); return { render, select: key => { if (definition(key)) { selected = key; render(); } } };
   }
