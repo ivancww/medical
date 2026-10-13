@@ -10,11 +10,14 @@ assert.match(app, /function goBack\(\)\{if\(state\.journey!=='ready'\)\{renderHo
 assert.match(app, /companyCoverage.*inputmode="numeric"/);
 assert.match(app, /function bindLiveNumericInput\(/);
 assert.match(app, /state\[key\]=value/);
+assert.doesNotMatch(app.match(/function bindLiveNumericInput\([\s\S]*?\nfunction updateCompanyMedicalSummary/)[0], /renderPage\(\)/);
 assert.match(app, /data-plan-id="'\+id/);
 assert.match(app, /data-condition-key="'\+key/);
 assert.match(app, /符合條件（享半私家）/);
 assert.match(app, /條件未符（降為普通房級別）/);
-assert.match(app, /wiseGen/);
+assert.match(app, /officialComparisonRows\(\)/);
+assert.match(app, /未有可核實資料/);
+assert.doesNotMatch(app, /90-365日|上限 \$640|上限 \$848|每次 \$650|每次 \$1,000|每日 \$1,200|每日 \$2,400|上限 \$96,000/);
 assert.match(app, /--plan-count:'\+visible\.length/);
 assert.match(app, /除咗醫療費用之外，如果患上大病而需要停工休養，期間嘅生活費用又會由邊度嚟？/);
 assert.match(app, /\$\('#backBtn'\)\.onclick=goBack/);
