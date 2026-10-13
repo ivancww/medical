@@ -1,5 +1,5 @@
 {
-  "appVersion": "v1.1.9",
-  "releaseType": "admin-ui",
-  "scope": "Admin tabs, Traditional Chinese localization and frontend version governance"
+  "appVersion": "v1.2.0",
+  "releaseType": "feature",
+  "scope": "Ready UX cleanup, final summary, P7 brochure links, Medical Firebase brochure upload and Admin cleanup"
 }

@@ -59,14 +59,20 @@
     if (type === "textarea") return '<label class="admin-field"><span>' + label + '</span><textarea class="ava-input" data-field="' + esc(field) + '" data-field-type="textarea" aria-label="' + esc(label) + '">' + esc(value) + '</textarea></label>';
     return '<label class="admin-field"><span>' + label + '</span><input class="ava-input" type="' + (type === "number" ? "number" : "text") + '" data-field="' + esc(field) + '" data-field-type="' + type + '" aria-label="' + esc(label) + '" value="' + esc(value) + '"></label>';
   }
+  function isPlanRecord(record) { return String(record?.record_type || "").toUpperCase() === "PLAN"; }
+  function brochureUploadMarkup(dataset, record) {
+    if (dataset !== "plans" || !isPlanRecord(record)) return "";
+    const current = String(record?.brochure_url || "").trim();
+    return '<section class="admin-brochure-media" data-brochure-media><h3>產品資料</h3><p class="helper">只會先上載至 Medical / CI Firebase，再以 authenticated Official write 發布連結；Google Sheet 只保存 URL。</p><label class="ava-button upload">選擇 PDF / 圖片<input type="file" data-brochure-file accept="application/pdf,image/jpeg,image/png,image/webp" hidden></label><span class="admin-brochure-current">目前檔案：' + (current ? '<a href="' + esc(current) + '" target="_blank" rel="noopener noreferrer">已發布產品資料</a>' : '未有') + '</span><button type="button" class="ava-button ava-button--secondary" data-brochure-upload>上載／取代產品資料</button><p class="helper" data-brochure-status role="status" aria-live="polite"></p></section>';
+  }
   function renderRecord(dataset, record, index, selectedIndex, data) {
-    const def = definition(dataset), id = recordId(record, def), fields = editableFields(record, def), known = new Set([...def.id, ...def.fields]), unknown = Object.keys(record || {}).filter(key => !known.has(key)), label = humanRecordLabel(record, def);
+    const def = definition(dataset), id = recordId(record, def), editable = editableFields(record, def), fields = dataset === "plans" ? editable.filter(field => field !== "brochure_url") : editable, known = new Set([...def.id, ...def.fields]), unknown = Object.keys(record || {}).filter(key => !known.has(key)), label = humanRecordLabel(record, def);
     if (!id || !fields.length) return '<article class="sync-record" data-record-index="' + index + '" ' + (index === selectedIndex ? "" : "hidden") + '><div class="sync-record-head"><div><span class="eyebrow">' + esc(id || (LABELS.record + " " + (index + 1))) + '</span><strong>' + esc(label) + '</strong></div><span class="helper">' + LABELS.official + ' · 唯讀</span></div><p class="helper">' + LABELS.readOnly + '</p></article>';
     const extra = unknown.length ? '<details class="admin-extra"><summary>其他欄位已保留（' + unknown.length + ' 項）</summary><p class="helper">' + esc(unknown.join("、")) + ' 不在此編輯器修改；儲存時會原樣保留。</p></details>' : "";
     const isVerified = record?.verified === true || String(record?.verified).toUpperCase() === "TRUE";
     const isEnabled = record?.enabled === true || String(record?.enabled).toUpperCase() === "TRUE";
     const verification = dataset === "planComparison" ? '<span class="comparison-verification ' + (isVerified && isEnabled ? 'comparison-verification--verified' : 'comparison-verification--unverified') + '">' + (isVerified ? (isEnabled ? '已核實 · 已啟用' : '已核實 · 未啟用') : '未核實') + '</span>' : '';
-    return '<article class="sync-record" data-record-index="' + index + '" ' + (index === selectedIndex ? "" : "hidden") + '><div class="sync-record-head"><div><span class="eyebrow">' + esc(id) + '</span><strong>' + esc(label) + '</strong></div><span class="helper">' + esc(def.label) + ' ' + verification + '</span></div><div class="form-grid admin-field-grid">' + fields.map(field => renderField(field, record, data)).join("") + '</div>' + extra + '<div class="nav-actions admin-record-actions"><button type="button" class="ava-button ava-button--primary" data-save-record>' + LABELS.save + '</button></div></article>';
+    return '<article class="sync-record" data-record-index="' + index + '" ' + (index === selectedIndex ? "" : "hidden") + '><div class="sync-record-head"><div><span class="eyebrow">' + esc(id) + '</span><strong>' + esc(label) + '</strong></div><span class="helper">' + esc(def.label) + ' ' + verification + '</span></div><div class="form-grid admin-field-grid">' + fields.map(field => renderField(field, record, data)).join("") + '</div>' + brochureUploadMarkup(dataset, record) + extra + '<div class="nav-actions admin-record-actions"><button type="button" class="ava-button ava-button--primary" data-save-record>' + LABELS.save + '</button></div></article>';
   }
   function validateMutationResult(result, context) {
     const dataset = context.dataset, expectedRecordId = context.recordId, changes = context.changes;
@@ -137,6 +143,7 @@
       panels.querySelectorAll("[data-record-select]").forEach(select => { select.onchange = () => switchRecord(select.dataset.recordSelect, select.value); });
       panels.querySelectorAll("[data-comparison-filter]").forEach(select => { select.onchange = () => { const field = select.dataset.comparisonFilter; if (hasUnsavedChanges(panel, "planComparison", selectedRecords.planComparison, state.official) && !(typeof global.confirm === "function" && global.confirm(LABELS.unsaved))) { select.value = comparisonFilters[field]; return; } comparisonFilters[field] = select.value; render(); }; });
       panels.querySelectorAll("[data-save-record]").forEach(button => { button.onclick = () => saveRecord(button); });
+      panels.querySelectorAll("[data-brochure-upload]").forEach(button => { button.onclick = () => uploadBrochure(button); });
       panels.querySelectorAll("[data-create-comparison]").forEach(button => { button.onclick = () => createComparison(button); });
     }
     function render() { renderTabs(); renderPanels(); }
@@ -151,6 +158,28 @@
         const result = await global.MedicalAdminAuth.authorizedRequest({ action: "updateOfficialRecord", operation: "medical:official-write", body: { dataset, recordId: expectedRecordId, changes, expectedVersion: state.official?.revision || state.official?.version } });
         const next = validateMutationResult(result, { dataset, recordId: expectedRecordId, changes }); state.official = next; onOfficialChanged?.(next); render(); setMessage(panel, LABELS.success.replace("{version}", result.version || next.version || "—"), "success");
       } catch (error) { const message = error.message.includes("version") || error.message.includes("stale") ? LABELS.conflict : LABELS.failure.replace("{message}", error.message); setMessage(panel, message, "error"); button.disabled = false; button.removeAttribute("aria-busy"); button.textContent = LABELS.save; }
+    }
+    async function uploadBrochure(button) {
+      if (!global.MedicalAdminAuth?.hasSession()) { setMessage(panel, LABELS.permission, "error"); return; }
+      const article = button.closest("[data-record-index]"), index = Number(article.dataset.recordIndex), source = rows(state.official, "plans")[index], fileInput = article.querySelector("[data-brochure-file]"), status = article.querySelector("[data-brochure-status]");
+      const file = fileInput?.files?.[0];
+      if (!file) { status.textContent = "請先選擇產品資料檔案。"; status.className = "error"; return; }
+      const oldUrl = String(source?.brochure_url || "");
+      try {
+        button.disabled = true; button.setAttribute("aria-busy", "true"); button.textContent = "上載中…"; status.textContent = "正在上載至 Firebase…"; status.className = "helper";
+        const firebase = await global.MedicalFirebaseReady;
+        if (!firebase?.uploadOfficialBrochure) throw new Error("Medical Firebase 模組未能載入。");
+        const uploaded = await firebase.uploadOfficialBrochure({ planId: recordId(source, definition("plans")), file });
+        status.textContent = "Firebase 上載成功，正在發布 Official URL…";
+        const expectedRecordId = String(recordId(source, definition("plans")));
+        const result = await global.MedicalAdminAuth.authorizedRequest({ action: "updateOfficialRecord", operation: "medical:official-write", body: { dataset: "plans", recordId: expectedRecordId, changes: { brochure_url: uploaded.url }, expectedVersion: state.official?.revision || state.official?.version } });
+        const next = validateMutationResult(result, { dataset: "plans", recordId: expectedRecordId, changes: { brochure_url: uploaded.url } });
+        state.official = next; onOfficialChanged?.(next); render(); setMessage(panel, LABELS.success.replace("{version}", result.version || next.version || "—"), "success");
+      } catch (error) {
+        const message = error.message.includes("version") || error.message.includes("stale") ? LABELS.conflict : error.message.includes("Official") || error.message.includes("回讀") ? "Firebase 上載成功，但 Official 發布失敗；目前產品資料連結仍然保留。" : LABELS.failure.replace("{message}", error.message);
+        status.textContent = oldUrl && message.includes("Firebase 上載成功") ? message : message; status.className = "error";
+        button.disabled = false; button.removeAttribute("aria-busy"); button.textContent = "上載／取代產品資料";
+      }
     }
     async function createComparison(button) {
       if (!global.MedicalAdminAuth?.hasSession()) { setMessage(panel, LABELS.permission, "error"); return; }
