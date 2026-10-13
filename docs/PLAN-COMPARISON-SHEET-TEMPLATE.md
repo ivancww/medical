@@ -2,9 +2,9 @@
 
 The Medical-owned P7 comparison domain uses a dedicated Google Sheet tab named
 `Plan_Comparison`. It is created safely by the GAS helper
-`initializeMedicalPlanComparisonSheet_()`; the helper creates the tab only when
-it is missing and validates headers in place when it already exists. It never
-clears, reorders, or republishes existing rows.
+`initializeMedicalPlanComparisonSheet_()`; the helper creates the tab only
+when it is missing and validates headers in place when it already exists. It
+never clears, reorders, or republishes existing rows.
 
 ## Stable header order
 
@@ -24,16 +24,18 @@ The initial approved presentation categories are:
 | `post_discharge_tcm` | 出院後中醫 | `DEFAULT`, Wise states where sourced |
 | `room_downgrade_cash` | 次級病房每日現金津貼 | `DEFAULT`, Wise states where sourced |
 | `non_surgical_cancer` | 非手術癌症長遠開支 | `DEFAULT`, Wise states where sourced |
+| `pre_surgery_outpatient_consultation` | 手術前門診諮詢服務 | `DEFAULT`, `WISE_SEMI_PRIVATE`, `WISE_GENERAL_ROOM` |
 
-No comparison benefit values are seeded in this repository because the
-existing committed Medical references and current Official payload do not
-establish a verified source for the screenshot-only values previously shown
-in the P7 prototype. This template therefore publishes zero customer-visible
-rows. Rows must identify `source_name`, include `source_url` when available,
-and set `verified` to `TRUE` only after provenance is confirmed.
+The production `AVA-Medical` spreadsheet is populated with the initial
+user-approved table. Its `source_name` records the approved PR #29
+presentation source; `source_url` is retained for future brochure references.
+`verified` may be maintained as governance metadata, but does not gate
+customer display because the Official Sheet is the publication source.
 
-Customer P7 eligibility is exactly `enabled = TRUE` and `verified = TRUE`.
-Missing or unverified rows are rendered as `未有可核實資料` and are not
-silently replaced with screenshot values.
+Customer P7 eligibility is exactly `enabled = TRUE` plus a non-empty
+`main_value` or `sub_value`. Missing plan/state cells are rendered as
+`未有資料`, without removing the item row.
 
-Production Sheet modification is intentionally not performed by this change.
+If the tab is absent, run `initializeMedicalPlanComparisonSheet_()`; it creates
+the tab without touching other Medical sheets. Existing tabs are validated in
+place and are not destructively rewritten.
