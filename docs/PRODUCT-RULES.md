@@ -15,7 +15,7 @@ Core official sheets: Config, Pages, Options, Plans, Claim_Rules, Claim_Cases, P
 Local-first: render valid Official cache immediately, run lightweight checkVersion, refresh Official cache only when version changes. User overrides remain separate and take precedence until reset.
 
 ## Ready journey
-R01 Concern Setup → R02 Existing Medical (company medical / no medical only) → conditional R03 Company Medical Setup → R04 Real Claim Case → R05 Coverage Layers + company continuity reminder → R06 Plan claim/follow-up comparison → R07 Plan Coverage & Features → R08 Concern Reflection → R09 Premium/Health Program/Age/Discount → R10 one-click live presentation.
+R01 Concern Setup → R02 Existing Medical (company medical / no medical only) → conditional R03 Company Medical Setup → R04 Real Claim Case → R05 Coverage Layers + company continuity reminder → R07 Plan Coverage & Features / selective comparison → R09 Premium/Health Program/Age/Discount → R08 Concern Reflection (final Ready page). The former R06 duplicate claim page and R10 one-click presentation page are not part of the active Ready journey.
 
 Stable IDs, never visible-text branching. Customer-facing claim content uses a Simple Claim Illustration: Medical Cost → Company Medical → Personal Medical → You Pay. ELITE/WISE illustrate deductible-then-cover and FLEXI uses the Official approximate illustration rate (currently 85%). This is a communication illustration, not a guaranteed claim result. Detailed surgery classes, per-benefit limits and other claim-engine internals must not be exposed in the customer journey; relevant product conditions belong in R07.
 
