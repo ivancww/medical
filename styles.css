@@ -14,6 +14,7 @@
 .comparison-verification{display:inline-flex;align-items:center;margin-left:6px;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap}
 .comparison-verification--verified{background:#dcfce7;color:#166534}
 .comparison-verification--unverified{background:#fef2f2;color:#b91c1c}
+.comparison-create{margin:14px 0;padding:14px;border:1px solid #bfdbfe;border-radius:14px;background:#f8fbff}.comparison-create summary{cursor:pointer;font-weight:800;min-height:44px;display:flex;align-items:center}.p7-user-editor{display:grid;gap:14px;margin-top:18px;padding-top:18px;border-top:1px solid #dbe3ef}.p7-user-editor-item{padding:16px;border:1px solid #dbe3ef;border-radius:14px;background:#f8fafc}.p7-user-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}.p7-user-cell{display:grid;gap:6px;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}.p7-user-cell span{font-size:13px;font-weight:800;color:#475569}.p7-user-cell input{min-height:40px;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font:inherit}@media(max-width:650px){.p7-user-grid{grid-template-columns:1fr}}
 @media(max-width:1000px){.admin-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:760px){.admin-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.comparison-filter-tools{align-items:stretch;display:grid}.comparison-filter-tools>label{min-width:100%}}
 @media(max-width:430px){.admin-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
