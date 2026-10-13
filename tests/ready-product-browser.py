@@ -28,8 +28,9 @@ OFFICIAL["planComparison"] = [
     {"comparison_id": "fixture-wise-semi", "item_key": "post_discharge_followup", "item_name": "出院後覆診", "plan_id": "WISE", "condition_state": "WISE_SEMI_PRIVATE", "main_value": "fixture WISE semi-private", "sub_value": "fixture source", "enabled": True, "sort_order": 2, "source_name": "fixture", "verified": True},
     {"comparison_id": "fixture-wise-general", "item_key": "post_discharge_followup", "item_name": "出院後覆診", "plan_id": "WISE", "condition_state": "WISE_GENERAL_ROOM", "main_value": "fixture WISE general-room", "sub_value": "fixture source", "enabled": True, "sort_order": 3, "source_name": "fixture", "verified": True},
     {"comparison_id": "fixture-flexi-followup", "item_key": "post_discharge_followup", "item_name": "出院後覆診", "plan_id": "FLEXI", "condition_state": "DEFAULT", "main_value": "fixture FLEXI value", "sub_value": "fixture source", "enabled": True, "sort_order": 4, "source_name": "fixture", "verified": True},
-    {"comparison_id": "fixture-unverified", "item_key": "post_discharge_tcm", "item_name": "出院後中醫", "plan_id": "ELITE", "condition_state": "DEFAULT", "main_value": "fixture unverified value", "sub_value": "not publishable", "enabled": True, "sort_order": 5, "source_name": "fixture", "verified": False},
+    {"comparison_id": "fixture-unverified", "item_key": "post_discharge_tcm", "item_name": "出院後中醫", "plan_id": "ELITE", "condition_state": "DEFAULT", "main_value": "fixture unverified value", "sub_value": "Official Sheet is the publication source", "enabled": True, "sort_order": 5, "source_name": "fixture", "verified": False},
     {"comparison_id": "fixture-disabled", "item_key": "room_downgrade_cash", "item_name": "次級病房每日現金津貼", "plan_id": "FLEXI", "condition_state": "DEFAULT", "main_value": "fixture disabled value", "sub_value": "not publishable", "enabled": False, "sort_order": 6, "source_name": "fixture", "verified": True},
+    {"comparison_id": "fixture-dynamic", "item_key": "diagnostic_imaging", "item_name": "診斷影像", "plan_id": "ELITE", "condition_state": "DEFAULT", "main_value": "自動新增項目", "sub_value": "Sheet-driven", "enabled": True, "sort_order": 0, "source_name": "fixture", "verified": False},
 ]
 OFFICIAL["options"] = [
     {"option_group": "R01", "option_id": "concern", "display_name": "Concern"},
@@ -152,7 +153,8 @@ def run():
             page.locator("[data-plan-id='WISE']").check()
             page.locator("[data-condition-key='preapproval']").uncheck()
             check(page.locator("#wiseStatus").inner_text() == "條件未符（降為普通房級別）" and "fixture WISE general-room" in page.locator(".product-comparison").inner_text(), "Wise partial-condition state downgrades the comparison")
-            check("fixture unverified value" not in page.locator(".product-comparison").inner_text() and "未有可核實資料" in page.locator(".product-comparison").inner_text(), "unverified and disabled comparison rows are not customer-visible")
+            check("fixture unverified value" in page.locator(".product-comparison").inner_text() and "自動新增項目" in page.locator(".product-comparison").inner_text(), "enabled Official rows display dynamically without a verified gate")
+            check("未有資料" in page.locator(".product-comparison").inner_text() and "fixture disabled value" not in page.locator(".product-comparison").inner_text(), "missing plan values show the safe fallback and disabled rows stay hidden")
 
             at(page, "R09")
             check(page.locator("#premiumEliteDeductible option").count() == 3 and page.locator("#premiumWiseDeductible option").count() == 4, "P9 shares product deductible definitions")
@@ -218,6 +220,19 @@ def run():
             check(page.locator(".app-shell").get_attribute("data-ava-mode") == "preview", "Preview mode remains available")
             page.locator("#saveBtn").click()
             check(page.evaluate("JSON.parse(localStorage.getItem('ava.medical.user.overrides.v1')).R01.title") == "客戶示例", "Save Local writes User override")
+            at(page, "R07")
+            check(page.locator("#p7UserEditor").count() == 1, "User Edit exposes the structured P7 editor")
+            official_name = page.evaluate("state.official.planComparison.find(row => row.item_key === 'post_discharge_followup').item_name")
+            name_input = page.locator("[data-p7-user-field='item_name'][data-p7-user-item='post_discharge_followup']")
+            name_input.fill("我的出院後覆診")
+            name_input.dispatch_event("change")
+            check("我的出院後覆診" in page.locator(".comparison-label").all_inner_texts(), "User item-name override wins in presentation")
+            check(page.evaluate("state.official.planComparison.find(row => row.item_key === 'post_discharge_followup').item_name") == official_name, "User P7 edit does not mutate Official data")
+            page.locator("#p7AddUserItem").click()
+            check(page.locator("[data-p7-editor-item^='user_p7_']").count() == 1, "User can add a stable local P7 item")
+            page.locator("[data-p7-editor-item^='user_p7_'] [data-p7-user-field='item_name']").fill("門診物理治療")
+            page.locator("[data-p7-editor-item^='user_p7_'] [data-p7-user-field='item_name']").dispatch_event("change")
+            check("門診物理治療" in page.locator(".comparison-label").all_inner_texts(), "User-created P7 item appears in presentation")
             context.close()
             browser.close()
     finally:
