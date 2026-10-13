@@ -15,6 +15,8 @@ assert.match(source, /planComparison: snapshot\.planComparison/);
 assert.match(source, /const payload = \{ pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, premiumTables/);
 assert.match(source, /legacyKeys = \[.*"planComparison"/);
 assert.match(source, /initializeMedicalPlanComparisonSheet_/);
+assert.match(source, /createOfficialRecord/);
+assert.match(source, /Only Plan_Comparison records may be created/);
 
 const headers = [
   'comparison_id', 'item_key', 'item_name', 'plan_id', 'condition_state',
@@ -31,10 +33,12 @@ class FakeSheet {
   constructor(values) { this.values = values.map(row => row.slice()); }
   getDataRange() { return { getValues: () => this.values.map(row => row.slice()) }; }
   getLastColumn() { return this.values[0]?.length || 0; }
-  getRange(row, column) {
+  getLastRow() { return this.values.length; }
+  getRange(row, column, numRows = 1, numColumns = 1) {
     return {
-      getValues: () => [this.values[row - 1].slice(column - 1, column - 1 + 1)],
-      setValue: value => { this.values[row - 1][column - 1] = value; }
+      getValues: () => this.values.slice(row - 1, row - 1 + numRows).map(line => line.slice(column - 1, column - 1 + numColumns)),
+      setValue: value => { this.values[row - 1][column - 1] = value; },
+      setValues: values => { values.forEach((line, rowOffset) => { this.values[row - 1 + rowOffset] = line.slice(); }); }
     };
   }
 }
@@ -93,6 +97,12 @@ const updated = sandbox.medicalUpdateOfficialRecord_({
 assert.equal(updated.success, true);
 assert.equal(updated.data.planComparison[0].main_value, 'fixture elite persisted');
 assert.equal(updated.data.planComparison[0].verified, false);
+const created = sandbox.medicalCreateOfficialRecord_({
+  dataset: 'planComparison', recordId: 'CMP-NEW', expectedVersion: updated.revision,
+  changes: { item_key: 'diagnostic_imaging', item_name: '診斷影像', plan_id: 'ELITE', condition_state: 'DEFAULT', main_value: '可顯示', sub_value: '', enabled: true, sort_order: 5, source_name: 'fixture', source_url: '', verified: false, notes: '' }
+});
+assert.equal(created.success, true, 'targeted create succeeds');
+assert.equal(created.data.planComparison.some(row => row.comparison_id === 'CMP-NEW'), true);
 assert.throws(() => sandbox.medicalUpdateOfficialRecord_({
   dataset: 'planComparison', recordId: 'CMP-1', expectedVersion: updated.revision,
   changes: { comparison_id: 'changed' }
@@ -107,4 +117,4 @@ assert.throws(() => sandbox.medicalUpdateOfficialRecord_({
 }), /Unsupported Medical Official dataset/);
 assert.throws(() => sandbox.medicalOfficialRejectLegacyBulkWrite_({ planComparison: [] }), /Legacy bulk Official write is disabled/);
 
-console.log('Medical P7 Plan_Comparison read, aliases, revision, targeted write, validation, premium read-only and legacy rejection checks passed');
+console.log('Medical P7 Plan_Comparison read, aliases, revision, targeted write/create, validation, premium read-only and legacy rejection checks passed');
