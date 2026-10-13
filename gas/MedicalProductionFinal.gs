@@ -91,7 +91,7 @@ function doPost(e) {
     const body = JSON.parse(e && e.postData && e.postData.contents || "{}");
     medicalOfficialRejectLegacyBulkWrite_(body);
     if (body.action === "exchangeAdminSession" || body.action === "exchangeAppLaunch") return output_(medicalAdminAuthAction_(body));
-    if (body.action === "updateOfficialRecord") return output_(medicalOfficialPostAction_(body));
+    if (body.action === "updateOfficialRecord" || body.action === "createOfficialRecord") return output_(medicalOfficialPostAction_(body));
     throw new Error("Unsupported Medical POST action");
   } catch (error) {
     return output_(error_(error.message, error.code || "REQUEST_REJECTED"));
@@ -389,7 +389,7 @@ function medicalOfficialReadSnapshot_() {
 }
 
 function medicalOfficialDataAction_(body) {
-  if (body.action !== "updateOfficialRecord") throw new Error("Unsupported Medical Official action");
+  if (body.action !== "updateOfficialRecord" && body.action !== "createOfficialRecord") throw new Error("Unsupported Medical Official action");
   if (String(body.appId || "") !== MEDICAL_ADMIN_APP_ID) throw new Error("Invalid Medical App ID");
   const hasAdminSessionProof = Boolean(String(body.adminSessionProof || ""));
   const hasAppGrant = Boolean(String(body.appGrant || ""));
@@ -402,7 +402,29 @@ function medicalOfficialDataAction_(body) {
     if (operation !== "medical:official-write") throw new Error("Invalid Medical Official operation");
     medicalVerifyAppGrant_(body.appGrant, operation);
   }
-  return medicalUpdateOfficialRecord_(body);
+  return body.action === "createOfficialRecord" ? medicalCreateOfficialRecord_(body) : medicalUpdateOfficialRecord_(body);
+}
+
+function medicalCreateOfficialRecord_(body) {
+  const dataset = String(body.dataset || ""), definition = MEDICAL_OFFICIAL_DATASETS[dataset], stableId = String(body.recordId || ""), changes = body.changes;
+  if (dataset !== "planComparison" || !definition) throw new Error("Only Plan_Comparison records may be created through this contract");
+  if (!stableId || !/^[A-Za-z0-9._-]{3,120}$/.test(stableId)) throw new Error("Stable Official record ID is required");
+  if (!changes || typeof changes !== "object" || Array.isArray(changes)) throw new Error("No Official record supplied");
+  Object.keys(changes).forEach(field => { if (!definition.fields.includes(field)) throw new Error("Official field is read-only or unsupported: " + field); medicalOfficialValidateValue_(field, changes[field], definition.types[field]); });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const snapshot = medicalOfficialReadSnapshot_(), currentToken = String(snapshot.revision || snapshot.version || "");
+    if (String(body.expectedVersion || "") !== currentToken) throw new Error("Stale Official version; refresh before saving");
+    if ((snapshot.adminDatasets[dataset] || []).some(row => String(medicalOfficialRecordId_(row, definition.ids)) === stableId)) throw new Error("Official record already exists");
+    const sheet = medicalSheet_(definition.sheet), values = sheet.getDataRange().getValues();
+    if (!values.length) throw new Error("Official sheet headers are required");
+    const headers = values[0].map(String), row = headers.map(header => header === definition.ids[0] ? stableId : Object.prototype.hasOwnProperty.call(changes, header) ? changes[header] : "");
+    sheet.getRange(sheet.getLastRow() + 1, 1, 1, headers.length).setValues([row]);
+    const persisted = medicalOfficialReadSnapshot_(), persistedRecord = (persisted.adminDatasets[dataset] || []).find(record => String(medicalOfficialRecordId_(record, definition.ids)) === stableId);
+    if (!persistedRecord || Object.entries(changes).some(([field, value]) => JSON.stringify(persistedRecord[field]) !== JSON.stringify(value))) throw new Error("Official read-after-write verification failed");
+    return { success: true, dataset, recordId: stableId, version: persisted.version, revision: persisted.revision, data: persisted };
+  } finally { lock.releaseLock(); }
 }
 
 function medicalUpdateOfficialRecord_(body) {
@@ -460,13 +482,13 @@ function medicalOfficialRow_(headers, row) {
 function medicalOfficialRejectLegacyBulkWrite_(payload) {
   const legacyKeys = ["config", "pages", "options", "plans", "claimRules", "claimCases", "premiumSettings", "planComparison"];
   if (legacyKeys.some(key => Object.prototype.hasOwnProperty.call(payload || {}, key))) {
-    throw new Error("Legacy bulk Official write is disabled; use authenticated updateOfficialRecord");
+    throw new Error("Legacy bulk Official write is disabled; use authenticated targeted Official mutation");
   }
 }
 
 /** Single deterministic Official branch for the existing doPost router. */
 function medicalOfficialPostAction_(payload) {
-  if (payload && payload.action === "updateOfficialRecord") return medicalOfficialDataAction_(payload);
+  if (payload && (payload.action === "updateOfficialRecord" || payload.action === "createOfficialRecord")) return medicalOfficialDataAction_(payload);
   medicalOfficialRejectLegacyBulkWrite_(payload);
   throw new Error("Unsupported Medical POST action");
 }
