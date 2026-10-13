@@ -55,6 +55,7 @@ jobs:
           assert "./styles.css" in service_worker
           assert "medical-admin-auth.js" in html
           assert "medical-official-sync.js" in service_worker
+          assert "medical-firebase.js" in html and "medical-firebase.js" in service_worker
           assert "ava-admin-connector.mjs" in service_worker
           assert "medical-official-sync.js?v=1.1.9" in html
           assert "app.js?v=1.1.9" in html
@@ -78,7 +79,7 @@ jobs:
       - name: Assemble Medical site
         run: |
           mkdir -p _site
-          cp index.html app.js medical-admin-auth.js medical-official-sync.js ava-admin-connector.mjs claim-engine.js styles.css ready-product.css product-data.js app-build.js release-version.json manifest.json sw.js _site/
+          cp index.html app.js medical-admin-auth.js medical-official-sync.js medical-firebase.js ava-admin-connector.mjs claim-engine.js styles.css ready-product.css product-data.js app-build.js release-version.json manifest.json sw.js _site/
           python3 - <<'PY'
           import json
           import os
