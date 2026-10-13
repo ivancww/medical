@@ -24,7 +24,8 @@ const AVA_MEDICAL = Object.freeze({
     PLANS: "Plans",
     CLAIM_RULES: "Claim_Rules",
     CLAIM_CASES: "Claim_Cases",
-    PREMIUM_SETTINGS: "Premium_Settings"
+    PREMIUM_SETTINGS: "Premium_Settings",
+    PLAN_COMPARISON: "Plan_Comparison"
   }),
   PREMIUM_SHEETS: Object.freeze([
     "女靈活計劃",
@@ -48,8 +49,11 @@ const MEDICAL_OFFICIAL_DATASETS = Object.freeze({
   claimRules: { sheet: "Claim_Rules", ids: ["plan_id"], fields: ["plan_name", "default_rate", "deductible_enabled", "note"], types: { default_rate: "number", deductible_enabled: "boolean" } },
   claimCases: { sheet: "Claim_Cases", ids: ["case_id"], fields: ["case_title", "condition_name", "treatment_name", "medical_cost", "actual_reimbursement", "case_date", "source_type", "source_url", "verified", "enabled", "sort_order"], types: { medical_cost: "number", actual_reimbursement: "number", verified: "boolean", enabled: "boolean", sort_order: "number" } },
   premiumSettings: { sheet: "Premium_Settings", ids: ["setting_id"], fields: ["title", "description", "value", "start_date", "end_date", "enabled", "sort_order"], types: { enabled: "boolean", sort_order: "number" } },
+  planComparison: { sheet: "Plan_Comparison", ids: ["comparison_id"], fields: ["item_key", "item_name", "plan_id", "condition_state", "main_value", "sub_value", "enabled", "sort_order", "source_name", "source_url", "verified", "notes"], types: { enabled: "boolean", sort_order: "number", verified: "boolean" } },
   config: { sheet: "Config", ids: ["config_key"], fields: ["config_value", "description"], types: {} }
 });
+
+const MEDICAL_PLAN_COMPARISON_HEADERS = Object.freeze(["comparison_id", "item_key", "item_name", "plan_id", "condition_state", "main_value", "sub_value", "enabled", "sort_order", "source_name", "source_url", "verified", "notes"]);
 
 function output_(value, callback) {
   const json = JSON.stringify(value);
@@ -87,7 +91,7 @@ function doPost(e) {
     const body = JSON.parse(e && e.postData && e.postData.contents || "{}");
     medicalOfficialRejectLegacyBulkWrite_(body);
     if (body.action === "exchangeAdminSession" || body.action === "exchangeAppLaunch") return output_(medicalAdminAuthAction_(body));
-    if (body.action === "updateOfficialRecord") return output_(medicalOfficialPostAction_(body));
+    if (body.action === "updateOfficialRecord" || body.action === "createOfficialRecord") return output_(medicalOfficialPostAction_(body));
     throw new Error("Unsupported Medical POST action");
   } catch (error) {
     return output_(error_(error.message, error.code || "REQUEST_REJECTED"));
@@ -112,7 +116,10 @@ function getDataset_(requested) {
     claimcases: "claim_cases",
     premiumsettings: "premium_settings",
     premiumtables: "premiums",
-    premium_tables: "premiums"
+    premium_tables: "premiums",
+    plancomparison: "plan_comparison",
+    comparisonitems: "plan_comparison",
+    comparison_items: "plan_comparison"
   }[requestedDataset] || requestedDataset;
   const config = readKeyValueSheet_(medicalSheet_(AVA_MEDICAL.SHEETS.CONFIG));
   const version = String(config.data_version || AVA_MEDICAL.SCHEMA_VERSION);
@@ -124,6 +131,7 @@ function getDataset_(requested) {
     claim_rules: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.CLAIM_RULES, "sort_order"),
     claim_cases: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.CLAIM_CASES, "sort_order"),
     premium_settings: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.PREMIUM_SETTINGS, "sort_order"),
+    plan_comparison: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.PLAN_COMPARISON, "sort_order"),
     premiums: readPremiumTables_(medicalSpreadsheet_())
   };
   if (!Object.prototype.hasOwnProperty.call(data, dataset)) throw new Error("Unsupported dataset");
@@ -146,6 +154,7 @@ function medicalFullBootstrap_() {
     claimRules: snapshot.claimRules,
     claimCases: snapshot.claimCases,
     premiumSettings: snapshot.premiumSettings,
+    planComparison: snapshot.planComparison,
     premiumTables: snapshot.premiumTables
   };
 }
@@ -252,6 +261,22 @@ function medicalSheet_(name) {
   return sheet;
 }
 
+/** Safe one-time setup: create the dedicated tab, or validate it in place. */
+function initializeMedicalPlanComparisonSheet_() {
+  const ss = medicalSpreadsheet_();
+  let sheet = ss.getSheetByName(AVA_MEDICAL.SHEETS.PLAN_COMPARISON);
+  if (!sheet) {
+    sheet = ss.insertSheet(AVA_MEDICAL.SHEETS.PLAN_COMPARISON);
+    sheet.getRange(1, 1, 1, MEDICAL_PLAN_COMPARISON_HEADERS.length).setValues([MEDICAL_PLAN_COMPARISON_HEADERS]);
+    return { created: true, sheet: AVA_MEDICAL.SHEETS.PLAN_COMPARISON, headers: MEDICAL_PLAN_COMPARISON_HEADERS.slice() };
+  }
+  const width = Math.max(sheet.getLastColumn(), MEDICAL_PLAN_COMPARISON_HEADERS.length);
+  const headers = sheet.getRange(1, 1, 1, width).getValues()[0].map(String);
+  const missing = MEDICAL_PLAN_COMPARISON_HEADERS.filter(header => !headers.includes(header));
+  if (missing.length) throw new Error("Plan_Comparison headers missing: " + missing.join(", "));
+  return { created: false, sheet: AVA_MEDICAL.SHEETS.PLAN_COMPARISON, headers };
+}
+
 function readKeyValueSheet_(sheet) {
   if (!sheet) return {};
   const values = sheet.getDataRange().getValues();
@@ -355,15 +380,16 @@ function medicalOfficialReadSnapshot_() {
   const claimRules = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.CLAIM_RULES, "sort_order");
   const claimCases = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.CLAIM_CASES, "sort_order");
   const premiumSettings = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PREMIUM_SETTINGS, "sort_order");
+  const planComparison = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PLAN_COMPARISON, "sort_order");
   const premiumTables = readPremiumTables_(ss) || {};
-  const adminDatasets = { pages, options, plans, claimRules, claimCases, premiumSettings, config: medicalOfficialConfigRows_(config) };
-  const payload = { pages, options, plans, claimRules, claimCases, premiumSettings, premiumTables, config, adminDatasets };
+  const adminDatasets = { pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, config: medicalOfficialConfigRows_(config) };
+  const payload = { pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, premiumTables, config, adminDatasets };
   const version = String(config.data_version || AVA_MEDICAL.SCHEMA_VERSION || "unknown");
   return Object.assign({ success: true, version, revision: medicalOfficialRevision_(payload) }, payload);
 }
 
 function medicalOfficialDataAction_(body) {
-  if (body.action !== "updateOfficialRecord") throw new Error("Unsupported Medical Official action");
+  if (body.action !== "updateOfficialRecord" && body.action !== "createOfficialRecord") throw new Error("Unsupported Medical Official action");
   if (String(body.appId || "") !== MEDICAL_ADMIN_APP_ID) throw new Error("Invalid Medical App ID");
   const hasAdminSessionProof = Boolean(String(body.adminSessionProof || ""));
   const hasAppGrant = Boolean(String(body.appGrant || ""));
@@ -376,7 +402,29 @@ function medicalOfficialDataAction_(body) {
     if (operation !== "medical:official-write") throw new Error("Invalid Medical Official operation");
     medicalVerifyAppGrant_(body.appGrant, operation);
   }
-  return medicalUpdateOfficialRecord_(body);
+  return body.action === "createOfficialRecord" ? medicalCreateOfficialRecord_(body) : medicalUpdateOfficialRecord_(body);
+}
+
+function medicalCreateOfficialRecord_(body) {
+  const dataset = String(body.dataset || ""), definition = MEDICAL_OFFICIAL_DATASETS[dataset], stableId = String(body.recordId || ""), changes = body.changes;
+  if (dataset !== "planComparison" || !definition) throw new Error("Only Plan_Comparison records may be created through this contract");
+  if (!stableId || !/^[A-Za-z0-9._-]{3,120}$/.test(stableId)) throw new Error("Stable Official record ID is required");
+  if (!changes || typeof changes !== "object" || Array.isArray(changes)) throw new Error("No Official record supplied");
+  Object.keys(changes).forEach(field => { if (!definition.fields.includes(field)) throw new Error("Official field is read-only or unsupported: " + field); medicalOfficialValidateValue_(field, changes[field], definition.types[field]); });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const snapshot = medicalOfficialReadSnapshot_(), currentToken = String(snapshot.revision || snapshot.version || "");
+    if (String(body.expectedVersion || "") !== currentToken) throw new Error("Stale Official version; refresh before saving");
+    if ((snapshot.adminDatasets[dataset] || []).some(row => String(medicalOfficialRecordId_(row, definition.ids)) === stableId)) throw new Error("Official record already exists");
+    const sheet = medicalSheet_(definition.sheet), values = sheet.getDataRange().getValues();
+    if (!values.length) throw new Error("Official sheet headers are required");
+    const headers = values[0].map(String), row = headers.map(header => header === definition.ids[0] ? stableId : Object.prototype.hasOwnProperty.call(changes, header) ? changes[header] : "");
+    sheet.getRange(sheet.getLastRow() + 1, 1, 1, headers.length).setValues([row]);
+    const persisted = medicalOfficialReadSnapshot_(), persistedRecord = (persisted.adminDatasets[dataset] || []).find(record => String(medicalOfficialRecordId_(record, definition.ids)) === stableId);
+    if (!persistedRecord || Object.entries(changes).some(([field, value]) => JSON.stringify(persistedRecord[field]) !== JSON.stringify(value))) throw new Error("Official read-after-write verification failed");
+    return { success: true, dataset, recordId: stableId, version: persisted.version, revision: persisted.revision, data: persisted };
+  } finally { lock.releaseLock(); }
 }
 
 function medicalUpdateOfficialRecord_(body) {
@@ -432,15 +480,15 @@ function medicalOfficialRow_(headers, row) {
 
 /** Legacy bulk writes are rejected before any writer or compatibility branch. */
 function medicalOfficialRejectLegacyBulkWrite_(payload) {
-  const legacyKeys = ["config", "pages", "options", "plans", "claimRules", "claimCases", "premiumSettings"];
+  const legacyKeys = ["config", "pages", "options", "plans", "claimRules", "claimCases", "premiumSettings", "planComparison"];
   if (legacyKeys.some(key => Object.prototype.hasOwnProperty.call(payload || {}, key))) {
-    throw new Error("Legacy bulk Official write is disabled; use authenticated updateOfficialRecord");
+    throw new Error("Legacy bulk Official write is disabled; use authenticated targeted Official mutation");
   }
 }
 
 /** Single deterministic Official branch for the existing doPost router. */
 function medicalOfficialPostAction_(payload) {
-  if (payload && payload.action === "updateOfficialRecord") return medicalOfficialDataAction_(payload);
+  if (payload && (payload.action === "updateOfficialRecord" || payload.action === "createOfficialRecord")) return medicalOfficialDataAction_(payload);
   medicalOfficialRejectLegacyBulkWrite_(payload);
   throw new Error("Unsupported Medical POST action");
 }

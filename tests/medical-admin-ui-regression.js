@@ -16,11 +16,12 @@ const sync = context.MedicalOfficialSync;
 const expected = [
   ['pages', '頁面設定'], ['options', '選項設定'], ['plans', '產品及保障'],
   ['claimRules', '理賠規則'], ['claimCases', '理賠案例'],
-  ['premiumSettings', '保費設定'], ['config', '系統設定']
+  ['premiumSettings', '保費設定'], ['planComparison', 'P7 保障比較'], ['config', '系統設定']
 ];
 
-assert.equal(JSON.stringify(sync.DATASETS.map(({ key, label }) => [key, label])), JSON.stringify(expected), 'Medical keeps all seven App-owned Admin domains');
+assert.equal(JSON.stringify(sync.DATASETS.map(({ key, label }) => [key, label])), JSON.stringify(expected), 'Medical keeps all eight App-owned Admin domains');
 assert.equal(JSON.stringify(sync.READ_ONLY), JSON.stringify(['premiumTables', 'premium_tables']), 'Medical premium tables remain read-only');
+assert.equal(sync.FIELD_LABELS.source_name, '資料來源名稱');
 assert.match(ui, /role="tablist"/);
 assert.match(ui, /role="tab"/);
 assert.match(ui, /role="tabpanel"/);
@@ -44,6 +45,15 @@ assert.match(ui, /MedicalAdminAuth\.authorizedRequest/);
 assert.match(ui, /expectedVersion: state\.official\?\.revision \|\| state\.official\?\.version/);
 assert.match(ui, /payload|result\.success/);
 assert.match(ui, /read-after-write|回讀/);
+assert.match(ui, /comparison_id/);
+assert.match(ui, /data-comparison-filter/);
+assert.match(ui, /data-create-comparison/);
+assert.match(ui, /createOfficialRecord/);
+assert.match(ui, /建立並發布/);
+assert.match(ui, /已核實/);
+assert.match(ui, /未核實/);
+assert.match(ui, /source_name/);
+assert.match(ui, /source_url/);
 assert.match(index, /id="adminLabel"/);
 assert.match(index, /id="officialSyncPanel"/);
 assert.match(index, /<details class="admin-system-info"><summary>系統資料<\/summary>/);
@@ -54,7 +64,7 @@ assert.match(index, /medical-official-sync\.js\?v=1\.1\.9/);
 assert.match(index, /app\.js\?v=1\.1\.9/);
 assert.doesNotMatch(auth, /Script Property|session proof|adminSessionProof/);
 assert.match(css, /\.admin-tabs\{[^}]*display:grid/);
-assert.match(css, /grid-template-columns:repeat\(7,minmax\(0,1fr\)\)/);
+assert.match(css, /grid-template-columns:repeat\(8,minmax\(0,1fr\)\)/);
 assert.match(css, /\.admin-domain\[hidden\],\.sync-record\[hidden\]\{display:none!important\}/);
 assert.match(css, /\.admin-system-info summary/);
 assert.match(css, /@media\(max-width:760px\)/);
