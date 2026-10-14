@@ -12,7 +12,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 function avaEntry(){const value=new URLSearchParams(window.location.search).get('avaEntry');return ['user','admin'].includes(value)?value:'frontend'}
 function avaPlatformReturnUrl(){return avaEntry()==='admin'?AVA_PLATFORM_URL+'?avaSurface=admin':AVA_PLATFORM_URL}
 function applyAvaPlatformReturnUrl(){document.querySelectorAll('a[href="https://ivancww.github.io/avaplatform/"]').forEach(link=>{link.href=avaPlatformReturnUrl()})}
-function setEntry(){state.entry=avaEntry();$('.app-shell').dataset.avaEntry=state.entry;$('#editBtn').hidden=state.entry!=='user';$('#status').hidden=state.entry==='frontend';$('#adminLabel').hidden=state.entry!=='admin';$('#appVersion').textContent=`${APP_VERSION} · build ${APP_BUILD.slice(0,12)}`;applyAvaPlatformReturnUrl()}
+function setEntry(){state.entry=avaEntry();$('.app-shell').dataset.avaEntry=state.entry;$('#editBtn').hidden=state.entry!=='user';$('#status').hidden=state.entry==='frontend';$('#adminLabel').hidden=state.entry!=='admin';$('#appVersion').textContent=APP_VERSION;applyAvaPlatformReturnUrl()}
 function setStatus(t,cls=''){const e=$('#status');e.textContent=t;e.className='status '+cls}
 function cache(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch{return null}}
 function isValidOfficialData(d){return !!d&&typeof d==='object'&&!Array.isArray(d)&&d.version!==undefined&&Array.isArray(d.pages)&&Array.isArray(d.options)}
