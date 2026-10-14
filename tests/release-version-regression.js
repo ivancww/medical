@@ -13,6 +13,8 @@ assert.equal(release.appVersion, 'v1.2.2');
 assert.equal(release.releaseType, 'feature');
 assert.match(app, /window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.2'/);
 assert.match(build, /AVA_MEDICAL_VERSION.*v1\.2\.2/);
+assert.match(app, /\$\('#appVersion'\)\.textContent=APP_VERSION/);
+assert.doesNotMatch(app, /\$\('#appVersion'\)\.textContent=.*APP_BUILD/);
 assert.match(index, /medical-admin-auth\.js\?v=1\.2\.2/);
 assert.match(index, /medical-official-sync\.js\?v=1\.2\.2/);
 assert.match(index, /app\.js\?v=1\.2\.2/);
