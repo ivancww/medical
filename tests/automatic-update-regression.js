@@ -114,8 +114,9 @@ async function runRegistrationContract(){
   const registration={update:async()=>{calls.push('update')}};
   const context={
     navigator:{serviceWorker:{addEventListener:(type,handler)=>{serviceWorkerHandlers[type]=handler},register:async(...args)=>{calls.push(args);return registration}}},
-    sessionStorage:{removeItem:key=>sessionValues.delete(key),setItem:(key,value)=>sessionValues.set(key,value)},
+    sessionStorage:{getItem:key=>sessionValues.get(key)||null,removeItem:key=>sessionValues.delete(key),setItem:(key,value)=>sessionValues.set(key,value)},
     window:{location:{reload:()=>{reloads++}}},
+    persistJourneySession:()=>{},
     console
   };
   vm.runInNewContext(app.slice(start,end),context,{filename:'app-update-lifecycle.js'});
@@ -128,6 +129,9 @@ async function runRegistrationContract(){
   serviceWorkerHandlers.controllerchange();
   assert.equal(reloads,1,'controller changes trigger at most one reload per page update cycle');
   assert.equal(sessionValues.get('ava:medical:sw-reload'),'1','reload cycle is recorded without browser-storage deletion');
+  await vm.runInNewContext('registerMedicalServiceWorker()',context);
+  serviceWorkerHandlers.controllerchange();
+  assert.equal(reloads,1,'a reload marker prevents an immediate second reload loop');
 }
 
 async function run(){
@@ -139,3 +143,4 @@ async function run(){
 }
 
 run().catch(error=>{console.error(error);process.exitCode=1});
+

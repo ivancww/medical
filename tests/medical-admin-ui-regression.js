@@ -60,8 +60,8 @@ assert.match(index, /<details class="admin-system-info"><summary>系統資料<\/
 assert.match(index, /返回 AVA/);
 assert.doesNotMatch(index, /class="admin-head"/);
 assert.doesNotMatch(index, /class="admin-status-bar"/);
-assert.match(index, /medical-official-sync\.js\?v=1\.2\.0/);
-assert.match(index, /app\.js\?v=1\.2\.0/);
+assert.match(index, /medical-official-sync\.js\?v=1\.2\.1/);
+assert.match(index, /app\.js\?v=1\.2\.1/);
 assert.doesNotMatch(auth, /Script Property|session proof|adminSessionProof/);
 assert.match(css, /\.admin-tabs\{[^}]*display:grid/);
 assert.match(css, /grid-template-columns:repeat\(8,minmax\(0,1fr\)\)/);
@@ -70,7 +70,7 @@ assert.match(css, /\.admin-system-info summary/);
 assert.match(css, /@media\(max-width:760px\)/);
 assert.match(css, /@media\(max-width:430px\)/);
 assert.match(app, /MedicalOfficialSync\.mount/);
-assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.0'/);
+assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.1'/);
 
 const official = {
   pages: [{ page_id: 'R01', title: 'Concern', enabled: true, unknown: { keep: true } }],
@@ -88,3 +88,4 @@ const mutation = {
 assert.equal(sync.validateMutationResult(mutation, { dataset: 'pages', recordId: 'R01', changes: { title: 'Updated' } }).pages[0].unknown.keep, true, 'Unknown fields remain preserved in confirmed snapshots');
 
 console.log('Medical Saving V1.8 Admin workspace regression passed');
+
