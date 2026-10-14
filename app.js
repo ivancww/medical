@@ -1,6 +1,6 @@
 const OFFICIAL_API='https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec';
 const CACHE_KEY='ava.medical.official.v1',OVERRIDE_KEY='ava.medical.user.overrides.v1';
-const APP_VERSION=window.AVA_MEDICAL_VERSION||'v1.2.1',APP_BUILD=window.AVA_MEDICAL_BUILD||'local';
+const APP_VERSION=window.AVA_MEDICAL_VERSION||'v1.2.2',APP_BUILD=window.AVA_MEDICAL_BUILD||'local';
 const AVA_PLATFORM_URL='https://ivancww.github.io/avaplatform/';
 const DIRECT_ADVANCE_PAGES=['R01','R02','N01','N02','N05','N07'];
 const READY_PAGE_ORDER=['R01','R02','R03','R04','R05','R07','R09','R08','FINAL_SUMMARY'];
@@ -12,7 +12,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 function avaEntry(){const value=new URLSearchParams(window.location.search).get('avaEntry');return ['user','admin'].includes(value)?value:'frontend'}
 function avaPlatformReturnUrl(){return avaEntry()==='admin'?AVA_PLATFORM_URL+'?avaSurface=admin':AVA_PLATFORM_URL}
 function applyAvaPlatformReturnUrl(){document.querySelectorAll('a[href="https://ivancww.github.io/avaplatform/"]').forEach(link=>{link.href=avaPlatformReturnUrl()})}
-function setEntry(){state.entry=avaEntry();$('.app-shell').dataset.avaEntry=state.entry;$('#editBtn').hidden=state.entry!=='user';$('#status').hidden=state.entry==='frontend';$('#adminLabel').hidden=state.entry!=='admin';$('#appVersion').textContent=`${APP_VERSION} · build ${APP_BUILD.slice(0,12)}`;applyAvaPlatformReturnUrl()}
+function setEntry(){state.entry=avaEntry();$('.app-shell').dataset.avaEntry=state.entry;$('#editBtn').hidden=state.entry!=='user';$('#status').hidden=state.entry==='frontend';$('#adminLabel').hidden=state.entry!=='admin';$('#appVersion').textContent=APP_VERSION;applyAvaPlatformReturnUrl()}
 function setStatus(t,cls=''){const e=$('#status');e.textContent=t;e.className='status '+cls}
 function cache(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch{return null}}
 function isValidOfficialData(d){return !!d&&typeof d==='object'&&!Array.isArray(d)&&d.version!==undefined&&Array.isArray(d.pages)&&Array.isArray(d.options)}

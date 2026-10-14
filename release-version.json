@@ -1,6 +1,6 @@
 {
-  "appVersion": "v1.2.1",
+  "appVersion": "v1.2.2",
   "releaseType": "feature",
-  "scope": "Wise P7 eligibility and comparison repair, brochure plan-ID mapping and journey resume"
+  "scope": "brochure file-selection persistence and upload feedback repair"
 }
 
