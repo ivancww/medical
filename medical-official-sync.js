@@ -60,6 +60,8 @@
     return '<label class="admin-field"><span>' + label + '</span><input class="ava-input" type="' + (type === "number" ? "number" : "text") + '" data-field="' + esc(field) + '" data-field-type="' + type + '" aria-label="' + esc(label) + '" value="' + esc(value) + '"></label>';
   }
   function isPlanRecord(record) { return String(record?.record_type || "").toUpperCase() === "PLAN"; }
+  const BROCHURE_PLAN_ALIASES = Object.freeze({ ELITE: "ELITE", ELITE_PLAN: "ELITE", WISE: "WISE", WISE_PLAN: "WISE", FLEXI: "FLEXI", FLEXI_PLAN: "FLEXI" });
+  function canonicalPlanId(record, def = definition("plans")) { if (!isPlanRecord(record)) return null; const stableId = String(recordId(record, def) || "").trim().toUpperCase(); return BROCHURE_PLAN_ALIASES[stableId] || null; }
   function brochureUploadMarkup(dataset, record) {
     if (dataset !== "plans" || !isPlanRecord(record)) return "";
     const current = String(record?.brochure_url || "").trim();
@@ -169,7 +171,9 @@
         button.disabled = true; button.setAttribute("aria-busy", "true"); button.textContent = "上載中…"; status.textContent = "正在上載至 Firebase…"; status.className = "helper";
         const firebase = await global.MedicalFirebaseReady;
         if (!firebase?.uploadOfficialBrochure) throw new Error("Medical Firebase 模組未能載入。");
-        const uploaded = await firebase.uploadOfficialBrochure({ planId: recordId(source, definition("plans")), file });
+        const planId = canonicalPlanId(source, definition("plans"));
+        if (!planId) throw new Error("只有 ELITE、WISE、FLEXI 計劃可以上載產品資料。");
+        const uploaded = await firebase.uploadOfficialBrochure({ planId, file });
         status.textContent = "Firebase 上載成功，正在發布 Official URL…";
         const expectedRecordId = String(recordId(source, definition("plans")));
         const result = await global.MedicalAdminAuth.authorizedRequest({ action: "updateOfficialRecord", operation: "medical:official-write", body: { dataset: "plans", recordId: expectedRecordId, changes: { brochure_url: uploaded.url }, expectedVersion: state.official?.revision || state.official?.version } });
@@ -198,5 +202,6 @@
     }
     render(); return { render, select: key => { if (definition(key)) { selected = key; render(); } } };
   }
-  global.MedicalOfficialSync = Object.freeze({ API, LABELS, FIELD_LABELS, DATASETS, READ_ONLY, rows, definition, recordId, validateMutationResult, mount });
+  global.MedicalOfficialSync = Object.freeze({ API, LABELS, FIELD_LABELS, DATASETS, READ_ONLY, rows, definition, recordId, canonicalPlanId, validateMutationResult, mount });
 })(typeof window === "undefined" ? globalThis : window);
+

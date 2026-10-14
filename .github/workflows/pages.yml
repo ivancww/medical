@@ -38,7 +38,7 @@ jobs:
           assert manifest["start_url"] == "/medical/"
           assert manifest["scope"] == "/medical/"
           assert manifest["display"] == "standalone"
-          assert release["appVersion"] == "v1.2.0"
+          assert release["appVersion"] == "v1.2.1"
           assert 'href="manifest.json"' in html
           assert "claim-engine.js" in html and "app.js" in html
           assert "medical-official-sync.js" in html
@@ -57,8 +57,8 @@ jobs:
           assert "medical-official-sync.js" in service_worker
           assert "medical-firebase.js" in html and "medical-firebase.js" in service_worker
           assert "ava-admin-connector.mjs" in service_worker
-          assert "medical-official-sync.js?v=1.2.0" in html
-          assert "app.js?v=1.2.0" in html
+          assert "medical-official-sync.js?v=1.2.1" in html
+          assert "app.js?v=1.2.1" in html
           assert not re.search(r'(?:href|src)=["\']/[^/]', html)
           print("Medical /medical/ deployment contract PASS")
           PY
@@ -99,3 +99,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
