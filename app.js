@@ -1,6 +1,6 @@
 const OFFICIAL_API='https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec';
 const CACHE_KEY='ava.medical.official.v1',OVERRIDE_KEY='ava.medical.user.overrides.v1';
-const APP_VERSION=window.AVA_MEDICAL_VERSION||'v1.2.1',APP_BUILD=window.AVA_MEDICAL_BUILD||'local';
+const APP_VERSION=window.AVA_MEDICAL_VERSION||'v1.2.2',APP_BUILD=window.AVA_MEDICAL_BUILD||'local';
 const AVA_PLATFORM_URL='https://ivancww.github.io/avaplatform/';
 const DIRECT_ADVANCE_PAGES=['R01','R02','N01','N02','N05','N07'];
 const READY_PAGE_ORDER=['R01','R02','R03','R04','R05','R07','R09','R08','FINAL_SUMMARY'];
