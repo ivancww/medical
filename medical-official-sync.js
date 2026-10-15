@@ -149,8 +149,9 @@
       const code = String(error?.code || "").toLowerCase();
       if (error?.stage === "timeout") return "Firebase 上載逾時，請檢查網絡後再試。";
       if (code === "storage/unauthorized") return "Firebase Storage 權限不足，未能上載產品資料。";
-      if (code === "storage/canceled") return "上載已取消。";
-      if (code === "storage/retry-limit-exceeded") return "Firebase 上載逾時或重試失敗。";
+      if (code === "storage/canceled") return "產品資料上載已取消。";
+      if (code === "storage/retry-limit-exceeded") return "Firebase 上載逾時或重試失敗，請稍後再試。";
+      if (code === "storage/unknown") return "Firebase Storage 發生未明錯誤。";
       if (error?.name === "TypeError" || /network|offline|failed to fetch/i.test(String(error?.message || ""))) return "網絡連線失敗，請重新連線後再試。";
       return String(error?.message || "Firebase Storage 發生未明錯誤。");
     }
@@ -271,11 +272,13 @@
         setBrochureStatus(recordIdValue, "產品資料已上載，正在發布 Official URL…");
         const expectedRecordId = recordIdValue;
         const result = await global.MedicalAdminAuth.authorizedRequest({ action: "updateOfficialRecord", operation: "medical:official-write", body: { dataset: "plans", recordId: expectedRecordId, changes: { brochure_url: uploaded.url }, expectedVersion: state.official?.revision || state.official?.version } });
+        stage = "official-verification";
         const next = validateMutationResult(result, { dataset: "plans", recordId: expectedRecordId, changes: { brochure_url: uploaded.url } });
         state.official = next; pending.uploading = false; pendingBrochureUploads.delete(recordIdValue); onOfficialChanged?.(next); render(); setBrochureStatus(recordIdValue, "產品資料已成功上載及發布：" + String(uploaded.filename || metadata.name), "success"); setMessage(panel, LABELS.success.replace("{version}", result.version || next.version || "—"), "success");
       } catch (error) {
         const message = error.message.includes("版本") || error.message.includes("version") || error.message.includes("stale") ? LABELS.conflict : (stage === "firebase" || error?.stage === "initialization" || error?.stage === "upload" || error?.stage === "timeout" || error?.stage === "download-url" ? firebaseErrorMessage(error) : error.message);
-        const stageMessage = error?.stage === "timeout" ? message : error?.stage === "download-url" ? "取得 Firebase 產品資料連結失敗：" + message : error?.stage === "initialization" ? "Firebase 初始化失敗：" + message : stage === "firebase" ? "Firebase 上載失敗：" + message : stage === "official" ? "官方資料發布失敗：" + message : message;
+        const verificationFailure = stage === "official-verification" || (stage === "official" && /read-after-write|回讀|驗證/i.test(String(error?.message || "")));
+        const stageMessage = error?.stage === "timeout" ? message : error?.stage === "download-url" ? "取得 Firebase 產品資料連結失敗：" + message : error?.stage === "initialization" ? "Firebase 初始化失敗：" + message : stage === "firebase" ? "Firebase 上載失敗：" + message : verificationFailure ? "官方資料驗證失敗：" + message : stage === "official" ? "官方資料發布失敗：" + message : message;
         setBrochureStatus(recordIdValue, stageMessage, "error");
         resetUploadButton(button);
       }

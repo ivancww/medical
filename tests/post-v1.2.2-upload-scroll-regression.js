@@ -30,6 +30,12 @@ assert.match(sync, /產品資料已成功上載及發布/);
 assert.match(sync, /Firebase 上載逾時，請檢查網絡後再試/);
 assert.match(sync, /storage\/unauthorized/);
 assert.match(sync, /Firebase Storage 權限不足/);
+assert.match(sync, /產品資料上載已取消/);
+assert.match(sync, /Firebase 上載逾時或重試失敗，請稍後再試/);
+assert.match(sync, /storage\/unknown/);
+assert.match(sync, /Firebase Storage 發生未明錯誤/);
+assert.match(sync, /official-verification/);
+assert.match(sync, /官方資料驗證失敗/);
 assert.match(sync, /pending\.uploading = true/);
 assert.match(sync, /pending\.uploading = false/);
 assert.match(sync, /resetUploadButton\(button\)/);
@@ -82,7 +88,9 @@ const result = vm.runInNewContext(`
     { page_id: 'R01', title: '一', enabled: true },
     { page_id: 'R02', title: '二', enabled: true },
     { page_id: 'R03', title: '三', enabled: true },
-    { page_id: 'R04', title: '四', enabled: true }
+    { page_id: 'R04', title: '四', enabled: true },
+    { page_id: 'N01', title: '五', enabled: true },
+    { page_id: 'N02', title: '六', enabled: true }
   ], options: [] };
   state.journey = 'ready';
   state.index = 0;
@@ -97,7 +105,15 @@ const result = vm.runInNewContext(`
   const afterDirectAdvance = scrollCalls.length;
   navigateJourney(-1);
   const afterBack = scrollCalls.length;
-  ({afterInitial, afterSamePage, afterNext, afterDirectAdvance, afterBack, current: state.renderedPageId});
+  const readyCurrent = state.renderedPageId;
+  state.journey = 'notready';
+  state.index = 1;
+  state.renderedPageId = null;
+  renderPage({scrollToTop:true});
+  const notReadyBeforeBack = scrollCalls.length;
+  goBack();
+  const notReadyAfterBack = scrollCalls.length;
+  ({afterInitial, afterSamePage, afterNext, afterDirectAdvance, afterBack, current: readyCurrent, notReadyBeforeBack, notReadyAfterBack, notReadyIndex: state.index});
 `, context);
 
 assert.equal(result.afterInitial, 1, 'initial journey page transition scrolls once');
@@ -106,6 +122,8 @@ assert.equal(result.afterNext, 2, 'next logical page scrolls to top');
 assert.equal(result.afterDirectAdvance, 3, 'direct advance scrolls to top');
 assert.equal(result.afterBack, 4, 'back navigation scrolls to top');
 assert.equal(result.current, 'R02');
+assert.equal(result.notReadyAfterBack, result.notReadyBeforeBack + 1, 'Not Ready back navigation scrolls to top');
+assert.equal(result.notReadyIndex, 0, 'Not Ready back navigation returns to the previous logical page');
 assert.equal(scrollCalls.at(-1).top, 788, 'scroll offset accounts for sticky Medical header and journey controls');
 
 console.log('Post-v1.2.3 observable brochure upload and journey top-reset regression PASS');
