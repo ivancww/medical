@@ -45,7 +45,8 @@ service firebase.storage {
     // from the Critical Illness namespace in the shared bucket.
     match /medical/official/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin() && validMedia();
+      allow create, update: if isAdmin() && validMedia();
+      allow delete: if isAdmin();
     }
 
     match /{allPaths=**} {
