@@ -11,8 +11,9 @@ is not exposed as an approved shared AVA Cloud Media service or Medical Admin
 upload contract. The user has now explicitly authorized the existing
 `medical-and-ci` Firebase project for Medical / CI brochure storage.
 
-Medical now uses a dedicated `medical-firebase.js` module for that existing
-project. It uploads only from the authenticated Medical Admin UI, validates
+Medical now uses a versioned `medical-firebase.js` classic bootstrap and its
+`medical-firebase-module.js` implementation for that existing project. It
+uploads only from the authenticated Medical Admin UI, validates
 PDF/JPEG/PNG/WEBP and size, creates a deterministic plan-scoped object path,
 and returns the HTTPS URL. The current safe boundary is:
 
