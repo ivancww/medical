@@ -36,7 +36,7 @@ assert.match(syncSource, /pendingBrochureUploads\.clear\(\)/, 'switching plan re
 assert.match(syncSource, /Firebase 上載失敗：/, 'Firebase failure is reported at the Firebase stage');
 assert.match(syncSource, /官方資料發布失敗：/, 'Official write failure is reported at the Official stage');
 assert.doesNotMatch(syncSource.slice(syncSource.indexOf('pendingBrochureUploads'), syncSource.indexOf('function mount')), /localStorage|sessionStorage|indexedDB|FileReader|readAsDataURL|base64/i, 'File is not placed into browser structured storage');
-assert.match(syncSource, /uploadOfficialBrochure\(\{ planId, file \}\)/, 'Firebase receives the canonical plan ID and captured File');
+assert.match(syncSource, /uploadOfficialBrochure\(\{\s*planId,\s*file/, 'Firebase receives the canonical plan ID and captured File');
 assert.match(syncSource, /authorizedRequest\(\{ action: "updateOfficialRecord"/, 'Official write remains after Firebase URL acquisition');
 
 console.log('Medical brochure file-selection and pending-state regression PASS');

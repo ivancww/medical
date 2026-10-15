@@ -223,7 +223,11 @@ export function createAdminConnector({
     assertGeneration(generation);
     const { response, payload } = result;
     if (!response.ok) fail('AUTHORIZED_REQUEST_HTTP', 'authorized-request-http');
-    if (payload?.success !== true) fail('AUTHORIZED_REQUEST_REJECTED', 'authorized-request-rejected');
+    if (payload?.success !== true) {
+      const code = stringValue(payload?.error?.code) || 'AUTHORIZED_REQUEST_REJECTED';
+      const message = stringValue(payload?.error?.message) || MESSAGES[code] || MESSAGES.AUTHORIZED_REQUEST_REJECTED;
+      throw new AdminConnectorError(code, 'authorized-request-rejected', message);
+    }
     if (typeof validateResponse === 'function') { try { await validateResponse(payload); } catch { fail('AUTHORIZED_RESPONSE_INVALID', 'authorized-response-validation'); } }
     return payload;
   };
