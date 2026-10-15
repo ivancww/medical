@@ -13,6 +13,12 @@ const MEDICAL_ADMIN_APP_ID = "medical";
 const AVA_PLATFORM_ADMIN_AUTH_URL_PROPERTY = "AVA_PLATFORM_ADMIN_AUTH_URL";
 const MEDICAL_ADMIN_SESSION_CONTRACT = "ava-admin-session-v1";
 const MEDICAL_APP_GRANT_CONTRACT = "ava-legacy-app-grant-v1";
+const MEDICAL_FIREBASE_CUSTOM_TOKEN_AUDIENCE = "https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit";
+const MEDICAL_FIREBASE_STORAGE_CONTRACT = "ava-medical-storage-v1";
+const MEDICAL_FIREBASE_SERVICE_ACCOUNT_EMAIL_PROPERTY = "MEDICAL_FIREBASE_SERVICE_ACCOUNT_EMAIL";
+const MEDICAL_FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY_PROPERTY = "MEDICAL_FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY";
+const MEDICAL_FIREBASE_AUTH_BROKER_URL_PROPERTY = "MEDICAL_FIREBASE_AUTH_BROKER_URL";
+const MEDICAL_FIREBASE_AUTH_BROKER_SECRET_PROPERTY = "MEDICAL_FIREBASE_AUTH_BROKER_SECRET";
 
 const AVA_MEDICAL = Object.freeze({
   APP: "AVA Medical",
@@ -91,6 +97,7 @@ function doPost(e) {
     const body = JSON.parse(e && e.postData && e.postData.contents || "{}");
     medicalOfficialRejectLegacyBulkWrite_(body);
     if (body.action === "exchangeAdminSession" || body.action === "exchangeAppLaunch") return output_(medicalAdminAuthAction_(body));
+    if (body.action === "issueFirebaseAuthorization") return output_(issueFirebaseAuthorization_(body));
     if (body.action === "updateOfficialRecord" || body.action === "createOfficialRecord") return output_(medicalOfficialPostAction_(body));
     throw new Error("Unsupported Medical POST action");
   } catch (error) {
@@ -210,6 +217,87 @@ function medicalExchangeAppLaunch_(launchTicket, appId) {
     throw new Error("Invalid or expired AVA Admin launch");
   }
   return { success: true, appId: MEDICAL_ADMIN_APP_ID, appGrant: String(payload.appGrant), expiresAt: String(payload.expiresAt), contract: MEDICAL_APP_GRANT_CONTRACT };
+}
+
+function medicalFirebaseError_(message, code) {
+  const error = new Error(String(message));
+  error.code = String(code || "FIREBASE_AUTH_CONFIGURATION_REQUIRED");
+  return error;
+}
+
+function base64Url_(value) {
+  const bytes = typeof value === "string" ? Utilities.newBlob(value).getBytes() : value;
+  return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/, "");
+}
+
+function firebaseServiceAccount_(properties) {
+  const source = properties || PropertiesService.getScriptProperties();
+  const email = String(source.getProperty(MEDICAL_FIREBASE_SERVICE_ACCOUNT_EMAIL_PROPERTY) || "").trim();
+  const privateKey = String(source.getProperty(MEDICAL_FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY_PROPERTY) || "").replace(/\\n/g, "\n").trim();
+  if (!email || !/@/.test(email) || !privateKey.includes("BEGIN PRIVATE KEY") || !privateKey.includes("END PRIVATE KEY")) {
+    throw medicalFirebaseError_("Medical Firebase service-account Script Properties 未完成配置。", "FIREBASE_AUTH_CONFIGURATION_REQUIRED");
+  }
+  return { email, privateKey };
+}
+
+function issueDirectFirebaseAdminToken_(properties) {
+  const serviceAccount = firebaseServiceAccount_(properties);
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const expiresAt = issuedAt + 15 * 60;
+  const header = base64Url_(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = base64Url_(JSON.stringify({
+    iss: serviceAccount.email,
+    sub: serviceAccount.email,
+    aud: MEDICAL_FIREBASE_CUSTOM_TOKEN_AUDIENCE,
+    iat: issuedAt,
+    exp: expiresAt,
+    uid: "medical:admin",
+    claims: { avaAdmin: true }
+  }));
+  const unsignedToken = header + "." + payload;
+  const signature = Utilities.computeRsaSha256Signature(unsignedToken, serviceAccount.privateKey);
+  return {
+    firebaseCustomToken: unsignedToken + "." + base64Url_(signature),
+    expiresAt: new Date(expiresAt * 1000).toISOString(),
+    claims: { avaAdmin: true },
+    contract: MEDICAL_FIREBASE_STORAGE_CONTRACT,
+    provider: "gas-service-account-custom-token"
+  };
+}
+
+function issueFirebaseAuthorization_(body) {
+  const payload = body || {};
+  if (String(payload.appId || "") !== MEDICAL_ADMIN_APP_ID) throw medicalFirebaseError_("Invalid Medical Firebase app", "FIREBASE_AUTH_UNAUTHORIZED");
+  if (String(payload.mode || "") !== "admin") throw medicalFirebaseError_("Medical Firebase authorization is Admin-only", "FIREBASE_AUTH_UNAUTHORIZED");
+  if (payload.contract && String(payload.contract) !== MEDICAL_FIREBASE_STORAGE_CONTRACT) throw medicalFirebaseError_("Unsupported Medical Firebase contract", "FIREBASE_AUTH_UNAUTHORIZED");
+  if (payload.operation && String(payload.operation) !== "medical:official-write") throw medicalFirebaseError_("Invalid Medical Firebase operation", "FIREBASE_AUTH_UNAUTHORIZED");
+  const hasSession = Boolean(String(payload.adminSessionProof || ""));
+  const hasGrant = Boolean(String(payload.appGrant || ""));
+  if (hasSession === hasGrant) throw medicalFirebaseError_("Exactly one Medical Admin credential is required", "FIREBASE_AUTH_UNAUTHORIZED");
+  if (hasSession) medicalVerifyAdminSession_(payload.adminSessionProof, "official-write");
+  else medicalVerifyAppGrant_(payload.appGrant, "medical:official-write");
+
+  const properties = PropertiesService.getScriptProperties();
+  const brokerUrl = String(properties.getProperty(MEDICAL_FIREBASE_AUTH_BROKER_URL_PROPERTY) || "").trim();
+  const brokerSecret = String(properties.getProperty(MEDICAL_FIREBASE_AUTH_BROKER_SECRET_PROPERTY) || "");
+  if (brokerUrl && brokerSecret) {
+    const response = UrlFetchApp.fetch(brokerUrl, {
+      method: "post",
+      contentType: "application/json",
+      headers: { Authorization: "Bearer " + brokerSecret },
+      payload: JSON.stringify({ appId: MEDICAL_ADMIN_APP_ID, mode: "admin", contract: MEDICAL_FIREBASE_STORAGE_CONTRACT, claims: { avaAdmin: true } }),
+      muteHttpExceptions: true
+    });
+    let brokerPayload;
+    try { brokerPayload = JSON.parse(response.getContentText() || "{}"); } catch (_) { brokerPayload = {}; }
+    const data = brokerPayload.data || brokerPayload;
+    const expiry = Date.parse(String(data.expiresAt || ""));
+    if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 || brokerPayload.success !== true || typeof data.firebaseCustomToken !== "string" || !data.firebaseCustomToken || !Number.isFinite(expiry) || expiry <= Date.now() || data.claims?.avaAdmin !== true || data.contract !== MEDICAL_FIREBASE_STORAGE_CONTRACT) {
+      throw medicalFirebaseError_("Firebase custom-token broker 拒絕授權。", "FIREBASE_AUTH_BROKER_REJECTED");
+    }
+    return { success: true, data: { firebaseCustomToken: data.firebaseCustomToken, expiresAt: data.expiresAt, claims: { avaAdmin: true }, contract: MEDICAL_FIREBASE_STORAGE_CONTRACT, provider: "approved-server-side-broker" } };
+  }
+  return { success: true, data: issueDirectFirebaseAdminToken_(properties) };
 }
 
 /** Canonical backend App Grant verification; no credential is stored here. */

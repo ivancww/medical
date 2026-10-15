@@ -148,6 +148,9 @@
     function firebaseErrorMessage(error) {
       const code = String(error?.code || "").toLowerCase();
       if (error?.stage === "timeout") return "Firebase 上載逾時，請檢查網絡後再試。";
+      if (code === "firebase_auth_configuration_required") return "Firebase Auth 設定未完成，請先配置 Medical GAS Script Properties。";
+      if (code === "firebase_auth_broker_rejected") return "Firebase custom-token 授權服務拒絕此管理請求。";
+      if (code === "firebase_auth_issue_invalid") return "Firebase custom-token 授權回應無效。";
       if (code === "storage/unauthorized") return "Firebase Storage 權限不足，未能上載產品資料。";
       if (code === "storage/canceled") return "產品資料上載已取消。";
       if (code === "storage/retry-limit-exceeded") return "Firebase 上載逾時或重試失敗，請稍後再試。";
@@ -262,6 +265,9 @@
             setBrochureStatus(recordIdValue, "正在上載至 Firebase… " + progress.percentage + "%（" + brochureBytesLabel(progress.bytesTransferred) + " / " + brochureBytesLabel(progress.totalBytes) + "）");
           },
           onStage: event => {
+            if (event?.stage === "firebase-auth" && event.state === "requesting") setBrochureStatus(recordIdValue, "正在取得 Firebase Admin 授權…");
+            if (event?.stage === "firebase-auth" && event.state === "signing-in") setBrochureStatus(recordIdValue, "正在登入 Firebase Auth…");
+            if (event?.stage === "firebase-auth" && event.state === "signed-in") setBrochureStatus(recordIdValue, "Firebase Auth 已授權，正在開始上載…");
             if (event?.stage === "upload" && event.state === "completed") setBrochureStatus(recordIdValue, "Firebase 上載完成，正在取得產品資料連結…");
             if (event?.stage === "download-url" && event.state === "started") setBrochureStatus(recordIdValue, "正在取得 Firebase 產品資料連結…");
             if (event?.stage === "download-url" && event.state === "completed") setBrochureStatus(recordIdValue, "產品資料已上載，正在發布 Official URL…");
@@ -276,9 +282,9 @@
         const next = validateMutationResult(result, { dataset: "plans", recordId: expectedRecordId, changes: { brochure_url: uploaded.url } });
         state.official = next; pending.uploading = false; pendingBrochureUploads.delete(recordIdValue); onOfficialChanged?.(next); render(); setBrochureStatus(recordIdValue, "產品資料已成功上載及發布：" + String(uploaded.filename || metadata.name), "success"); setMessage(panel, LABELS.success.replace("{version}", result.version || next.version || "—"), "success");
       } catch (error) {
-        const message = error.message.includes("版本") || error.message.includes("version") || error.message.includes("stale") ? LABELS.conflict : (stage === "firebase" || error?.stage === "initialization" || error?.stage === "upload" || error?.stage === "timeout" || error?.stage === "download-url" ? firebaseErrorMessage(error) : error.message);
+        const message = error.message.includes("版本") || error.message.includes("version") || error.message.includes("stale") ? LABELS.conflict : (stage === "firebase" || error?.stage === "initialization" || error?.stage === "upload" || error?.stage === "timeout" || error?.stage === "download-url" || error?.stage === "firebase-auth-configuration" || error?.stage === "firebase-auth-issue" || error?.stage === "firebase-auth-signin" ? firebaseErrorMessage(error) : error.message);
         const verificationFailure = stage === "official-verification" || (stage === "official" && /read-after-write|回讀|驗證/i.test(String(error?.message || "")));
-        const stageMessage = error?.stage === "timeout" ? message : error?.stage === "download-url" ? "取得 Firebase 產品資料連結失敗：" + message : error?.stage === "initialization" ? "Firebase 初始化失敗：" + message : stage === "firebase" ? "Firebase 上載失敗：" + message : verificationFailure ? "官方資料驗證失敗：" + message : stage === "official" ? "官方資料發布失敗：" + message : message;
+        const stageMessage = error?.stage === "timeout" ? message : error?.stage === "firebase-auth-configuration" ? message : error?.stage === "firebase-auth-issue" ? "Firebase custom-token 授權失敗：" + message : error?.stage === "firebase-auth-signin" ? "Firebase Auth 登入失敗：" + message : error?.stage === "download-url" ? "取得 Firebase 產品資料連結失敗：" + message : error?.stage === "initialization" ? "Firebase 初始化失敗：" + message : stage === "firebase" ? "Firebase 上載失敗：" + message : verificationFailure ? "官方資料驗證失敗：" + message : stage === "official" ? "官方資料發布失敗：" + message : message;
         setBrochureStatus(recordIdValue, stageMessage, "error");
         resetUploadButton(button);
       }

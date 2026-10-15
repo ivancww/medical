@@ -84,6 +84,7 @@ jobs:
           node --check tests/medical-pages-deployment-regression.js
           node --check tests/android-browser-context-regression.js
           node --check tests/medical-gas-dual-contract-regression.js
+          node --check tests/medical-firebase-auth-regression.js
           node --check tests/plan-comparison-regression.js
           node --check tests/official-sync-contract.js
           node --check tests/medical-official-write-confirmation.js
@@ -108,6 +109,7 @@ jobs:
           node tests/android-browser-context-regression.js
           node tests/medical-connector-integration.js
           node tests/medical-gas-dual-contract-regression.js
+          node tests/medical-firebase-auth-regression.js
           node tests/plan-comparison-regression.js
           node tests/official-sync-contract.js
           node tests/medical-official-write-confirmation.js
