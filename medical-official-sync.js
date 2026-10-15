@@ -83,7 +83,9 @@
     if (dataset !== "plans" || !isPlanRecord(record)) return "";
     const id = String(recordId(record, definition("plans"))), current = String(record?.brochure_url || "").trim(), file = pending?.file, metadata = file ? validateBrochureFile(file) : null;
     const selected = metadata ? '<div class="admin-brochure-selection" data-brochure-selection><strong>已選擇：</strong> ' + esc(metadata.name) + '<small>' + brochureFileTypeLabel(metadata.type) + ' · ' + brochureFileSizeLabel(metadata.size) + '</small></div>' : '<div class="admin-brochure-selection" data-brochure-selection hidden></div>';
-    return '<section class="admin-brochure-media" data-brochure-media data-brochure-record-id="' + esc(id) + '"><h3>產品資料</h3><p class="helper">只會先上載至 Medical / CI Firebase，再以 authenticated Official write 發布連結；Google Sheet 只保存 URL。</p><label class="ava-button upload">選擇 PDF / 圖片<input type="file" data-brochure-file accept="application/pdf,image/jpeg,image/png,image/webp" hidden></label>' + selected + '<span class="admin-brochure-current">目前檔案：' + (current ? '<a href="' + esc(current) + '" target="_blank" rel="noopener noreferrer">已發布產品資料</a>' : '未有') + '</span><button type="button" class="ava-button ava-button--secondary" data-brochure-upload ' + (metadata ? '' : 'disabled') + '>上載／取代產品資料</button><button type="button" class="ava-button ava-button--secondary" data-brochure-cancel ' + (metadata ? '' : 'hidden') + '>取消</button><p class="helper" data-brochure-status role="status" aria-live="polite"></p></section>';
+    const uploading = pending?.uploading === true, statusText = pending?.statusText || "", statusClass = pending?.statusClass || "helper";
+    const uploadLabel = uploading ? (pending?.uploadButtonText || "上載中…") : "上載／取代產品資料";
+    return '<section class="admin-brochure-media" data-brochure-media data-brochure-record-id="' + esc(id) + '"><h3>產品資料</h3><p class="helper">只會先上載至 Medical / CI Firebase，再以 authenticated Official write 發布連結；Google Sheet 只保存 URL。</p><label class="ava-button upload">選擇 PDF / 圖片<input type="file" data-brochure-file accept="application/pdf,image/jpeg,image/png,image/webp" hidden></label>' + selected + '<span class="admin-brochure-current">目前檔案：' + (current ? '<a href="' + esc(current) + '" target="_blank" rel="noopener noreferrer">已發布產品資料</a>' : '未有') + '</span><button type="button" class="ava-button ava-button--secondary" data-brochure-upload ' + (metadata && !uploading ? '' : 'disabled') + '>' + uploadLabel + '</button><button type="button" class="ava-button ava-button--secondary" data-brochure-cancel ' + (metadata ? '' : 'hidden') + (uploading ? ' disabled' : '') + '>取消</button><p class="' + esc(statusClass) + '" data-brochure-status role="status" aria-live="polite">' + esc(statusText) + '</p></section>';
   }
   function renderRecord(dataset, record, index, selectedIndex, data) {
     const def = definition(dataset), id = recordId(record, def), editable = editableFields(record, def), fields = dataset === "plans" ? editable.filter(field => field !== "brochure_url") : editable, known = new Set([...def.id, ...def.fields]), unknown = Object.keys(record || {}).filter(key => !known.has(key)), label = humanRecordLabel(record, def);
@@ -124,14 +126,33 @@
       return index < 0 ? null : panels.querySelector('[data-sync-domain="plans"] [data-record-index="' + index + '"]');
     }
     function setBrochureStatus(recordIdValue, message, className = "helper") {
+      const pending = pendingBrochureUploads.get(String(recordIdValue));
+      if (pending) { pending.statusText = String(message || ""); pending.statusClass = className; }
       const article = planArticle(recordIdValue), status = article?.querySelector("[data-brochure-status]");
       if (status) { status.textContent = message; status.className = className; }
     }
     function resetUploadButton(button) {
       if (!button) return;
+      const recordIdValue = button.closest("[data-brochure-media]")?.dataset.brochureRecordId;
+      const pending = pendingBrochureUploads.get(String(recordIdValue || ""));
+      if (pending) { pending.uploading = false; pending.uploadButtonText = ""; }
       button.disabled = false;
       button.removeAttribute("aria-busy");
       button.textContent = "上載／取代產品資料";
+    }
+    function brochureBytesLabel(bytes) {
+      const size = Number(bytes || 0);
+      if (size < 1024 * 1024) return Math.max(0, Math.round(size / 1024)) + " KB";
+      return (size / (1024 * 1024)).toFixed(1).replace(/\.0$/, "") + " MB";
+    }
+    function firebaseErrorMessage(error) {
+      const code = String(error?.code || "").toLowerCase();
+      if (error?.stage === "timeout") return "Firebase 上載逾時，請檢查網絡後再試。";
+      if (code === "storage/unauthorized") return "Firebase Storage 權限不足，未能上載產品資料。";
+      if (code === "storage/canceled") return "上載已取消。";
+      if (code === "storage/retry-limit-exceeded") return "Firebase 上載逾時或重試失敗。";
+      if (error?.name === "TypeError" || /network|offline|failed to fetch/i.test(String(error?.message || ""))) return "網絡連線失敗，請重新連線後再試。";
+      return String(error?.message || "Firebase Storage 發生未明錯誤。");
     }
     function selectBrochureFile(input) {
       const article = input.closest("[data-record-index]"), index = Number(article?.dataset.recordIndex), source = rows(state.official, "plans")[index], def = definition("plans"), recordIdValue = source ? String(recordId(source, def)) : "", file = input.files?.[0];
@@ -225,20 +246,36 @@
         metadata = validateBrochureFile(file);
         const planId = canonicalPlanId(source, def);
         if (!planId || pending.canonicalPlanId !== planId) throw new Error("產品記錄與待上載檔案不一致，請重新選擇檔案。");
-        button.disabled = true; button.setAttribute("aria-busy", "true"); button.textContent = "上載中…"; setBrochureStatus(recordIdValue, "正在上載至 Firebase…");
+        pending.uploading = true; pending.progress = { bytesTransferred: 0, totalBytes: Number(file.size || 0), percentage: 0 }; pending.uploadButtonText = "上載中… 0%";
+        button.disabled = true; button.setAttribute("aria-busy", "true"); button.textContent = pending.uploadButtonText; setBrochureStatus(recordIdValue, "正在上載至 Firebase… 0%（0 KB / " + brochureBytesLabel(file.size) + "）");
         stage = "firebase";
         const firebase = await global.MedicalFirebaseReady;
         if (!firebase?.uploadOfficialBrochure) throw new Error("Medical Firebase 模組未能載入。");
-        const uploaded = await firebase.uploadOfficialBrochure({ planId, file });
+        const uploaded = await firebase.uploadOfficialBrochure({
+          planId,
+          file,
+          onProgress: progress => {
+            pending.progress = progress;
+            pending.uploadButtonText = "上載中… " + progress.percentage + "%";
+            if (button.isConnected !== false) { button.textContent = pending.uploadButtonText; button.disabled = true; }
+            setBrochureStatus(recordIdValue, "正在上載至 Firebase… " + progress.percentage + "%（" + brochureBytesLabel(progress.bytesTransferred) + " / " + brochureBytesLabel(progress.totalBytes) + "）");
+          },
+          onStage: event => {
+            if (event?.stage === "upload" && event.state === "completed") setBrochureStatus(recordIdValue, "Firebase 上載完成，正在取得產品資料連結…");
+            if (event?.stage === "download-url" && event.state === "started") setBrochureStatus(recordIdValue, "正在取得 Firebase 產品資料連結…");
+            if (event?.stage === "download-url" && event.state === "completed") setBrochureStatus(recordIdValue, "產品資料已上載，正在發布 Official URL…");
+          }
+        });
         stage = "official";
-        setBrochureStatus(recordIdValue, "Firebase 上載成功，正在發布 Official URL…");
+        if (!/^https:\/\//i.test(String(uploaded?.url || ""))) throw new Error("Firebase 未返回有效的 HTTPS 產品資料連結。");
+        setBrochureStatus(recordIdValue, "產品資料已上載，正在發布 Official URL…");
         const expectedRecordId = recordIdValue;
         const result = await global.MedicalAdminAuth.authorizedRequest({ action: "updateOfficialRecord", operation: "medical:official-write", body: { dataset: "plans", recordId: expectedRecordId, changes: { brochure_url: uploaded.url }, expectedVersion: state.official?.revision || state.official?.version } });
         const next = validateMutationResult(result, { dataset: "plans", recordId: expectedRecordId, changes: { brochure_url: uploaded.url } });
-        state.official = next; pendingBrochureUploads.delete(recordIdValue); onOfficialChanged?.(next); render(); setBrochureStatus(recordIdValue, "產品資料已成功上載及發布：" + String(uploaded.filename || metadata.name), "success"); setMessage(panel, LABELS.success.replace("{version}", result.version || next.version || "—"), "success");
+        state.official = next; pending.uploading = false; pendingBrochureUploads.delete(recordIdValue); onOfficialChanged?.(next); render(); setBrochureStatus(recordIdValue, "產品資料已成功上載及發布：" + String(uploaded.filename || metadata.name), "success"); setMessage(panel, LABELS.success.replace("{version}", result.version || next.version || "—"), "success");
       } catch (error) {
-        const message = error.message.includes("版本") || error.message.includes("version") || error.message.includes("stale") ? LABELS.conflict : error.message;
-        const stageMessage = stage === "firebase" ? "Firebase 上載失敗：" + message : stage === "official" ? "官方資料發布失敗：" + message : message;
+        const message = error.message.includes("版本") || error.message.includes("version") || error.message.includes("stale") ? LABELS.conflict : (stage === "firebase" || error?.stage === "initialization" || error?.stage === "upload" || error?.stage === "timeout" || error?.stage === "download-url" ? firebaseErrorMessage(error) : error.message);
+        const stageMessage = error?.stage === "timeout" ? message : error?.stage === "download-url" ? "取得 Firebase 產品資料連結失敗：" + message : error?.stage === "initialization" ? "Firebase 初始化失敗：" + message : stage === "firebase" ? "Firebase 上載失敗：" + message : stage === "official" ? "官方資料發布失敗：" + message : message;
         setBrochureStatus(recordIdValue, stageMessage, "error");
         resetUploadButton(button);
       }
