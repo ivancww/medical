@@ -1,6 +1,6 @@
 {
-  "appVersion": "v1.2.3",
+  "appVersion": "v1.2.4",
   "releaseType": "feature",
-  "scope": "brochure file-selection persistence and upload feedback repair"
+  "scope": "Firebase module loading and selected-plan summary repair"
 }
 

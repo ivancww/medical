@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-const frontend = fs.readFileSync('medical-firebase.js', 'utf8');
+const frontend = fs.readFileSync('medical-firebase-module.js', 'utf8');
 const gas = fs.readFileSync('gas/MedicalProductionFinal.gs', 'utf8');
 const rules = fs.readFileSync('firebase/storage.rules', 'utf8');
 const connector = fs.readFileSync('ava-admin-connector.mjs', 'utf8');

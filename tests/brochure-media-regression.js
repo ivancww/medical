@@ -5,7 +5,7 @@ const app = fs.readFileSync('app.js', 'utf8');
 const index = fs.readFileSync('index.html', 'utf8');
 const product = fs.readFileSync('product-data.js', 'utf8');
 const sync = fs.readFileSync('medical-official-sync.js', 'utf8');
-const firebase = fs.readFileSync('medical-firebase.js', 'utf8');
+const firebase = fs.readFileSync('medical-firebase-module.js', 'utf8');
 const boundary = fs.readFileSync('docs/MEDICAL-BROCHURE-MEDIA-BOUNDARY.md', 'utf8');
 
 assert.match(product, /brochure_url/);
