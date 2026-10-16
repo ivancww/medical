@@ -9,8 +9,8 @@ const sw = fs.readFileSync('sw.js', 'utf8');
 const pages = fs.readFileSync('.github/workflows/pages.yml', 'utf8');
 const connectorPin = fs.readFileSync('docs/MEDICAL-ADMIN-CONNECTOR-PIN.md', 'utf8');
 
-assert.equal(release.appVersion, 'v1.2.5');
-assert.equal(release.releaseType, 'feature');
+assert.equal(release.appVersion, 'v1.2.6');
+assert.equal(release.releaseType, 'patch');
 assert.match(app, /window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.5'/);
 assert.match(build, /AVA_MEDICAL_VERSION.*v1\.2\.5/);
 assert.match(app, /\$\('#appVersion'\)\.textContent=APP_VERSION/);
@@ -32,5 +32,5 @@ assert.match(pages, /release-version\.json/);
 assert.match(pages, /AVA_MEDICAL_VERSION/);
 assert.match(connectorPin, /Medical release: \`v1\.2\.5\`/);
 
-console.log('Medical frontend release identity v1.2.5 is consistent across source, build and PWA metadata');
+console.log('Medical frontend release identity v1.2.6 is consistent across source, build and PWA metadata');
 
