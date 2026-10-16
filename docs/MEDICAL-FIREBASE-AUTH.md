@@ -1,63 +1,38 @@
-# Medical Firebase custom-token activation
+# Medical Official media upload contract
 
-PR #34 prepares the Medical Admin upload path for the existing shared
-`medical-and-ci` Firebase project. The browser requests a short-lived token
-from Medical GAS through the existing AVA Admin grant, signs in with
-`signInWithCustomToken`, and keeps Firebase Auth persistence in memory only.
-The browser never receives a service-account property and never writes a File,
-blob, base64 value, or custom token to browser storage.
+Medical Official brochures use the shared `medical-and-ci` Firebase Web
+configuration and the Storage-only SDK path. The browser uploads directly to
+Firebase Storage under `medical/official/brochures/**`, observes resumable
+progress, obtains an HTTPS download URL, and then uses the existing AVA Admin
+authorization contract for the authenticated Medical Official Sheet write.
 
-## Medical GAS Script Properties
-
-Configure these properties in the Medical GAS project before deployment:
-
-`MEDICAL_FIREBASE_SERVICE_ACCOUNT_EMAIL`
-
-Set it to the Firebase service-account JSON `client_email`.
-
-`MEDICAL_FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY`
-
-Set it to the complete JSON `private_key`, including `-----BEGIN PRIVATE KEY-----`
-and `-----END PRIVATE KEY-----`. Preserve the PEM newlines. If the value is
-pasted with literal `\n` escapes, the issuer normalizes those escapes to real
-newlines server-side. Never commit, log, or return this value.
-
-Optional approved server-side broker properties are:
-
-`MEDICAL_FIREBASE_AUTH_BROKER_URL`
-
-`MEDICAL_FIREBASE_AUTH_BROKER_SECRET`
-
-When both are present, Medical GAS uses the broker; otherwise it issues the
-token directly from the two Medical service-account properties. The current
-contract is `ava-medical-storage-v1`, with `avaAdmin: true` and a 15-minute
-expiry.
+Firebase Auth, custom tokens, service-account keys, broker credentials, and a
+second Firebase login are not part of the Medical brochure flow.
 
 ## Shared Storage Rules
 
-`firebase/storage.rules` is a deployment artifact only. The intended Medical
-rule is public read and authenticated Admin-claim write under
-`medical/official/**`:
+`firebase/storage.rules` is a deployment artifact only. The dedicated Medical
+Official brochure namespace is intentionally public media:
 
 ```text
-request.auth != null && request.auth.token.avaAdmin == true
+match /medical/official/brochures/{allPaths=**} {
+  allow read: if true;
+  allow create, update: if validMedia();
+  allow delete: if false;
+}
 ```
 
-The artifact preserves the existing Critical Illness namespaces and denies
-unmatched paths. Do not deploy a public write rule and do not deploy this
-change until the shared-bucket owner confirms the Critical Illness rules are
-unchanged.
+The rule validates PDF, PNG, JPEG, and WEBP content up to 20 MB. Unmatched
+paths remain denied. The Critical Illness Official namespace uses the same
+public-media contract; user-scoped CI media remains authenticated and scoped.
 
-## Activation boundary
+## Publication boundary
 
-Production activation is still required after this PR:
+Public Storage media does not make Official Sheet editing public. The Admin
+flow still requires AVA Admin authorization for `updateOfficialRecord` or
+`createOfficialRecord`, followed by read-after-write confirmation before the
+new brochure URL becomes authoritative.
 
-1. Deploy the Medical GAS source.
-2. Configure the two required Script Properties (or the approved broker pair).
-3. Confirm Firebase Auth custom-token sign-in is enabled for `medical-and-ci`.
-4. Deploy the coordinated Storage Rules change through the approved process.
-5. Run the real iPad Admin upload and verify Firebase URL, Official write,
-   read-after-write, success UI, retry, and old brochure preservation.
-
-This PR does not deploy GAS, change Script Properties, change production
-Sheets, or deploy Firebase Rules.
+This source change does not deploy GAS or Firebase Rules. Deploy the reviewed
+GAS source and shared Storage Rules through the approved production process,
+then run the real-device Admin upload and retry/failure checks.
