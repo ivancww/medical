@@ -41,12 +41,14 @@ service firebase.storage {
       allow delete: if ownsUserScope(userScope);
     }
 
-    // Medical Admin custom-token migration. This is deliberately separate
-    // from the Critical Illness namespace in the shared bucket.
-    match /medical/official/{allPaths=**} {
+    // Medical Official product brochures are intentionally public media,
+    // matching the current Critical Illness Official-media contract. Keep
+    // the grant limited to the brochure namespace; all other Medical paths
+    // remain denied by the default rule below.
+    match /medical/official/brochures/{allPaths=**} {
       allow read: if true;
-      allow create, update: if isAdmin() && validMedia();
-      allow delete: if isAdmin();
+      allow create, update: if validMedia();
+      allow delete: if false;
     }
 
     match /{allPaths=**} {
