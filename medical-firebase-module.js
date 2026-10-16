@@ -1,6 +1,5 @@
 /* Approved Medical / CI Firebase Storage boundary for Official brochures. */
 import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, inMemoryPersistence, setPersistence, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getDownloadURL, getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
 const firebaseConfig = Object.freeze({
@@ -16,15 +15,12 @@ const ALLOWED_TYPES = Object.freeze(["application/pdf", "image/jpeg", "image/png
 const MAX_BYTES = 20 * 1024 * 1024;
 const PLAN_IDS = Object.freeze(["ELITE", "WISE", "FLEXI"]);
 export const FIREBASE_UPLOAD_TIMEOUT_MS = 120000;
-const FIREBASE_AUTH_CONTRACT = "ava-medical-storage-v1";
 let storage = null;
-let auth = null;
 let initializationError = null;
 
 try {
   const app = getApps().find(candidate => candidate.name === "ava-medical") || initializeApp(firebaseConfig, "ava-medical");
   storage = getStorage(app);
-  auth = getAuth(app);
 } catch (error) {
   initializationError = error;
 }
@@ -51,52 +47,11 @@ function validateFile(file) {
   if (!Number.isFinite(Number(file.size)) || Number(file.size) <= 0 || Number(file.size) > MAX_BYTES) throw new Error("檔案大小必須介乎 1 byte 至 20 MB。");
 }
 
-async function authenticateFirebaseAdmin(onStage) {
-  if (!auth || !globalThis.MedicalAdminAuth?.hasSession?.() || typeof globalThis.MedicalAdminAuth.authorizedRequest !== "function") {
-    const error = new Error("Medical Admin Firebase 授權未就緒。");
-    error.code = "FIREBASE_AUTH_CONFIGURATION_REQUIRED";
-    throw stageError("firebase-auth-configuration", error, "Firebase Auth 設定未完成。");
-  }
-  notify(onStage, { stage: "firebase-auth", state: "requesting" });
-  let response;
-  try {
-    response = await globalThis.MedicalAdminAuth.authorizedRequest({
-      action: "issueFirebaseAuthorization",
-      operation: "medical:official-write",
-      body: { mode: "admin", contract: FIREBASE_AUTH_CONTRACT }
-    });
-  } catch (error) {
-    throw stageError("firebase-auth-issue", error, "Firebase custom-token 授權失敗。");
-  }
-  const grant = response?.data || response || {};
-  const expiresAt = Date.parse(String(grant.expiresAt || ""));
-  if (
-    typeof grant.firebaseCustomToken !== "string" || !grant.firebaseCustomToken.trim() ||
-    !Number.isFinite(expiresAt) || expiresAt <= Date.now() ||
-    grant.claims?.avaAdmin !== true || grant.contract !== FIREBASE_AUTH_CONTRACT
-  ) {
-    const error = new Error("Firebase custom-token 授權回應無效。");
-    error.code = "FIREBASE_AUTH_ISSUE_INVALID";
-    throw stageError("firebase-auth-issue", error, "Firebase custom-token 授權回應無效。");
-  }
-  notify(onStage, { stage: "firebase-auth", state: "signing-in" });
-  try {
-    await setPersistence(auth, inMemoryPersistence);
-    const credential = await signInWithCustomToken(auth, grant.firebaseCustomToken);
-    if (!credential?.user?.uid) throw new Error("Firebase Auth 未返回已登入使用者。");
-    notify(onStage, { stage: "firebase-auth", state: "signed-in", uid: credential.user.uid });
-    return { uid: credential.user.uid, expiresAt: grant.expiresAt, claims: grant.claims };
-  } catch (error) {
-    throw stageError("firebase-auth-signin", error, "Firebase Auth 登入失敗。");
-  }
-}
-
 export async function uploadOfficialBrochure({ planId, file, onProgress, onStage, timeoutMs = FIREBASE_UPLOAD_TIMEOUT_MS }) {
   if (initializationError || !storage) throw stageError("initialization", initializationError, "Medical Firebase 模組未能初始化。");
   const id = String(planId || "").toUpperCase();
   if (!PLAN_IDS.includes(id)) throw new Error("只有 ELITE、WISE、FLEXI 計劃可以上載產品資料。");
   validateFile(file);
-  await authenticateFirebaseAdmin(onStage);
   const boundedTimeout = Number.isFinite(Number(timeoutMs)) ? Math.max(1000, Number(timeoutMs)) : FIREBASE_UPLOAD_TIMEOUT_MS;
   const filename = `${Date.now()}-${sanitizeFilename(file.name)}`;
   const objectPath = `medical/official/brochures/${id}/${filename}`;
