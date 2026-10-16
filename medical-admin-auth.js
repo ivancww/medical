@@ -24,10 +24,7 @@
       ADMIN_EXCHANGE_RESPONSE: "AVA 管理授權回應無效，請返回 AVA Studio 再開啟 Medical。",
       ADMIN_UNAUTHORIZED: "此管理入口未能由 AVA Studio 授權。",
       ADMIN_LAUNCH_REPLAY: "此管理入口已使用，請返回 AVA Studio 重新開啟 Medical。",
-      ADMIN_SESSION_CLEARED: "AVA 管理授權已清除，請返回 AVA Studio 重新開啟 Medical。",
-      FIREBASE_AUTH_CONFIGURATION_REQUIRED: "Firebase Auth 設定未完成，請先配置 Medical GAS Script Properties。",
-      FIREBASE_AUTH_BROKER_REJECTED: "Firebase custom-token 授權服務拒絕此管理請求。",
-      FIREBASE_AUTH_ISSUE_INVALID: "Firebase custom-token 授權回應無效。"
+      ADMIN_SESSION_CLEARED: "AVA 管理授權已清除，請返回 AVA Studio 重新開啟 Medical。"
     };
     const safe = new Error(messages[error?.code] || "此管理入口需要由 AVA Studio 驗證後開啟。");
     safe.code = error?.code || "ADMIN_UNAUTHORIZED";
