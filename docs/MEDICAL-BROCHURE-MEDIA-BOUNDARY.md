@@ -11,9 +11,10 @@ is not exposed as an approved shared AVA Cloud Media service or Medical Admin
 upload contract. The user has now explicitly authorized the existing
 `medical-and-ci` Firebase project for Medical / CI brochure storage.
 
-Medical now uses a versioned `medical-firebase.js` classic bootstrap and its
-Storage-only `medical-firebase-module.js` implementation for that existing
-project. Official media upload uses the same public-write Firebase namespace
+Medical now uses a versioned three-layer client: `medical-firebase.js` is the
+Official-media orchestration layer, `medical-firebase-bootstrap.js` is the
+classic readiness gate, and `medical-firebase-module.js` is the thin
+Storage-only SDK provider for that existing project. Official media upload uses the same public-write Firebase namespace
 model as current Critical Illness; the Admin session still gates the later
 Official Sheet write. It validates
 PDF/JPEG/PNG/WEBP and size, creates a deterministic plan-scoped object path,

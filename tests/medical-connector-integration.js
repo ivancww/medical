@@ -34,7 +34,7 @@ async function run() {
   assert.equal(calls[1].appId, 'medical');
   assert.equal(calls[1].operation, 'medical:official-write');
   assert.equal(calls[1].appGrant, 'grant-1');
-  assert.equal(connector.getSessionProof(), undefined);
+  assert.equal(connector.getSessionProof(), 'grant-1');
   assert.equal(JSON.stringify(calls[1]).includes('adminSessionProof'), false);
 
   await assert.rejects(connector.exchangeAppLaunch(), error => error.code === 'ADMIN_LAUNCH_REPLAY');
