@@ -8,6 +8,7 @@ const MEDICAL_OFFICIAL_DATASETS = Object.freeze({
   claimCases: { sheet: "Claim_Cases", ids: ["case_id"], fields: ["case_title", "condition_name", "treatment_name", "medical_cost", "actual_reimbursement", "case_date", "source_type", "source_url", "verified", "enabled", "sort_order"], types: { medical_cost: "number", actual_reimbursement: "number", verified: "boolean", enabled: "boolean", sort_order: "number" } },
   premiumSettings: { sheet: "Premium_Settings", ids: ["setting_id"], fields: ["title", "description", "value", "start_date", "end_date", "enabled", "sort_order"], types: { enabled: "boolean", sort_order: "number" } },
   planComparison: { sheet: "Plan_Comparison", ids: ["comparison_id"], fields: ["item_key", "item_name", "plan_id", "condition_state", "main_value", "sub_value", "enabled", "sort_order", "source_name", "source_url", "verified", "notes"], types: { enabled: "boolean", sort_order: "number", verified: "boolean" } },
+  productContent: { sheet: "Product_Content", ids: ["content_id"], fields: ["plan_id", "content_type", "category", "owner_id", "title", "short_text", "resource_type", "resource_ref", "sort_order", "enabled"], types: { sort_order: "number", enabled: "boolean" } },
   config: { sheet: "Config", ids: ["config_key"], fields: ["config_value", "description"], types: {} }
 });
 
@@ -117,12 +118,13 @@ function medicalOfficialReadSnapshot_() {
   const claimCases = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.CLAIM_CASES, "sort_order");
   const premiumSettings = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PREMIUM_SETTINGS, "sort_order");
   const planComparison = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PLAN_COMPARISON, "sort_order");
+  const productContent = medicalOfficialReadObjects_(ss, "Product_Content", "sort_order");
   const premiumTables = readPremiumTables_(ss) || {};
   const adminDatasets = {
-    pages, options, plans, claimRules, claimCases, premiumSettings, planComparison,
+    pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, productContent,
     config: medicalOfficialConfigRows_(config)
   };
-  const payload = { pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, premiumTables, config, adminDatasets };
+  const payload = { pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, productContent, premiumTables, config, adminDatasets };
   const version = String(config.data_version || AVA_MEDICAL.SCHEMA_VERSION || "unknown");
   return Object.assign({ success: true, version, revision: medicalOfficialRevision_(payload) }, payload);
 }

@@ -19,7 +19,7 @@ assert.match(frontend, /getMetadata/);
 assert.match(frontend, /FIREBASE_UPLOAD_TIMEOUT_MS = 120000/);
 assert.doesNotMatch(`${frontend}\n${bootstrap}\n${provider}`, /firebase-auth\.js|getAuth|signInWithCustomToken|inMemoryPersistence|setPersistence|issueFirebaseAuthorization/);
 assert.doesNotMatch(`${frontend}\n${bootstrap}\n${provider}`, /-----BEGIN (?:RSA )?PRIVATE KEY-----|localStorage|sessionStorage|indexedDB|base64/i);
-assert.match(frontend, /medical\/official\/brochures/);
+assert.match(frontend, /medical\/official\//);
 assert.doesNotMatch(frontend, /critical-illness\/official/);
 
 // Admin authentication still gates the Official Sheet write independently of
@@ -54,8 +54,8 @@ assert.match(connector, /payload\?\.error\?\.code/);
 
 assert.match(rules, /match \/critical-illness\/official\/\{planId\}\/\{allPaths=\*\*\}/);
 assert.match(rules, /match \/critical-illness\/official\/\{planId\}\/\{allPaths=\*\*\}[\s\S]*?allow read: if true;[\s\S]*?allow create, update: if validMedia\(\);[\s\S]*?allow delete: if false;/);
-assert.match(rules, /match \/medical\/official\/brochures\/\{allPaths=\*\*\}/);
-assert.match(rules, /match \/medical\/official\/brochures\/\{allPaths=\*\*\}[\s\S]*?allow read: if true;[\s\S]*?allow create, update: if validMedia\(\);[\s\S]*?allow delete: if false;/);
+assert.match(rules, /match \/medical\/official\/\{planId\}\/\{allPaths=\*\*\}/);
+assert.match(rules, /match \/medical\/official\/\{planId\}\/\{allPaths=\*\*\}[\s\S]*?allow read: if true;[\s\S]*?allow create, update: if validMedia\(\);[\s\S]*?allow delete: if false;/);
 assert.doesNotMatch(rules, /match \/medical\/official\/\{allPaths=\*\*\}/);
 assert.doesNotMatch(rules, /allow read, write: if true/);
 assert.match(rules, /match \/critical-illness\/users\/\{userScope\}\/\{allPaths=\*\*\}/);

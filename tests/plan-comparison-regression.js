@@ -12,11 +12,11 @@ assert.match(source, /plancomparison: "plan_comparison"/);
 assert.match(source, /comparisonitems: "plan_comparison"/);
 assert.match(source, /comparison_items: "plan_comparison"/);
 assert.match(source, /planComparison: snapshot\.planComparison/);
-assert.match(source, /const payload = \{ pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, premiumTables/);
+assert.match(source, /const payload = \{ pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, productContent, premiumTables/);
 assert.match(source, /legacyKeys = \[.*"planComparison"/);
 assert.match(source, /initializeMedicalPlanComparisonSheet_/);
 assert.match(source, /createOfficialRecord/);
-assert.match(source, /Only Plan_Comparison records may be created/);
+assert.match(source, /Only Plan_Comparison or Product_Content records may be created/);
 
 const headers = [
   'comparison_id', 'item_key', 'item_name', 'plan_id', 'condition_state',
