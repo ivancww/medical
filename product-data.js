@@ -5,6 +5,8 @@
   const TABLE_PREFIXES={ELITE:['尊耀','尊顯'],WISE:['睿選'],FLEXI:['男靈活計劃','女靈活計劃']};
   const GENDER_KEYS={male:'男靈活計劃',female:'女靈活計劃'};
   function enabled(value){return value?.enabled===undefined||value.enabled===true||String(value.enabled).toUpperCase()==='TRUE'}
+  function usableResource(value){return enabled(value)&&/^https:\/\//i.test(String(value?.resource_ref||''))}
+  function resourceRows(official){return (official?.productContent||official?.product_content||official?.adminDatasets?.productContent||official?.adminDatasets?.product_content||[]).filter(usableResource)}
   function rowsFor(official,id){return (official?.plans||[]).filter(x=>enabled(x)&&String(x.plan_id||x.record_id||'').toUpperCase()===id)}
   function ruleFor(official,id){return (official?.claimRules||official?.claim_rules||[]).find(x=>String(x.plan_id||'').toUpperCase()===id)}
   function tableEntries(official,id){
@@ -40,8 +42,11 @@
   function getProductData(official){
     return PRODUCT_ORDER.map(id=>{
       const planRows=rowsFor(official,id), base=planRows.find(x=>String(x.record_type||'').toUpperCase()==='PLAN')||planRows[0]||{};
-      return {id,name:base.plan_name||base.title||ruleFor(official,id)?.plan_name||id,brochure_url:base.brochure_url||'',rule:ruleFor(official,id)||null,deductibles:deductibleOptions(official,id),features:planRows.filter(x=>String(x.record_type||'').toUpperCase()==='FEATURE')};
+      const resources=resourceRows(official).filter(x=>String(x.plan_id||'').toUpperCase()===id);
+      return {id,name:base.plan_name||base.title||ruleFor(official,id)?.plan_name||id,brochure_url:base.brochure_url||'',resources,rule:ruleFor(official,id)||null,deductibles:deductibleOptions(official,id),features:planRows.filter(x=>String(x.record_type||'').toUpperCase()==='FEATURE')};
     }).filter(x=>x.rule||x.name!==x.id);
   }
-  root.AVAMedicalProductData={PRODUCT_ORDER,getProductData,deductibleOptions,lookupPremium,calculatePremium};
+  function resourcesForPlan(official,planId){return resourceRows(official).filter(x=>String(x.plan_id||'').toUpperCase()===String(planId||'').toUpperCase())}
+  function resourcesForClaimCase(official,caseId){return resourceRows(official).filter(x=>String(x.owner_id||'')===String(caseId||''))}
+  root.AVAMedicalProductData={PRODUCT_ORDER,getProductData,deductibleOptions,lookupPremium,calculatePremium,resourceRows,resourcesForPlan,resourcesForClaimCase};
 })(typeof window!=='undefined'?window:globalThis);

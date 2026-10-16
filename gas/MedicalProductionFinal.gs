@@ -25,7 +25,8 @@ const AVA_MEDICAL = Object.freeze({
     CLAIM_RULES: "Claim_Rules",
     CLAIM_CASES: "Claim_Cases",
     PREMIUM_SETTINGS: "Premium_Settings",
-    PLAN_COMPARISON: "Plan_Comparison"
+    PLAN_COMPARISON: "Plan_Comparison",
+    PRODUCT_CONTENT: "Product_Content"
   }),
   PREMIUM_SHEETS: Object.freeze([
     "女靈活計劃",
@@ -50,10 +51,12 @@ const MEDICAL_OFFICIAL_DATASETS = Object.freeze({
   claimCases: { sheet: "Claim_Cases", ids: ["case_id"], fields: ["case_title", "condition_name", "treatment_name", "medical_cost", "actual_reimbursement", "case_date", "source_type", "source_url", "verified", "enabled", "sort_order"], types: { medical_cost: "number", actual_reimbursement: "number", verified: "boolean", enabled: "boolean", sort_order: "number" } },
   premiumSettings: { sheet: "Premium_Settings", ids: ["setting_id"], fields: ["title", "description", "value", "start_date", "end_date", "enabled", "sort_order"], types: { enabled: "boolean", sort_order: "number" } },
   planComparison: { sheet: "Plan_Comparison", ids: ["comparison_id"], fields: ["item_key", "item_name", "plan_id", "condition_state", "main_value", "sub_value", "enabled", "sort_order", "source_name", "source_url", "verified", "notes"], types: { enabled: "boolean", sort_order: "number", verified: "boolean" } },
+  productContent: { sheet: "Product_Content", ids: ["content_id"], fields: ["plan_id", "content_type", "category", "owner_id", "title", "short_text", "resource_type", "resource_ref", "sort_order", "enabled"], types: { sort_order: "number", enabled: "boolean" } },
   config: { sheet: "Config", ids: ["config_key"], fields: ["config_value", "description"], types: {} }
 });
 
 const MEDICAL_PLAN_COMPARISON_HEADERS = Object.freeze(["comparison_id", "item_key", "item_name", "plan_id", "condition_state", "main_value", "sub_value", "enabled", "sort_order", "source_name", "source_url", "verified", "notes"]);
+const MEDICAL_PRODUCT_CONTENT_HEADERS = Object.freeze(["content_id", "plan_id", "content_type", "category", "owner_id", "title", "short_text", "resource_type", "resource_ref", "sort_order", "enabled", "version"]);
 
 function output_(value, callback) {
   const json = JSON.stringify(value);
@@ -119,7 +122,9 @@ function getDataset_(requested) {
     premium_tables: "premiums",
     plancomparison: "plan_comparison",
     comparisonitems: "plan_comparison",
-    comparison_items: "plan_comparison"
+    comparison_items: "plan_comparison",
+    productcontent: "product_content",
+    product_content: "product_content"
   }[requestedDataset] || requestedDataset;
   const config = readKeyValueSheet_(medicalSheet_(AVA_MEDICAL.SHEETS.CONFIG));
   const version = String(config.data_version || AVA_MEDICAL.SCHEMA_VERSION);
@@ -132,6 +137,7 @@ function getDataset_(requested) {
     claim_cases: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.CLAIM_CASES, "sort_order"),
     premium_settings: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.PREMIUM_SETTINGS, "sort_order"),
     plan_comparison: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.PLAN_COMPARISON, "sort_order"),
+    product_content: medicalOfficialReadObjects_(medicalSpreadsheet_(), AVA_MEDICAL.SHEETS.PRODUCT_CONTENT, "sort_order"),
     premiums: readPremiumTables_(medicalSpreadsheet_())
   };
   if (!Object.prototype.hasOwnProperty.call(data, dataset)) throw new Error("Unsupported dataset");
@@ -155,6 +161,7 @@ function medicalFullBootstrap_() {
     claimCases: snapshot.claimCases,
     premiumSettings: snapshot.premiumSettings,
     planComparison: snapshot.planComparison,
+    productContent: snapshot.productContent,
     premiumTables: snapshot.premiumTables
   };
 }
@@ -277,6 +284,22 @@ function initializeMedicalPlanComparisonSheet_() {
   return { created: false, sheet: AVA_MEDICAL.SHEETS.PLAN_COMPARISON, headers };
 }
 
+/** Safe one-time setup for the canonical Official resource directory. */
+function initializeMedicalProductContentSheet_() {
+  const ss = medicalSpreadsheet_();
+  let sheet = ss.getSheetByName(AVA_MEDICAL.SHEETS.PRODUCT_CONTENT);
+  if (!sheet) {
+    sheet = ss.insertSheet(AVA_MEDICAL.SHEETS.PRODUCT_CONTENT);
+    sheet.getRange(1, 1, 1, MEDICAL_PRODUCT_CONTENT_HEADERS.length).setValues([MEDICAL_PRODUCT_CONTENT_HEADERS]);
+    return { created: true, sheet: AVA_MEDICAL.SHEETS.PRODUCT_CONTENT, headers: MEDICAL_PRODUCT_CONTENT_HEADERS.slice() };
+  }
+  const width = Math.max(sheet.getLastColumn(), MEDICAL_PRODUCT_CONTENT_HEADERS.length);
+  const headers = sheet.getRange(1, 1, 1, width).getValues()[0].map(String);
+  const missing = MEDICAL_PRODUCT_CONTENT_HEADERS.filter(header => !headers.includes(header));
+  if (missing.length) throw new Error("Product_Content headers missing: " + missing.join(", "));
+  return { created: false, sheet: AVA_MEDICAL.SHEETS.PRODUCT_CONTENT, headers };
+}
+
 function readKeyValueSheet_(sheet) {
   if (!sheet) return {};
   const values = sheet.getDataRange().getValues();
@@ -382,8 +405,9 @@ function medicalOfficialReadSnapshot_() {
   const premiumSettings = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PREMIUM_SETTINGS, "sort_order");
   const planComparison = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PLAN_COMPARISON, "sort_order");
   const premiumTables = readPremiumTables_(ss) || {};
-  const adminDatasets = { pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, config: medicalOfficialConfigRows_(config) };
-  const payload = { pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, premiumTables, config, adminDatasets };
+  const productContent = medicalOfficialReadObjects_(ss, AVA_MEDICAL.SHEETS.PRODUCT_CONTENT, "sort_order");
+  const adminDatasets = { pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, productContent, config: medicalOfficialConfigRows_(config) };
+  const payload = { pages, options, plans, claimRules, claimCases, premiumSettings, planComparison, productContent, premiumTables, config, adminDatasets };
   const version = String(config.data_version || AVA_MEDICAL.SCHEMA_VERSION || "unknown");
   return Object.assign({ success: true, version, revision: medicalOfficialRevision_(payload) }, payload);
 }
@@ -407,10 +431,11 @@ function medicalOfficialDataAction_(body) {
 
 function medicalCreateOfficialRecord_(body) {
   const dataset = String(body.dataset || ""), definition = MEDICAL_OFFICIAL_DATASETS[dataset], stableId = String(body.recordId || ""), changes = body.changes;
-  if (dataset !== "planComparison" || !definition) throw new Error("Only Plan_Comparison records may be created through this contract");
+  if (!(dataset === "planComparison" || dataset === "productContent") || !definition) throw new Error("Only Plan_Comparison or Product_Content records may be created through this contract");
   if (!stableId || !/^[A-Za-z0-9._-]{3,120}$/.test(stableId)) throw new Error("Stable Official record ID is required");
   if (!changes || typeof changes !== "object" || Array.isArray(changes)) throw new Error("No Official record supplied");
   Object.keys(changes).forEach(field => { if (!definition.fields.includes(field)) throw new Error("Official field is read-only or unsupported: " + field); medicalOfficialValidateValue_(field, changes[field], definition.types[field]); });
+  medicalValidateProductContent_(dataset, changes);
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -435,6 +460,7 @@ function medicalUpdateOfficialRecord_(body) {
     if (!definition.fields.includes(field)) throw new Error("Official field is read-only or unsupported: " + field);
     medicalOfficialValidateValue_(field, changes[field], definition.types[field]);
   });
+  medicalValidateProductContent_(dataset, changes);
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -467,6 +493,23 @@ function medicalOfficialValidateValue_(field, value, type) {
   if (value !== null && typeof value === "object") throw new Error("Official value must be scalar");
   if (type === "number" && (typeof value !== "number" || !isFinite(value))) throw new Error("Official field must be numeric: " + field);
   if (type === "boolean" && typeof value !== "boolean") throw new Error("Official field must be boolean: " + field);
+}
+
+function medicalValidateProductContent_(dataset, changes) {
+  if (dataset !== "productContent") return;
+  const planId = changes.plan_id === undefined ? "" : String(changes.plan_id);
+  const contentType = changes.content_type === undefined ? "" : String(changes.content_type);
+  const category = changes.category === undefined ? "" : String(changes.category);
+  const resourceType = changes.resource_type === undefined ? "" : String(changes.resource_type);
+  const resourceRef = changes.resource_ref === undefined ? "" : String(changes.resource_ref);
+  if (planId && !/^(ELITE|WISE|FLEXI)$/.test(planId)) throw new Error("Product_Content plan_id is invalid");
+  if (contentType && !/^(brochure|product_feature|product_document|claim_case|claim_example|other)$/.test(contentType)) throw new Error("Product_Content content_type is invalid");
+  if (category && !/^[A-Za-z0-9._-]{1,80}$/.test(category)) throw new Error("Product_Content category is invalid");
+  if (resourceType && resourceType !== "firebase") throw new Error("Product_Content resource_type is invalid");
+  if (resourceRef && !/^https:\/\//i.test(resourceRef)) throw new Error("Product_Content resource_ref must be HTTPS");
+  if ((contentType === "claim_case" || contentType === "claim_example" || category === "claims") && changes.owner_id !== undefined && !String(changes.owner_id).trim()) {
+    throw new Error("Claim Product_Content requires owner_id");
+  }
 }
 
 function medicalOfficialRecordId_(row, ids) {

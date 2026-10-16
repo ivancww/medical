@@ -1,15 +1,15 @@
-# Medical brochure media boundary
+# Medical Official media boundary
 
-Medical Plans already carries the Official `brochure_url` field. The frontend
-reads that field from the Official `Plans` dataset and does not contain a
-brochure URL allowlist.
+Medical Plans continues to carry the backwards-compatible Official
+`brochure_url` field. New product, feature and Claim Case resources use the
+canonical `Product_Content` directory and require an HTTPS resource URL.
 
 The latest AVA Platform source was reviewed before this change. It contains an
 `AVAStorage` provider abstraction whose shared provider is local storage. A
 Firebase Storage upload implementation exists inside the 5pay module, but it
 is not exposed as an approved shared AVA Cloud Media service or Medical Admin
 upload contract. The user has now explicitly authorized the existing
-`medical-and-ci` Firebase project for Medical / CI brochure storage.
+`medical-and-ci` Firebase project for Medical / CI Official media storage.
 
 Medical now uses a versioned three-layer client: `medical-firebase.js` is the
 Official-media orchestration layer, `medical-firebase-bootstrap.js` is the
@@ -20,11 +20,11 @@ Official Sheet write. It validates
 PDF/JPEG/PNG/WEBP and size, creates a deterministic plan-scoped object path,
 and returns the HTTPS URL. The current safe boundary is:
 
-`approved cloud media reference → Medical Official Plans.brochure_url → P7`
+`approved cloud media reference → Product_Content.resource_ref → Frontstage`
 
 The browser never writes a binary or Base64 value to Google Sheet, IndexedDB or
 LocalStorage. After Firebase upload, only the returned URL is sent through the
 existing authenticated Medical Official write path and is accepted after
 read-after-write confirmation. The intended public rule is limited to
-`medical/official/brochures/**`; user/private and unrelated bucket paths remain
+`medical/official/{PLAN_ID}/...`; user/private and unrelated bucket paths remain
 denied.

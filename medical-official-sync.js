@@ -19,7 +19,8 @@
     plan_id: "計劃識別碼", default_rate: "預設賠償比例", deductible_enabled: "啟用自付額", note: "備註", case_id: "個案識別碼", case_title: "個案標題", condition_name: "病症名稱", treatment_name: "治療名稱",
     medical_cost: "醫療費用", actual_reimbursement: "實際賠償", case_date: "個案日期", source_type: "資料來源類型", source_name: "資料來源名稱", source_url: "資料來源連結", verified: "已核實", setting_id: "設定識別碼",
     value: "設定值", start_date: "開始日期", end_date: "結束日期", config_key: "設定鍵值", config_value: "設定內容",
-    comparison_id: "比較記錄識別碼", item_key: "保障項目鍵值", item_name: "保障項目名稱", condition_state: "條件狀態", main_value: "主要保障值", sub_value: "補充說明", sort_order: "排序", notes: "內部備註"
+    comparison_id: "比較記錄識別碼", item_key: "保障項目鍵值", item_name: "保障項目名稱", condition_state: "條件狀態", main_value: "主要保障值", sub_value: "補充說明", sort_order: "排序", notes: "內部備註",
+    content_id: "資源識別碼", content_type: "資源類型", owner_id: "關聯個案識別碼", short_text: "簡短說明", resource_type: "資源格式", resource_ref: "Firebase 資源連結"
   });
   const DATASETS = Object.freeze([
     { key: "pages", label: "頁面設定", description: "管理 Ready 及 Not Ready 流程頁面的內容與啟用狀態。", id: ["page_id"], fields: ["page_name", "title", "subtitle", "enabled", "sort_order", "highlight_text"] },
@@ -27,13 +28,14 @@
     { key: "plans", label: "產品及保障", description: "管理前台展示的醫療計劃、保障說明及產品連結。", id: ["record_id"], fields: ["plan_name", "category", "title", "description", "brochure_url", "enabled", "sort_order"] },
     { key: "claimRules", label: "理賠規則", description: "管理客戶展示用的理賠說明規則；詳細計算邏輯仍由 Medical 引擎負責。", id: ["plan_id"], fields: ["plan_name", "default_rate", "deductible_enabled", "note"] },
     { key: "claimCases", label: "理賠案例", description: "管理已核實的醫療費用、實際賠償及案例展示資料。", id: ["case_id"], fields: ["case_title", "condition_name", "treatment_name", "medical_cost", "actual_reimbursement", "case_date", "source_type", "source_url", "verified", "enabled", "sort_order"] },
+    { key: "productContent", label: "官方產品／案例資源", description: "管理產品小冊子、產品特點及 Claim Case 附件；Firebase 只保存二進制，Official Sheet 保存發布目錄。", id: ["content_id"], fields: ["plan_id", "content_type", "category", "owner_id", "title", "short_text", "resource_type", "resource_ref", "sort_order", "enabled"] },
     { key: "premiumSettings", label: "保費設定", description: "管理官方保費設定及其生效期間；保費表仍維持唯讀。", id: ["setting_id"], fields: ["title", "description", "value", "start_date", "end_date", "enabled", "sort_order"] },
     { key: "planComparison", label: "P7 保障比較", description: "管理 P7 保障比較資料；Official Sheet 以啟用狀態及可顯示內容控制發布，已核實狀態只作治理資料。", id: ["comparison_id"], fields: ["item_key", "item_name", "plan_id", "condition_state", "main_value", "sub_value", "enabled", "sort_order", "source_name", "source_url", "verified", "notes"] },
     { key: "config", label: "系統設定", description: "管理 Medical 官方設定鍵值；授權與技術資訊只在底部系統資料顯示。", id: ["config_key"], fields: ["config_value", "description"] }
   ]);
   const READ_ONLY = Object.freeze(["premiumTables", "premium_tables"]);
   const TEXTAREA_FIELDS = new Set(["subtitle", "reflection_text", "description", "highlight_text", "note", "config_value", "main_value", "sub_value", "source_name", "notes"]);
-  const SELECT_FIELDS = new Set(["source_type"]);
+  const SELECT_FIELDS = new Set(["source_type", "content_type", "category", "plan_id", "resource_type"]);
   function definition(key) { return DATASETS.find(item => item.key === key) || null; }
   function rows(official, key) { const value = official?.adminDatasets?.[key] ?? official?.[key]; if (Array.isArray(value)) return value; if (value && typeof value === "object") return Object.entries(value).map(([id, record]) => ({ id, ...(record || {}) })); return []; }
   function sameValue(left, right) { return JSON.stringify(left) === JSON.stringify(right); }
@@ -64,6 +66,7 @@
   const BROCHURE_ALLOWED_TYPES = Object.freeze(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
   const BROCHURE_MAX_BYTES = 20 * 1024 * 1024;
   const pendingBrochureUploads = new Map();
+  const pendingMediaUploads = new Map();
   function canonicalPlanId(record, def = definition("plans")) { if (!isPlanRecord(record)) return null; const stableId = String(recordId(record, def) || "").trim().toUpperCase(); return BROCHURE_PLAN_ALIASES[stableId] || null; }
   function brochureFileTypeLabel(type) { return ({ "application/pdf": "PDF", "image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP" })[String(type || "").toLowerCase()] || String(type || "檔案"); }
   function brochureFileSizeLabel(bytes) { const size = Number(bytes); if (!Number.isFinite(size) || size < 0) return "—"; if (size < 1024 * 1024) return Math.max(1, Math.round(size / 1024)) + " KB"; return (size / (1024 * 1024)).toFixed(1).replace(/\.0$/, "") + " MB"; }
@@ -86,6 +89,17 @@
     const uploading = pending?.uploading === true, statusText = pending?.statusText || "", statusClass = pending?.statusClass || "helper";
     const uploadLabel = uploading ? (pending?.uploadButtonText || "上載中…") : "上載／取代產品資料";
     return '<section class="admin-brochure-media" data-brochure-media data-brochure-record-id="' + esc(id) + '"><h3>產品資料</h3><p class="helper">只會先上載至 Medical / CI Firebase，再以 authenticated Official write 發布連結；Google Sheet 只保存 URL。</p><label class="ava-button upload">選擇 PDF / 圖片<input type="file" data-brochure-file accept="application/pdf,image/jpeg,image/png,image/webp" hidden></label>' + selected + '<span class="admin-brochure-current">目前檔案：' + (current ? '<a href="' + esc(current) + '" target="_blank" rel="noopener noreferrer">已發布產品資料</a>' : '未有') + '</span><button type="button" class="ava-button ava-button--secondary" data-brochure-upload ' + (metadata && !uploading ? '' : 'disabled') + '>' + uploadLabel + '</button><button type="button" class="ava-button ava-button--secondary" data-brochure-cancel ' + (metadata ? '' : 'hidden') + (uploading ? ' disabled' : '') + '>取消</button><p class="' + esc(statusClass) + '" data-brochure-status role="status" aria-live="polite">' + esc(statusText) + '</p></section>';
+  }
+  function resourceOptionsMarkup(field, options, selected) {
+    return options.map(option => '<option value="' + esc(option.value) + '" ' + (option.value === selected ? "selected" : "") + '>' + esc(option.label) + '</option>').join("");
+  }
+  function productContentCreateMarkup() {
+    const pending = pendingMediaUploads.get("new") || {}, metadata = pending.metadata;
+    const values = pending.values || {}, value = field => esc(values[field] ?? "");
+    const selected = metadata ? '<div class="admin-brochure-selection" data-resource-selection><strong>已選擇：</strong> ' + esc(metadata.name) + '<small>' + brochureFileTypeLabel(metadata.type) + ' · ' + brochureFileSizeLabel(metadata.size) + '</small></div>' : '<div class="admin-brochure-selection" data-resource-selection hidden></div>';
+    const fields = '<div class="form-grid admin-field-grid"><label class="admin-field"><span>資源識別碼</span><input class="ava-input" data-resource-field="content_id" value="' + value("content_id") + '" placeholder="例如 ELITE_FEATURES_001"></label><label class="admin-field"><span>計劃</span><select class="ava-input" data-resource-field="plan_id">' + resourceOptionsMarkup("plan_id", [{value:"ELITE",label:"ELITE 尊耀"},{value:"WISE",label:"WISE 睿選"},{value:"FLEXI",label:"FLEXI 靈活"}], values.plan_id || "ELITE") + '</select></label><label class="admin-field"><span>資源類型</span><select class="ava-input" data-resource-field="content_type">' + resourceOptionsMarkup("content_type", [{value:"brochure",label:"產品小冊子"},{value:"product_feature",label:"產品特點"},{value:"product_document",label:"產品資料"},{value:"claim_case",label:"Claim Case 文件"},{value:"claim_example",label:"理賠案例文件"},{value:"other",label:"其他官方資料"}], values.content_type || "product_feature") + '</select></label><label class="admin-field"><span>分類</span><select class="ava-input" data-resource-field="category">' + resourceOptionsMarkup("category", [{value:"brochure",label:"brochure"},{value:"features",label:"features"},{value:"benefits",label:"benefits"},{value:"claims",label:"claims"},{value:"other",label:"other"}], values.category || "features") + '</select></label><label class="admin-field"><span>關聯 Claim Case（如適用）</span><input class="ava-input" data-resource-field="owner_id" value="' + value("owner_id") + '" placeholder="例如 CASE001"></label><label class="admin-field"><span>顯示標題</span><input class="ava-input" data-resource-field="title" value="' + value("title") + '" placeholder="客戶看到的資源名稱"></label><label class="admin-field"><span>簡短說明</span><textarea class="ava-input" data-resource-field="short_text">' + value("short_text") + '</textarea></label><label class="admin-field"><span>排序</span><input class="ava-input" type="number" data-resource-field="sort_order" value="' + value("sort_order") + '"></label><label class="admin-field admin-field--checkbox"><span>啟用發布</span><input type="checkbox" data-resource-field="enabled" ' + (values.enabled === false ? "" : "checked") + '></label></div>';
+    const uploading = pending.uploading === true;
+    return '<details class="resource-create" data-resource-create open><summary>新增官方產品／案例資源</summary><p class="helper">先上載至 Medical Official Firebase，再由 AVA Admin 驗證並建立 Product_Content 官方目錄記錄；不會掃描 Firebase 資料夾。</p>' + fields + '<label class="ava-button upload">選擇 PDF / 圖片<input type="file" data-resource-file accept="application/pdf,image/jpeg,image/png,image/webp" hidden></label>' + selected + '<button type="button" class="ava-button ava-button--primary" data-resource-upload ' + (!metadata || uploading ? 'disabled' : '') + '>' + (uploading ? '上載中…' : '上載並發布官方資源') + '</button><button type="button" class="ava-button ava-button--secondary" data-resource-cancel ' + (metadata && !uploading ? '' : 'hidden') + '>取消</button><p class="helper" data-resource-status role="status" aria-live="polite">' + esc(pending.statusText || "") + '</p></details>';
   }
   function renderRecord(dataset, record, index, selectedIndex, data) {
     const def = definition(dataset), id = recordId(record, def), editable = editableFields(record, def), fields = dataset === "plans" ? editable.filter(field => field !== "brochure_url") : editable, known = new Set([...def.id, ...def.fields]), unknown = Object.keys(record || {}).filter(key => !known.has(key)), label = humanRecordLabel(record, def);
@@ -178,6 +192,50 @@
       render();
       setBrochureStatus(recordIdValue, "已取消選取的產品資料。", "helper");
     }
+    function resourceCreateForm() { return panels.querySelector('[data-resource-create]'); }
+    function resourceFormValues(form) {
+      const values = {};
+      form?.querySelectorAll("[data-resource-field]").forEach(control => { values[control.dataset.resourceField] = control.type === "checkbox" ? control.checked : control.value; });
+      return values;
+    }
+    function setResourceStatus(message, className = "helper") {
+      const pending = pendingMediaUploads.get("new");
+      if (pending) { pending.statusText = String(message || ""); pending.statusClass = className; }
+      const status = resourceCreateForm()?.querySelector("[data-resource-status]");
+      if (status) { status.textContent = message; status.className = className; }
+    }
+    function selectResourceFile(input) {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const metadata = global.MedicalFirebaseMedia?.validateFile ? global.MedicalFirebaseMedia.validateFile(file) : validateBrochureFile(file);
+        pendingMediaUploads.set("new", { file, metadata, values: resourceFormValues(input.closest("[data-resource-create]")), uploading: false });
+        render();
+        setResourceStatus("已選擇：" + metadata.name, "success");
+      } catch (error) { pendingMediaUploads.delete("new"); render(); setResourceStatus(error.message, "error"); }
+    }
+    function cancelResourceFile() { pendingMediaUploads.delete("new"); render(); }
+    async function uploadResource(button) {
+      const pending = pendingMediaUploads.get("new"), form = resourceCreateForm(), values = resourceFormValues(form);
+      if (!pending?.file) { setResourceStatus("請先選擇產品資料檔案。", "error"); return; }
+      const contentId = String(values.content_id || "").trim();
+      if (!/^[A-Za-z0-9._-]{3,120}$/.test(contentId)) { setResourceStatus("資源識別碼必須為 3 至 120 個英數字、底線、句點或連字號。", "error"); return; }
+      const isClaim = ["claim_case", "claim_example"].includes(String(values.content_type)) || String(values.category) === "claims";
+      if (isClaim && !String(values.owner_id || "").trim()) { setResourceStatus("Claim Case 資源必須填寫對應的 Claim_Cases.case_id。", "error"); return; }
+      if (!global.MedicalAdminAuth?.hasSession()) { setResourceStatus(LABELS.permission, "error"); return; }
+      const proof = global.MedicalAdminAuth?.getSessionProof?.();
+      if (!proof) { setResourceStatus("上載未獲授權：必須由 AVA Studio Admin session 啟動。", "error"); return; }
+      pending.uploading = true; button.disabled = true; button.textContent = "上載中…"; setResourceStatus("正在上載官方資源至 Firebase… 0%", "helper");
+      try {
+        const uploaded = await global.MedicalFirebaseMedia.uploadOfficialMedia({ planId: values.plan_id, category: values.category, contentId: values.owner_id || contentId, contentType: values.content_type, file: pending.file, adminSessionProof: proof, onProgress: progress => setResourceStatus("正在上載官方資源至 Firebase… " + progress.percentage + "%（" + brochureBytesLabel(progress.bytesTransferred) + " / " + brochureBytesLabel(progress.totalBytes) + "）"), onStage: event => { if (event?.stage === "object-verification" && event.state === "started") setResourceStatus("Firebase 上載完成，正在確認物件…"); if (event?.stage === "download-url" && event.state === "started") setResourceStatus("正在取得官方資源連結…"); } });
+        const changes = { plan_id: String(values.plan_id), content_type: String(values.content_type), category: String(values.category), owner_id: String(values.owner_id || ""), title: String(values.title || contentId), short_text: String(values.short_text || ""), resource_type: "firebase", resource_ref: uploaded.url, sort_order: Number(values.sort_order || 0), enabled: Boolean(values.enabled) };
+        if (!Number.isFinite(changes.sort_order)) throw new Error(LABELS.invalidNumber);
+        setResourceStatus("資源已上載，正在發布 Official metadata…");
+        const result = await global.MedicalAdminAuth.authorizedRequest({ action: "createOfficialRecord", operation: "medical:official-write", body: { dataset: "productContent", recordId: contentId, changes, expectedVersion: state.official?.revision || state.official?.version } });
+        const next = validateMutationResult(result, { dataset: "productContent", recordId: contentId, changes });
+        state.official = next; pendingMediaUploads.delete("new"); onOfficialChanged?.(next); render(); setMessage(panel, "官方資源已成功上載及發布。", "success");
+      } catch (error) { pending.uploading = false; setResourceStatus(error?.stage === "timeout" ? "Firebase 上載逾時，請檢查網絡後再試。" : error?.message || "官方資源發布失敗。", "error"); button.disabled = false; button.textContent = "上載並發布官方資源"; }
+    }
     function switchDataset(next) {
       if (!definition(next) || next === selected) return;
       if (hasUnsavedChanges(panel, selected, selectedRecords[selected], state.official) && !(typeof global.confirm === "function" && global.confirm(LABELS.unsaved))) return;
@@ -217,7 +275,7 @@
         const selectedIndex = availableIndexes.includes(selectedRecords[dataset.key]) ? selectedRecords[dataset.key] : (availableIndexes[0] ?? -1);
         selectedRecords[dataset.key] = selectedIndex < 0 ? 0 : selectedIndex;
         const selector = entries.length ? '<div class="admin-record-tools"><label for="medical-record-select-' + dataset.key + '"><span>' + LABELS.selectRecord + '</span><select class="ava-input" id="medical-record-select-' + dataset.key + '" data-record-select="' + dataset.key + '">' + entries.map(entry => '<option value="' + entry.index + '" ' + (entry.index === selectedIndex ? "selected" : "") + '>' + esc(recordId(entry.record, dataset) || (LABELS.record + " " + (entry.index + 1))) + ' · ' + esc(humanRecordLabel(entry.record, dataset)) + '</option>').join("") + '</select></label><span class="helper">' + LABELS.selectedRecord + '：' + esc(recordId(data[selectedIndex] || {}, dataset) || (LABELS.record + " " + (selectedIndex + 1))) + '</span></div>' : "";
-        const body = (dataset.key === "planComparison" ? comparisonCreateMarkup() + comparisonFiltersMarkup(data) : "") + (entries.length ? selector + entries.map(entry => renderRecord(dataset.key, entry.record, entry.index, selectedIndex, entries.map(item => item.record))).join("") : '<div class="empty-official"><strong>' + LABELS.emptyTitle + '</strong><p>' + LABELS.emptyHelp + '</p></div>');
+        const body = (dataset.key === "planComparison" ? comparisonCreateMarkup() + comparisonFiltersMarkup(data) : "") + (dataset.key === "productContent" ? productContentCreateMarkup() : "") + (entries.length ? selector + entries.map(entry => renderRecord(dataset.key, entry.record, entry.index, selectedIndex, entries.map(item => item.record))).join("") : '<div class="empty-official"><strong>' + LABELS.emptyTitle + '</strong><p>' + LABELS.emptyHelp + '</p></div>');
         return '<section id="' + ("medical-dataset-panel-" + dataset.key) + '" class="ava-card admin-domain" data-sync-domain="' + dataset.key + '" role="tabpanel" aria-labelledby="medical-dataset-tab-' + dataset.key + '" tabindex="-1" aria-hidden="' + (!active) + '" ' + (active ? "" : "hidden") + '><div class="admin-domain-heading"><div><span class="eyebrow">' + dataset.key + '</span><h2>' + esc(dataset.label) + '</h2><p class="helper">' + esc(dataset.description) + '</p></div><span class="admin-count">' + entries.length + ' / ' + data.length + ' 筆</span></div>' + body + '</section>';
       }).join("");
       panels.querySelectorAll("[data-record-select]").forEach(select => { select.onchange = () => switchRecord(select.dataset.recordSelect, select.value); });
@@ -226,6 +284,9 @@
       panels.querySelectorAll("[data-brochure-file]").forEach(input => { input.onchange = () => selectBrochureFile(input); });
       panels.querySelectorAll("[data-brochure-upload]").forEach(button => { button.onclick = () => uploadBrochure(button); });
       panels.querySelectorAll("[data-brochure-cancel]").forEach(button => { button.onclick = () => cancelBrochureFile(button.closest("[data-brochure-media]")?.dataset.brochureRecordId); });
+      panels.querySelectorAll("[data-resource-file]").forEach(input => { input.onchange = () => selectResourceFile(input); });
+      panels.querySelectorAll("[data-resource-upload]").forEach(button => { button.onclick = () => uploadResource(button); });
+      panels.querySelectorAll("[data-resource-cancel]").forEach(button => { button.onclick = cancelResourceFile; });
       panels.querySelectorAll("[data-create-comparison]").forEach(button => { button.onclick = () => createComparison(button); });
     }
     function render() { renderTabs(); renderPanels(); }

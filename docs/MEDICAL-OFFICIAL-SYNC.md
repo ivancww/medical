@@ -14,6 +14,7 @@ Official write payload.
 | Pages (`Pages`) | Editable Official | `page_name`, `title`, `subtitle`, `enabled`, `sort_order`, `highlight_text`; stable ID `page_id` |
 | Options (`Options`) | Editable Official | `display_name`, `subtitle`, `reflection_text`, `enabled`, `sort_order`; stable ID `option_id` |
 | Plans / Features (`Plans`) | Editable Official | `plan_name`, `category`, `title`, `description`, `brochure_url`, `enabled`, `sort_order`; stable ID `record_id` |
+| Official resources (`Product_Content`) | Editable / publishable Official | `plan_id`, `content_type`, `category`, `owner_id`, `title`, `short_text`, `resource_type`, `resource_ref`, `sort_order`, `enabled`; stable ID `content_id` |
 | Claim Rules (`Claim_Rules`) | Editable Official | `plan_name`, `default_rate`, `deductible_enabled`, `note`; stable ID `plan_id` |
 | Claim Cases (`Claim_Cases`) | Editable Official | case content/publication fields; stable ID `case_id`; empty is valid |
 | Premium Settings (`Premium_Settings`) | Editable Official | `title`, `description`, `value`, dates, `enabled`, `sort_order`; stable ID `setting_id` |
@@ -22,7 +23,25 @@ Official write payload.
 | Calculations, auth, service worker, Platform rules | Read-only / protected | none |
 
 The UI derives editable controls from fields actually present in the current
-Official row. It does not fabricate missing rows or Claim Cases.
+Official row. New Product_Content resources use a structured upload form and
+publish only after Firebase object verification, HTTPS URL validation and
+authenticated metadata read-after-write. Claim resources set `owner_id` to the
+corresponding Claim_Cases.case_id. It does not fabricate missing rows or Claim
+Cases.
+
+## Product_Content migration
+
+The dedicated tab is `Product_Content` with headers:
+
+`content_id, plan_id, content_type, category, owner_id, title, short_text,
+resource_type, resource_ref, sort_order, enabled, version`
+
+Run the source-controlled `initializeMedicalProductContentSheet_()` setup
+function once in the existing Medical GAS project after reviewing the target
+spreadsheet. It only creates or validates the tab and headers; it does not
+populate business content. Existing `Plans.brochure_url` values remain valid
+and continue to render, while new resources become canonical through
+`Product_Content.resource_ref`.
 
 The canonical workbook discovered for this contract is spreadsheet
 `1G6JirabWJPrTtsdPuzzfyo-D-EPIbbdCM3HvFUW7ZCw` (title `成人醫療`). The

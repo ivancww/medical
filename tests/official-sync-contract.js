@@ -21,6 +21,8 @@ assert.match(gas, /medicalOfficialPostAction_/);
 assert.match(gas, /config_value/); assert.match(gas, /record_id/);
 assert.doesNotMatch(gas, /writeKeyValueSheet_\(|writeObjectSheet_\(/);
 assert.match(ui, /adminDatasets/); assert.match(ui, /revision \|\| state\.official\?\.version/);
+assert.match(ui, /key: "productContent"/); assert.match(ui, /createOfficialRecord/); assert.match(ui, /resource_ref/);
 assert.match(ui, /validateMutationResult/); assert.match(ui, /result\.data/); assert.match(ui, /result\.recordId/);
 assert.match(productionGas, /revision: String\(snapshot\.revision \|\| ""\)/); assert.match(productionGas, /revision: snapshot\.revision/);
+assert.match(productionGas, /PRODUCT_CONTENT: "Product_Content"/); assert.match(productionGas, /productContent:/); assert.match(productionGas, /initializeMedicalProductContentSheet_/);
 console.log('Medical Official bidirectional sync contract checks passed');

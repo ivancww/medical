@@ -15,11 +15,11 @@ vm.runInNewContext(ui, context, { filename: 'medical-official-sync.js' });
 const sync = context.MedicalOfficialSync;
 const expected = [
   ['pages', '頁面設定'], ['options', '選項設定'], ['plans', '產品及保障'],
-  ['claimRules', '理賠規則'], ['claimCases', '理賠案例'],
+  ['claimRules', '理賠規則'], ['claimCases', '理賠案例'], ['productContent', '官方產品／案例資源'],
   ['premiumSettings', '保費設定'], ['planComparison', 'P7 保障比較'], ['config', '系統設定']
 ];
 
-assert.equal(JSON.stringify(sync.DATASETS.map(({ key, label }) => [key, label])), JSON.stringify(expected), 'Medical keeps all eight App-owned Admin domains');
+assert.equal(JSON.stringify(sync.DATASETS.map(({ key, label }) => [key, label])), JSON.stringify(expected), 'Medical keeps all App-owned Admin domains');
 assert.equal(JSON.stringify(sync.READ_ONLY), JSON.stringify(['premiumTables', 'premium_tables']), 'Medical premium tables remain read-only');
 assert.equal(sync.FIELD_LABELS.source_name, '資料來源名稱');
 assert.match(ui, /role="tablist"/);
@@ -60,8 +60,8 @@ assert.match(index, /<details class="admin-system-info"><summary>系統資料<\/
 assert.match(index, /返回 AVA/);
 assert.doesNotMatch(index, /class="admin-head"/);
 assert.doesNotMatch(index, /class="admin-status-bar"/);
-assert.match(index, /medical-official-sync\.js\?v=1\.2\.5/);
-assert.match(index, /app\.js\?v=1\.2\.5/);
+assert.match(index, /medical-official-sync\.js\?v=1\.2\.6/);
+assert.match(index, /app\.js\?v=1\.2\.6/);
 assert.doesNotMatch(auth, /Script Property|session proof|adminSessionProof/);
 assert.match(css, /\.admin-tabs\{[^}]*display:grid/);
 assert.match(css, /grid-template-columns:repeat\(8,minmax\(0,1fr\)\)/);
@@ -70,7 +70,7 @@ assert.match(css, /\.admin-system-info summary/);
 assert.match(css, /@media\(max-width:760px\)/);
 assert.match(css, /@media\(max-width:430px\)/);
 assert.match(app, /MedicalOfficialSync\.mount/);
-assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.5'/);
+assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.6'/);
 
 const official = {
   pages: [{ page_id: 'R01', title: 'Concern', enabled: true, unknown: { keep: true } }],
