@@ -38,7 +38,7 @@ jobs:
           assert manifest["start_url"] == "/medical/"
           assert manifest["scope"] == "/medical/"
           assert manifest["display"] == "standalone"
-          assert release["appVersion"] == "v1.2.4"
+          assert release["appVersion"] == "v1.2.5"
           assert 'href="manifest.json"' in html
           assert "claim-engine.js" in html and "app.js" in html
           assert "medical-official-sync.js" in html
@@ -55,11 +55,12 @@ jobs:
           assert "./styles.css" in service_worker
           assert "medical-admin-auth.js" in html
           assert "medical-official-sync.js" in service_worker
-          assert "medical-firebase.js?v=1.2.4" in html and "medical-firebase.js?v=1.2.4" in service_worker
-          assert "medical-firebase-module.js?v=1.2.4" in service_worker
+          assert "medical-firebase-bootstrap.js?v=1.2.5" in html and "medical-firebase-bootstrap.js?v=1.2.5" in service_worker
+          assert "medical-firebase.js?v=1.2.5" in html and "medical-firebase.js?v=1.2.5" in service_worker
+          assert "medical-firebase-module.js?v=1.2.5" in service_worker
           assert "ava-admin-connector.mjs" in service_worker
-          assert "medical-official-sync.js?v=1.2.4" in html
-          assert "app.js?v=1.2.4" in html
+          assert "medical-official-sync.js?v=1.2.5" in html
+          assert "app.js?v=1.2.5" in html
           assert not re.search(r'(?:href|src)=["\']/[^/]', html)
           print("Medical /medical/ deployment contract PASS")
           PY
@@ -80,7 +81,7 @@ jobs:
       - name: Assemble Medical site
         run: |
           mkdir -p _site
-          cp index.html app.js medical-admin-auth.js medical-official-sync.js medical-firebase.js medical-firebase-module.js ava-admin-connector.mjs claim-engine.js styles.css ready-product.css product-data.js app-build.js release-version.json manifest.json sw.js _site/
+          cp index.html app.js medical-admin-auth.js medical-firebase-bootstrap.js medical-firebase.js medical-official-sync.js medical-firebase-module.js ava-admin-connector.mjs claim-engine.js styles.css ready-product.css product-data.js app-build.js release-version.json manifest.json sw.js _site/
           python3 - <<'PY'
           import json
           import os

@@ -2,8 +2,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-const firebase = fs.readFileSync('medical-firebase-module.js', 'utf8');
-const firebaseBootstrap = fs.readFileSync('medical-firebase.js', 'utf8');
+const firebase = fs.readFileSync('medical-firebase.js', 'utf8');
+const firebaseBootstrap = fs.readFileSync('medical-firebase-bootstrap.js', 'utf8');
+const firebaseProvider = fs.readFileSync('medical-firebase-module.js', 'utf8');
 const sync = fs.readFileSync('medical-official-sync.js', 'utf8');
 const app = fs.readFileSync('app.js', 'utf8');
 
@@ -15,16 +16,18 @@ assert.match(firebase, /totalBytes/);
 assert.match(firebase, /percentage/);
 assert.match(firebase, /uploadTask\.cancel\(\)/);
 assert.match(firebase, /FIREBASE_UPLOAD_TIMEOUT_MS = 120000/);
-assert.match(firebase, /stageError\("initialization"/);
+assert.match(firebase, /stageError\("admin-proof"/);
 assert.match(firebase, /stageError\("upload"/);
+assert.match(firebase, /stageError\("object-verification"/);
 assert.match(firebase, /stageError\("download-url"/);
-assert.match(firebase, /getDownloadURL\(snapshot\.ref\)/);
+assert.match(firebaseProvider, /getDownloadURL/);
+assert.match(firebaseProvider, /getMetadata/);
 assert.match(firebase, /onProgress/);
 assert.match(firebase, /onStage/);
-assert.match(firebaseBootstrap, /MedicalFirebaseReady = new Promise/);
+assert.match(firebaseBootstrap, /MedicalFirebaseReady = ready/);
 assert.match(firebaseBootstrap, /medical-firebase-module\.js\?v=\" \+ RELEASE/);
-assert.match(firebaseBootstrap, /module-load-timeout/);
-assert.doesNotMatch(firebase, /localStorage|sessionStorage|indexedDB|FileReader|readAsDataURL|base64/i);
+assert.match(firebaseBootstrap, /module-bootstrap/);
+assert.doesNotMatch(`${firebase}\n${firebaseBootstrap}\n${firebaseProvider}`, /localStorage|sessionStorage|indexedDB|FileReader|readAsDataURL|base64/i);
 
 assert.match(sync, /正在上載至 Firebase… .*percentage/);
 assert.match(sync, /Firebase 上載完成，正在取得產品資料連結/);
@@ -67,7 +70,7 @@ const memory = new Map();
 const context = {
   scrollCalls,
   window: {
-    AVA_MEDICAL_VERSION: 'v1.2.4',
+    AVA_MEDICAL_VERSION: 'v1.2.5',
     AVA_MEDICAL_BUILD: 'test',
     scrollY: 100,
     requestAnimationFrame: callback => callback(),
@@ -130,4 +133,4 @@ assert.equal(result.notReadyAfterBack, result.notReadyBeforeBack + 1, 'Not Ready
 assert.equal(result.notReadyIndex, 0, 'Not Ready back navigation returns to the previous logical page');
 assert.equal(scrollCalls.at(-1).top, 788, 'scroll offset accounts for sticky Medical header and journey controls');
 
-console.log('Post-v1.2.4 observable brochure upload and journey top-reset regression PASS');
+console.log('Post-v1.2.5 observable brochure upload and journey top-reset regression PASS');

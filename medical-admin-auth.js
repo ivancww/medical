@@ -68,7 +68,7 @@
   function clear() { connector?.clearSession(); }
   function hasSession() { return Boolean(connector?.isAuthorized()); }
   function getAuthorizationState() { return connector?.getAuthorizationState() || { status: "idle", appId: APP_ID, compatibility: CONNECTOR_COMPATIBILITY, connectorVersion: CONNECTOR_VERSION, expiresAt: null, error: null }; }
-  function getSessionProof() { return undefined; }
+  function getSessionProof() { return connector?.getSessionProof?.() || ""; }
 
   global.MedicalAdminAuth = Object.freeze({
     APP_ID,

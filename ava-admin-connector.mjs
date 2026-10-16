@@ -253,7 +253,10 @@ export function createAdminConnector({
     clearSession,
     subscribeToStateChanges,
     buildReturnUrl: () => returnToAvaUrl,
-    getSessionProof: () => undefined
+    // The App Grant is the existing in-memory AVA Admin proof used by the
+    // Medical Official write contract. It is exposed only as an application
+    // gate for Official media orchestration; Firebase Storage never receives it.
+    getSessionProof: () => appGrant
   });
 }
 

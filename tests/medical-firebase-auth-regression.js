@@ -1,22 +1,24 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const frontend = fs.readFileSync('medical-firebase-module.js', 'utf8');
-const bootstrap = fs.readFileSync('medical-firebase.js', 'utf8');
+const frontend = fs.readFileSync('medical-firebase.js', 'utf8');
+const bootstrap = fs.readFileSync('medical-firebase-bootstrap.js', 'utf8');
+const provider = fs.readFileSync('medical-firebase-module.js', 'utf8');
 const sync = fs.readFileSync('medical-official-sync.js', 'utf8');
 const gas = fs.readFileSync('gas/MedicalProductionFinal.gs', 'utf8');
 const rules = fs.readFileSync('firebase/storage.rules', 'utf8');
 const connector = fs.readFileSync('ava-admin-connector.mjs', 'utf8');
 
-assert.match(frontend, /firebase-app\.js/);
-assert.match(frontend, /firebase-storage\.js/);
-assert.match(frontend, /projectId: "medical-and-ci"/);
-assert.match(frontend, /storageBucket: "medical-and-ci\.firebasestorage\.app"/);
+assert.match(provider, /firebase-app\.js/);
+assert.match(provider, /firebase-storage\.js/);
+assert.match(provider, /projectId: "medical-and-ci"/);
+assert.match(provider, /storageBucket: "medical-and-ci\.firebasestorage\.app"/);
 assert.match(frontend, /uploadBytesResumable/);
 assert.match(frontend, /getDownloadURL/);
+assert.match(frontend, /getMetadata/);
 assert.match(frontend, /FIREBASE_UPLOAD_TIMEOUT_MS = 120000/);
-assert.doesNotMatch(frontend, /firebase-auth\.js|getAuth|signInWithCustomToken|inMemoryPersistence|setPersistence|issueFirebaseAuthorization/);
-assert.doesNotMatch(`${frontend}\n${bootstrap}`, /-----BEGIN (?:RSA )?PRIVATE KEY-----|localStorage|sessionStorage|indexedDB|base64/i);
+assert.doesNotMatch(`${frontend}\n${bootstrap}\n${provider}`, /firebase-auth\.js|getAuth|signInWithCustomToken|inMemoryPersistence|setPersistence|issueFirebaseAuthorization/);
+assert.doesNotMatch(`${frontend}\n${bootstrap}\n${provider}`, /-----BEGIN (?:RSA )?PRIVATE KEY-----|localStorage|sessionStorage|indexedDB|base64/i);
 assert.match(frontend, /medical\/official\/brochures/);
 assert.doesNotMatch(frontend, /critical-illness\/official/);
 
@@ -47,7 +49,7 @@ assert.match(gas, /body\.action === "exchangeAdminSession"/);
 assert.match(gas, /body\.action === "exchangeAppLaunch"/);
 assert.match(gas, /body\.action === "updateOfficialRecord"/);
 assert.match(gas, /body\.action === "createOfficialRecord"/);
-assert.doesNotMatch(frontend, /MEDICAL_FIREBASE_SERVICE_ACCOUNT|privateKey|serviceAccount/i);
+assert.doesNotMatch(`${frontend}\n${bootstrap}\n${provider}`, /MEDICAL_FIREBASE_SERVICE_ACCOUNT|privateKey|serviceAccount/i);
 assert.match(connector, /payload\?\.error\?\.code/);
 
 assert.match(rules, /match \/critical-illness\/official\/\{planId\}\/\{allPaths=\*\*\}/);

@@ -253,21 +253,28 @@
         pending.uploading = true; pending.progress = { bytesTransferred: 0, totalBytes: Number(file.size || 0), percentage: 0 }; pending.uploadButtonText = "上載中… 0%";
         button.disabled = true; button.setAttribute("aria-busy", "true"); button.textContent = pending.uploadButtonText; setBrochureStatus(recordIdValue, "正在上載至 Firebase… 0%（0 KB / " + brochureBytesLabel(file.size) + "）");
         stage = "firebase";
+        const adminSessionProof = global.MedicalAdminAuth?.getSessionProof?.();
+        if (!adminSessionProof) {
+          const error = new Error("有效的 AVA Admin session proof 是必要的。");
+          error.stage = "admin-proof";
+          error.code = "ADMIN_PROOF_REQUIRED";
+          throw error;
+        }
         if (!global.MedicalFirebaseReady) {
           const error = new Error("Medical Firebase 模組未能載入。");
-          error.stage = "module-not-loaded";
+          error.stage = "module-bootstrap";
           error.code = "MEDICAL_FIREBASE_MODULE_NOT_LOADED";
           throw error;
         }
-        const firebase = await global.MedicalFirebaseReady;
-        if (!firebase?.uploadOfficialBrochure) {
-          const error = new Error("Medical Firebase 模組載入合約無效。");
-          error.stage = "module-contract";
+        if (!global.MedicalFirebaseMedia?.uploadOfficialBrochure) {
+          const error = new Error("Medical Firebase orchestration layer 未能載入。");
+          error.stage = "module-import";
           throw error;
         }
-        const uploaded = await firebase.uploadOfficialBrochure({
+        const uploaded = await global.MedicalFirebaseMedia.uploadOfficialBrochure({
           planId,
           file,
+          adminSessionProof,
           onProgress: progress => {
             pending.progress = progress;
             pending.uploadButtonText = "上載中… " + progress.percentage + "%";
@@ -289,10 +296,10 @@
         const next = validateMutationResult(result, { dataset: "plans", recordId: expectedRecordId, changes: { brochure_url: uploaded.url } });
         state.official = next; pending.uploading = false; pendingBrochureUploads.delete(recordIdValue); onOfficialChanged?.(next); render(); setBrochureStatus(recordIdValue, "產品資料已成功上載及發布：" + String(uploaded.filename || metadata.name), "success"); setMessage(panel, LABELS.success.replace("{version}", result.version || next.version || "—"), "success");
       } catch (error) {
-        const firebaseStages = ["firebase", "module-load-timeout", "sdk-import", "module-contract", "module-not-loaded", "initialization", "upload", "timeout", "download-url"];
+      const firebaseStages = ["firebase", "module-bootstrap", "module-import", "sdk-import", "initialization", "file-validation", "admin-proof", "upload", "timeout", "object-verification", "download-url"];
         const message = error.message.includes("版本") || error.message.includes("version") || error.message.includes("stale") ? LABELS.conflict : (firebaseStages.includes(stage) || firebaseStages.includes(error?.stage) ? firebaseErrorMessage(error) : error.message);
         const verificationFailure = stage === "official-verification" || (stage === "official" && /read-after-write|回讀|驗證/i.test(String(error?.message || "")));
-        const stageMessage = ["module-load-timeout", "sdk-import", "module-contract", "module-not-loaded", "timeout"].includes(error?.stage) ? message : error?.stage === "download-url" ? "取得 Firebase 產品資料連結失敗：" + message : error?.stage === "initialization" ? "Firebase 初始化失敗：" + message : stage === "firebase" ? "Firebase 上載失敗：" + message : verificationFailure ? "官方資料驗證失敗：" + message : stage === "official" ? "官方資料發布失敗：" + message : message;
+        const stageMessage = ["module-bootstrap", "module-import", "sdk-import", "timeout"].includes(error?.stage) ? message : error?.stage === "initialization" ? "Firebase 初始化失敗：" + message : error?.stage === "admin-proof" ? "上載未獲授權：必須由 AVA Studio Admin session 啟動。" : error?.stage === "file-validation" ? message : error?.stage === "object-verification" ? "Firebase 物件確認失敗：" + message : error?.stage === "download-url" ? "取得 Firebase 產品資料連結失敗：" + message : stage === "firebase" ? "Firebase 上載失敗：" + message : verificationFailure ? "官方資料驗證失敗：" + message : stage === "official" ? "官方資料發布失敗：" + message : message;
         setBrochureStatus(recordIdValue, stageMessage, "error");
         resetUploadButton(button);
       }
