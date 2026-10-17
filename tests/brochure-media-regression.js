@@ -11,7 +11,7 @@ const firebase = fs.readFileSync('medical-firebase-module.js', 'utf8');
 const boundary = fs.readFileSync('docs/MEDICAL-BROCHURE-MEDIA-BOUNDARY.md', 'utf8');
 
 assert.match(product, /brochure_url/);
-assert.match(app, /function brochureIcon\(/);
+assert.match(app, /function brochureButton\(/);
 assert.match(app, /aria-label="查看.*產品資料/);
 assert.match(sync, /brochure_url/);
 assert.match(sync, /data-brochure-upload/);
@@ -30,7 +30,7 @@ assert.match(boundary, /approved shared AVA Cloud Media service/);
 assert.doesNotMatch(app, /firebase|initializeApp|uploadBytes|getDownloadURL/i);
 assert.doesNotMatch(index, /新增資料草稿|AI 文件分析|手動輸入|aiFile|manualBtn|intakePanel/);
 assert.doesNotMatch(app, /CRM_AI_API|aiStudy|fileBase64|fallbackManual|manualForm|intakePanel/);
-assert.match(app, /function brochureIcon\(plan\)\{[^}]*brochure_url/);
+assert.match(app, /function brochureButton\(plan\)\{[^}]*brochure_url/);
 assert.doesNotMatch(app.match(/function planFeaturesBlockV2\([\s\S]*?\nfunction concernReflection/)[0], /FileReader|readAsDataURL|base64|data:/i);
 
 console.log('Medical brochure reference, accessibility and storage-boundary regression PASS');
