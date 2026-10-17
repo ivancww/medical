@@ -28,7 +28,7 @@ assert.match(app, /p7AddUserItem/);
 assert.doesNotMatch(app, /READY_COMPARISON_ITEMS/);
 assert.match(app, /FINAL_SUMMARY/);
 assert.match(app, /function readySummaryBlock\(/);
-assert.match(app, /function brochureIcon\(/);
+assert.match(app, /function brochureButton\(/);
 assert.match(app, /brochure_url/);
 assert.match(app, /function planFeaturesBlockV2\(/);
 assert.doesNotMatch(app, /legacyPlanFeaturesBlockV2|Official Plan_Comparison rows are shown|三個計劃，保障方法各有不同/);
@@ -46,4 +46,4 @@ console.log('Ready flow UX regression contract PASS');
 
 assert.match(app, /startJourneyAtPage\(j,pageIdValue\)/);
 assert.match(app, /directPlansBtn/);
-assert.doesNotMatch(app, /brochureIcon\(/);
+assert.doesNotMatch(app, /brochureButton\(/);
