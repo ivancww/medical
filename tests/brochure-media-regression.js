@@ -34,3 +34,7 @@ assert.match(app, /function brochureIcon\(plan\)\{[^}]*brochure_url/);
 assert.doesNotMatch(app.match(/function planFeaturesBlockV2\([\s\S]*?\nfunction concernReflection/)[0], /FileReader|readAsDataURL|base64|data:/i);
 
 console.log('Medical brochure reference, accessibility and storage-boundary regression PASS');
+
+assert.doesNotMatch(app, />ℹ️<|brochureIcon\(/, 'customer brochure access no longer uses info icons');
+assert.match(app, />查看產品資料<\/a>/, 'brochure is a visible product-data button');
+assert.match(app, /startJourneyAtPage\('ready','R07'\)/, 'home direct-plan action opens the Ready product page');
