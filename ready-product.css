@@ -50,3 +50,7 @@
 .premium-result small { font-size: 13px; color: #64748b; line-height: 1.4; }
 .premium-unavailable { color: #64748b; }
 @media(max-width:650px) { .product-positioning, .product-comparison-grid, .premium-results { grid-template-columns: 1fr; } .comparison-row { grid-template-columns: minmax(112px,1fr) repeat(var(--comparison-plan-count, 3),minmax(0,1fr)); gap: 5px; } .comparison-label, .comparison-cell { padding: 9px; font-size: 13px; } .claim-result-head { gap: 8px; } .claim-bar-labels { font-size: 13px; } }
+
+.plan-brochure-action { margin-top: auto; padding-top: 14px; }
+.plan-brochure-action .plan-brochure-link { width: 100%; justify-content: center; text-decoration: none; }
+.home-direct-actions { justify-content: flex-end; margin-top: 16px; }
