@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const app = fs.readFileSync('app.js', 'utf8');
 const syncSource = fs.readFileSync('medical-official-sync.js', 'utf8');
 
-const p7 = app.slice(app.indexOf('function planFeaturesBlockV2'), app.indexOf('function brochureIcon'));
+const p7 = app.slice(app.indexOf('function planFeaturesBlockV2'), app.indexOf('function brochureButton'));
 assert.match(p7, /p\.id==='WISE'\?wiseStatusBlock\(\):''/, 'Wise eligibility is composed inside the Wise product card');
 assert.doesNotMatch(p7, /const wise=|\+wise\+/, 'no standalone Wise eligibility block remains');
 assert.doesNotMatch(p7.replace(/p\.id==='WISE'\?wiseStatusBlock\(\):''/, ''), /wise-condition-toggle/, 'Elite and Flexi cards do not receive Wise controls');
