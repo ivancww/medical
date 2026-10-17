@@ -43,3 +43,7 @@ assert.match(css, /@media\(max-width:650px\)[^}]*premium-results[^}]*grid-templa
 assert.match(rules, /R01 Concern Setup → R02 Existing Medical[\s\S]*R07 Plan Coverage & Features[\s\S]*R09 Premium[\s\S]*R08 Concern Reflection \(final Ready page\)/);
 
 console.log('Ready flow UX regression contract PASS');
+
+assert.match(app, /startJourneyAtPage\(j,pageIdValue\)/);
+assert.match(app, /directPlansBtn/);
+assert.doesNotMatch(app, /brochureIcon\(/);
