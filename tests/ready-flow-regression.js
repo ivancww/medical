@@ -46,4 +46,4 @@ console.log('Ready flow UX regression contract PASS');
 
 assert.match(app, /startJourneyAtPage\(j,pageIdValue\)/);
 assert.match(app, /directPlansBtn/);
-assert.doesNotMatch(app, /brochureButton\(/);
+assert.doesNotMatch(app, /brochureIcon\(/);
