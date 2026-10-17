@@ -70,7 +70,7 @@ assert.match(css, /\.admin-system-info summary/);
 assert.match(css, /@media\(max-width:760px\)/);
 assert.match(css, /@media\(max-width:430px\)/);
 assert.match(app, /MedicalOfficialSync\.mount/);
-assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.5'/);
+assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.6'/);
 
 const official = {
   pages: [{ page_id: 'R01', title: 'Concern', enabled: true, unknown: { keep: true } }],

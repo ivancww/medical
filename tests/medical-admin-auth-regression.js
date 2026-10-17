@@ -43,8 +43,8 @@ assert.match(official, /Exactly one Medical Admin credential is required/);
 assert.match(official, /medicalVerifyAdminSession_\(body\.adminSessionProof, "official-write"\)/);
 assert.match(official, /medicalVerifyAppGrant_\(body\.appGrant, operation\)/);
 assert.match(sync, /MedicalAdminAuth\.authorizedRequest/);
-assert.match(sync, /MedicalAdminAuth\?\.getSessionProof\?\.\(\)/);
+assert.doesNotMatch(sync, /MedicalAdminAuth\?\.getSessionProof\?\.\(\)/);
 assert.match(app, /MedicalAdminAuth\.exchangeAppLaunch\(\)/);
-assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.5'/);
+assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.6'/);
 console.log('Medical Legacy App Grant static contract checks passed');
 

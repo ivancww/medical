@@ -43,7 +43,7 @@ assert.match(provider, /getDownloadURL/);
 assert.match(provider, /candidate\.name === "ava-medical"/);
 assert.doesNotMatch(provider, /firebase-auth\.js|getAuth|signInWithCustomToken|setPersistence|inMemoryPersistence/);
 
-assert.match(sync, /MedicalAdminAuth\?\.getSessionProof\?\.\(\)/);
+assert.doesNotMatch(sync, /MedicalAdminAuth\?\.getSessionProof\?\.\(\)/);
 assert.match(sync, /authorizedRequest\(\{ action: "updateOfficialRecord"/);
 assert.match(sync, /official-verification/);
 assert.match(sync, /pendingBrochureUploads\.delete\(recordIdValue\)/);
