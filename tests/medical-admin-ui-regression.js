@@ -60,8 +60,8 @@ assert.match(index, /<details class="admin-system-info"><summary>系統資料<\/
 assert.match(index, /返回 AVA/);
 assert.doesNotMatch(index, /class="admin-head"/);
 assert.doesNotMatch(index, /class="admin-status-bar"/);
-assert.match(index, /medical-official-sync\.js\?v=1\.2\.5/);
-assert.match(index, /app\.js\?v=1\.2\.5/);
+assert.match(index, /medical-official-sync\.js\?v=1\.2\.6/);
+assert.match(index, /app\.js\?v=1\.2\.6/);
 assert.doesNotMatch(auth, /Script Property|session proof|adminSessionProof/);
 assert.match(css, /\.admin-tabs\{[^}]*display:grid/);
 assert.match(css, /grid-template-columns:repeat\(8,minmax\(0,1fr\)\)/);
