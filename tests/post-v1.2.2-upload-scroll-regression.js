@@ -16,7 +16,7 @@ assert.match(firebase, /totalBytes/);
 assert.match(firebase, /percentage/);
 assert.match(firebase, /uploadTask\.cancel\(\)/);
 assert.match(firebase, /FIREBASE_UPLOAD_TIMEOUT_MS = 120000/);
-assert.match(firebase, /stageError\("admin-proof"/);
+assert.doesNotMatch(firebase, /stageError\("admin-proof"/);
 assert.match(firebase, /stageError\("upload"/);
 assert.match(firebase, /stageError\("object-verification"/);
 assert.match(firebase, /stageError\("download-url"/);
