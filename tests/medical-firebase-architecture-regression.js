@@ -12,7 +12,7 @@ const rules = fs.readFileSync('firebase/storage.rules', 'utf8');
 assert.match(orchestration, /MedicalFirebaseMedia/);
 assert.match(orchestration, /validateBrochureFile/);
 assert.match(orchestration, /officialBrochurePath/);
-assert.match(orchestration, /admin-proof/);
+assert.doesNotMatch(orchestration, /admin-proof/);
 assert.match(orchestration, /uploadBytesResumable/);
 assert.match(orchestration, /getMetadata/);
 assert.match(orchestration, /getDownloadURL/);
