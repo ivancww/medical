@@ -42,7 +42,7 @@ const session = new Map();
 const local = new Map();
 const element = () => ({ hidden: false, textContent: '', className: '', dataset: {}, setAttribute() {}, addEventListener() {} });
 const persistenceContext = {
-  window: { AVA_MEDICAL_VERSION: 'v1.2.6', AVA_MEDICAL_BUILD: 'test', location: { search: '' } },
+  window: { AVA_MEDICAL_VERSION: 'v1.2.7', AVA_MEDICAL_BUILD: 'test', location: { search: '' } },
   document: { querySelector: () => element(), querySelectorAll: () => [] },
   localStorage: { getItem: key => local.get(key) || null, setItem: (key, value) => local.set(key, value), removeItem: key => local.delete(key) },
   sessionStorage: { getItem: key => session.get(key) || null, setItem: (key, value) => session.set(key, value), removeItem: key => session.delete(key) },
@@ -74,4 +74,4 @@ assert.match(app, /function startJourney\(j\)\{clearJourneySession\(\);resetJour
 assert.match(app, /function renderHome\(\)\{clearJourneySession\(\)/, 'deliberate Home navigation clears the resume pointer');
 assert.match(app, /persistJourneySession\(\);\s*try\{sessionStorage\.setItem\(SW_RELOAD_KEY/, 'service-worker reload persists the active conversation first');
 
-console.log('Post-v1.2.6 Wise, brochure plan-ID and journey-resume regressions PASS');
+console.log('Post-v1.2.7 Wise, brochure plan-ID and journey-resume regressions PASS');
