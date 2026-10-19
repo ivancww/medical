@@ -77,6 +77,7 @@ jobs:
           node --check tests/mother-contract-regression.js
           node --check tests/medical-admin-auth-regression.js
           node --check tests/platform-entry-regression.js
+          node --check tests/admin-startup-regression.js
           node --check tests/product-data-regression.js
           node --check tests/automatic-update-regression.js
           node --check tests/medical-admin-ui-regression.js
@@ -104,6 +105,7 @@ jobs:
           node tests/mother-contract-regression.js
           node tests/medical-admin-auth-regression.js
           node tests/platform-entry-regression.js
+          node tests/admin-startup-regression.js
           node tests/automatic-update-regression.js
           node tests/medical-admin-ui-regression.js
           node tests/release-version-regression.js
@@ -123,5 +125,5 @@ jobs:
           node tests/post-v1.2.4-module-summary-regression.js
       - name: Verify PWA and fixed contracts
         run: |
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js?v=1.2.6','medical-firebase-bootstrap.js?v=1.2.6','medical-official-sync.js?v=1.2.6','ava-admin-connector.mjs?v=1.2.6','medical-firebase.js?v=1.2.6','medical-firebase-module.js?v=1.2.6','product-data.js','ready-product.css','release-version.json'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js?v=1.2.6','medical-firebase-bootstrap.js?v=1.2.6','medical-official-sync.js?v=1.2.6','medical-firebase.js?v=1.2.6','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js?v=1.2.7','medical-firebase-bootstrap.js?v=1.2.7','medical-official-sync.js?v=1.2.7','ava-admin-connector.mjs?v=1.2.7','medical-firebase.js?v=1.2.7','medical-firebase-module.js?v=1.2.7','product-data.js','ready-product.css','release-version.json'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js?v=1.2.7','medical-firebase-bootstrap.js?v=1.2.7','medical-official-sync.js?v=1.2.7','medical-firebase.js?v=1.2.7','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
 

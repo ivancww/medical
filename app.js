@@ -1,6 +1,6 @@
 const OFFICIAL_API='https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec';
 const CACHE_KEY='ava.medical.official.v1',OVERRIDE_KEY='ava.medical.user.overrides.v1';
-const APP_VERSION=window.AVA_MEDICAL_VERSION||'v1.2.6',APP_BUILD=window.AVA_MEDICAL_BUILD||'local';
+const APP_VERSION=window.AVA_MEDICAL_VERSION||'v1.2.7',APP_BUILD=window.AVA_MEDICAL_BUILD||'local';
 const AVA_PLATFORM_URL='https://ivancww.github.io/avaplatform/';
 const DIRECT_ADVANCE_PAGES=['R01','R02','N01','N02','N05','N07'];
 const READY_PAGE_ORDER=['R01','R02','R03','R04','R05','R07','R09','R08','FINAL_SUMMARY'];
@@ -161,6 +161,6 @@ function registerMedicalServiceWorker(){
   });
   return navigator.serviceWorker.register('sw.js',{scope:'./',updateViaCache:'none'}).then(registration=>registration.update());
 }
-setEntry();$('[data-journey]').forEach(b=>b.onclick=()=>startJourney(b.dataset.journey));$('#directPlansBtn')?.addEventListener('click',()=>startJourneyAtPage('ready','R07'));$('#backBtn').onclick=goBack;$('#nextBtn').onclick=()=>navigateJourney(1);$('#editBtn').onclick=()=>setMode('edit');$('#previewBtn').onclick=()=>setMode('preview');$('#saveBtn').onclick=saveOverrides;$('#cancelBtn').onclick=()=>{state.draftText={};setMode('use');renderPage()};$('#adminClose')?.addEventListener('click',renderHome);$('#refreshBtn').onclick=async()=>{localStorage.removeItem(CACHE_KEY);await bootstrap({render:false});showAdmin()};registerMedicalServiceWorker().catch(error=>console.warn('[AVA Medical] Service worker registration/update failed:',error));async function initializeAdmin(){await authorizeAdmin();if(state.adminAuthorized){await bootstrap({render:false});renderEntry()}}(async()=>{if(state.entry==='admin')await initializeAdmin();else await bootstrap()})();
+setEntry();$$('[data-journey]').forEach(b=>b.onclick=()=>startJourney(b.dataset.journey));$('#directPlansBtn')?.addEventListener('click',()=>startJourneyAtPage('ready','R07'));$('#backBtn').onclick=goBack;$('#nextBtn').onclick=()=>navigateJourney(1);$('#editBtn').onclick=()=>setMode('edit');$('#previewBtn').onclick=()=>setMode('preview');$('#saveBtn').onclick=saveOverrides;$('#cancelBtn').onclick=()=>{state.draftText={};setMode('use');renderPage()};$('#adminClose')?.addEventListener('click',renderHome);$('#refreshBtn').onclick=async()=>{localStorage.removeItem(CACHE_KEY);await bootstrap({render:false});showAdmin()};registerMedicalServiceWorker().catch(error=>console.warn('[AVA Medical] Service worker registration/update failed:',error));async function initializeAdmin(){await authorizeAdmin();if(state.adminAuthorized){await bootstrap({render:false});renderEntry()}}(async()=>{if(state.entry==='admin')await initializeAdmin();else await bootstrap()})();
 $('#backBtn').onclick=goBack;
 
