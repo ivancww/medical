@@ -1,6 +1,5 @@
 {
-  "appVersion": "v1.2.6",
+  "appVersion": "v1.2.7",
   "releaseType": "patch",
-  "scope": "Remove duplicate AVA Admin proof gate from public Official brochure Storage upload"
+  "scope": "Repair Admin startup journey binding and force v1.2.7 PWA refresh"
 }
-
