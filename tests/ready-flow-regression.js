@@ -28,7 +28,7 @@ assert.match(app, /p7AddUserItem/);
 assert.doesNotMatch(app, /READY_COMPARISON_ITEMS/);
 assert.match(app, /FINAL_SUMMARY/);
 assert.match(app, /function readySummaryBlock\(/);
-assert.match(app, /function brochureIcon\(/);
+assert.match(app, /function brochureButton\(/);
 assert.match(app, /brochure_url/);
 assert.match(app, /function planFeaturesBlockV2\(/);
 assert.doesNotMatch(app, /legacyPlanFeaturesBlockV2|Official Plan_Comparison rows are shown|三個計劃，保障方法各有不同/);
@@ -43,3 +43,7 @@ assert.match(css, /@media\(max-width:650px\)[^}]*premium-results[^}]*grid-templa
 assert.match(rules, /R01 Concern Setup → R02 Existing Medical[\s\S]*R07 Plan Coverage & Features[\s\S]*R09 Premium[\s\S]*R08 Concern Reflection \(final Ready page\)/);
 
 console.log('Ready flow UX regression contract PASS');
+
+assert.match(app, /startJourneyAtPage\(j,pageIdValue\)/);
+assert.match(app, /directPlansBtn/);
+assert.doesNotMatch(app, /brochureIcon\(/);

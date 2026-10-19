@@ -1,6 +1,6 @@
 {
-  "appVersion": "v1.2.5",
-  "releaseType": "feature",
-  "scope": "CI-aligned Official media layers and resumable upload verification"
+  "appVersion": "v1.2.6",
+  "releaseType": "patch",
+  "scope": "Remove duplicate AVA Admin proof gate from public Official brochure Storage upload"
 }
 

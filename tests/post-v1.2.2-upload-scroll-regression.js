@@ -16,7 +16,7 @@ assert.match(firebase, /totalBytes/);
 assert.match(firebase, /percentage/);
 assert.match(firebase, /uploadTask\.cancel\(\)/);
 assert.match(firebase, /FIREBASE_UPLOAD_TIMEOUT_MS = 120000/);
-assert.match(firebase, /stageError\("admin-proof"/);
+assert.doesNotMatch(firebase, /stageError\("admin-proof"/);
 assert.match(firebase, /stageError\("upload"/);
 assert.match(firebase, /stageError\("object-verification"/);
 assert.match(firebase, /stageError\("download-url"/);
@@ -70,7 +70,7 @@ const memory = new Map();
 const context = {
   scrollCalls,
   window: {
-    AVA_MEDICAL_VERSION: 'v1.2.5',
+    AVA_MEDICAL_VERSION: 'v1.2.6',
     AVA_MEDICAL_BUILD: 'test',
     scrollY: 100,
     requestAnimationFrame: callback => callback(),
@@ -133,4 +133,4 @@ assert.equal(result.notReadyAfterBack, result.notReadyBeforeBack + 1, 'Not Ready
 assert.equal(result.notReadyIndex, 0, 'Not Ready back navigation returns to the previous logical page');
 assert.equal(scrollCalls.at(-1).top, 788, 'scroll offset accounts for sticky Medical header and journey controls');
 
-console.log('Post-v1.2.5 observable brochure upload and journey top-reset regression PASS');
+console.log('Post-v1.2.6 observable brochure upload and journey top-reset regression PASS');

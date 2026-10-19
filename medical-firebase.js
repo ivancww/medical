@@ -47,8 +47,7 @@
     catch (error) { throw stageError(error?.stage || "module-import", error, "Firebase 模組載入失敗，請重新開啟 Medical 後再試。"); }
   }
 
-  async function uploadOfficialBrochure({ planId, file, adminSessionProof, onProgress, onStage, timestamp, timeoutMs = FIREBASE_UPLOAD_TIMEOUT_MS } = {}) {
-    if (!adminSessionProof) throw stageError("admin-proof", null, "有效的 AVA Admin session proof 是必要的。");
+  async function uploadOfficialBrochure({ planId, file, onProgress, onStage, timestamp, timeoutMs = FIREBASE_UPLOAD_TIMEOUT_MS } = {}) {
     const validated = validateBrochureFile(file);
     const path = officialBrochurePath({ planId, filename: validated.name, timestamp });
     const client = await storageClient();
