@@ -77,6 +77,7 @@ jobs:
           node --check tests/mother-contract-regression.js
           node --check tests/medical-admin-auth-regression.js
           node --check tests/platform-entry-regression.js
+          node --check tests/admin-startup-regression.js
           node --check tests/product-data-regression.js
           node --check tests/automatic-update-regression.js
           node --check tests/medical-admin-ui-regression.js
@@ -104,6 +105,7 @@ jobs:
           node tests/mother-contract-regression.js
           node tests/medical-admin-auth-regression.js
           node tests/platform-entry-regression.js
+          node tests/admin-startup-regression.js
           node tests/automatic-update-regression.js
           node tests/medical-admin-ui-regression.js
           node tests/release-version-regression.js
