@@ -4,7 +4,7 @@ const auth = fs.readFileSync('medical-admin-auth.js', 'utf8');
 const ui = fs.readFileSync('medical-official-sync.js', 'utf8');
 const gas = fs.readFileSync('gas/MedicalOfficialData.gs', 'utf8');
 const productionGas = fs.readFileSync('gas/MedicalProductionFinal.gs', 'utf8');
-assert.match(auth, /getSessionProof/); assert.match(auth, /ava-legacy-app-grant-v1/); assert.match(auth, /exchangeAppLaunch/); assert.match(ui, /updateOfficialRecord/); assert.match(ui, /expectedVersion/);
+assert.match(auth, /getSessionProof/); assert.match(auth, /ava-admin-session-v1/); assert.match(auth, /exchangeAppLaunch/); assert.match(ui, /updateOfficialRecord/); assert.match(ui, /expectedVersion/);
 assert.match(ui, /使用者自訂內容/); assert.match(ui, /premiumTables/);
 assert.match(gas, /medicalVerifyAdminSession_\(body\.adminSessionProof, "official-write"\)/);
 assert.match(gas, /medicalVerifyAppGrant_\(body\.appGrant, operation\)/);

@@ -1,20 +1,24 @@
 /*
  * AVA Medical Admin Connector.
- * Connector version: 0.2.0
- * Compatibility contract: ava-legacy-app-grant-v1
+ * Connector version: 0.3.0
+ * Compatibility contract: ava-admin-session-v1
  *
- * The launch ticket is exchanged once by Medical GAS. The resulting App Grant
- * is closure state only; it is never written to URL, browser storage, QR or
- * User Override data.
+ * The Platform launch ticket and browser proof are exchanged once. The
+ * resulting Admin Session proof is held in memory only and is used for all
+ * subsequent Medical Official requests in the live Admin session.
  */
-export const ADMIN_CONTRACT = 'ava-legacy-app-grant-v1';
-export const CONNECTOR_VERSION = '0.2.0';
+export const ADMIN_CONTRACT = 'ava-admin-session-v1';
+export const CONNECTOR_VERSION = '0.3.0';
 export const DEFAULT_PLATFORM_ORIGIN = 'https://ivancww.github.io';
+export const BROWSER_CONTEXT_PREFIX = 'ava-admin-session-v1:';
 
 const SAFE_STATES = new Set(['idle', 'initializing', 'authorized', 'expired', 'failed', 'cleared']);
 const SAFE_DETAIL_KEYS = new Set(['code', 'transport', 'status']);
 const MESSAGES = Object.freeze({
   ADMIN_LAUNCH_REQUIRED: 'Admin launch must originate from AVA Studio.',
+  ADMIN_BROWSER_BINDING_REQUIRED: 'Admin launch must include an AVA Studio browser binding.',
+  ADMIN_BROWSER_BINDING_INVALID: 'The AVA Studio browser binding is invalid.',
+  ADMIN_BROWSER_BINDING_EXPIRED: 'The AVA Studio browser binding expired.',
   ADMIN_EXCHANGE_TIMEOUT: 'Admin authorization service timed out.',
   ADMIN_EXCHANGE_NETWORK: 'Admin authorization service is unavailable.',
   ADMIN_EXCHANGE_HTTP: 'Admin authorization service returned an HTTP error.',
@@ -55,6 +59,7 @@ function clearLaunch(locationObject, historyObject) {
   try {
     const url = new URL(href);
     url.searchParams.delete('avaAdminLaunch');
+    url.searchParams.delete('avaAdminLaunchNonce');
     historyObject.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   } catch { /* URL cleanup is defensive and never changes authorization outcome. */ }
 }
@@ -71,6 +76,23 @@ function safeStateSnapshot({ status, appId, lastError, expiresAt }) {
   });
 }
 
+export function browserProofFromContext(launchTicket, launchNonce, browserWindow = globalThis.window, now = () => Date.now(), appId = '') {
+  let raw = '';
+  try {
+    raw = String(browserWindow?.name || '');
+    if (browserWindow) browserWindow.name = '';
+  } catch (_) { return null; }
+  if (!raw.startsWith(BROWSER_CONTEXT_PREFIX)) return null;
+  let data;
+  try { data = JSON.parse(raw.slice(BROWSER_CONTEXT_PREFIX.length)); }
+  catch (_) { fail('ADMIN_BROWSER_BINDING_INVALID', 'browser-context'); }
+  const expiry = finiteExpiry(data?.expiresAt);
+  if (data?.type !== 'ava-admin-session-context' || data.appId !== appId || data.launchTicket !== launchTicket || data.launchNonce !== launchNonce || !stringValue(data.browserProof) || data.contract !== ADMIN_CONTRACT || !expiry || expiry <= now()) {
+    fail('ADMIN_BROWSER_BINDING_INVALID', 'browser-context');
+  }
+  return data;
+}
+
 export function createAdminConnector({
   appId,
   gasEndpoint,
@@ -78,8 +100,10 @@ export function createAdminConnector({
   returnToAvaUrl = `${DEFAULT_PLATFORM_ORIGIN}/avaplatform/?avaSurface=admin`,
   locationObject = globalThis.location,
   historyObject = globalThis.history,
+  windowObject = globalThis.window,
   fetchImpl = globalThis.fetch,
   timeoutMs = 15000,
+  browserProofTimeoutMs = 15000,
   now = () => Date.now(),
   setTimeoutImpl = globalThis.setTimeout,
   clearTimeoutImpl = globalThis.clearTimeout,
@@ -94,15 +118,15 @@ export function createAdminConnector({
 
   let status = 'idle';
   let lastError = null;
-  let appGrant = '';
-  let grantExpiry = 0;
+  let adminSessionProof = '';
+  let sessionExpiry = 0;
   let launchConsumed = false;
   let initializationPromise = null;
   let sessionGeneration = 0;
   let activeCancel = null;
   const subscribers = new Set();
   const notify = () => {
-    const snapshot = safeStateSnapshot({ status, appId, lastError, expiresAt: grantExpiry ? new Date(grantExpiry).toISOString() : null });
+    const snapshot = safeStateSnapshot({ status, appId, lastError, expiresAt: sessionExpiry ? new Date(sessionExpiry).toISOString() : null });
     try { onStateChange(snapshot); } catch { /* observers are non-authoritative */ }
     for (const subscriber of [...subscribers]) { try { subscriber(snapshot); } catch { /* isolate observers */ } }
   };
@@ -115,8 +139,9 @@ export function createAdminConnector({
   const assertGeneration = generation => { if (generation !== sessionGeneration) fail('ADMIN_SESSION_CLEARED', 'session-clear'); };
   const readLaunch = () => {
     const launchTicket = queryValue(locationObject, 'avaAdminLaunch');
-    if (!launchTicket) fail('ADMIN_LAUNCH_REQUIRED', 'launch-context');
-    return { launchTicket };
+    const launchNonce = queryValue(locationObject, 'avaAdminLaunchNonce');
+    if (!launchTicket || !launchNonce) fail('ADMIN_LAUNCH_REQUIRED', 'launch-context');
+    return { launchTicket, launchNonce };
   };
 
   const requestWithTimeout = async (kind, request) => {
@@ -163,41 +188,80 @@ export function createAdminConnector({
     }
   };
 
-  const exchangeAppLaunch = async () => {
+  const requestBrowserProof = async (launch) => {
+    let contextProof;
+    try { contextProof = browserProofFromContext(launch.launchTicket, launch.launchNonce, windowObject, now, appId); }
+    catch (error) { throw currentError(error, 'ADMIN_BROWSER_BINDING_INVALID', 'browser-context'); }
+    if (contextProof) return contextProof;
+    const opener = windowObject?.opener;
+    if (!opener || typeof windowObject?.addEventListener !== 'function' || typeof windowObject?.removeEventListener !== 'function' || typeof opener.postMessage !== 'function') {
+      fail('ADMIN_BROWSER_BINDING_REQUIRED', 'browser-binding');
+    }
+    return new Promise((resolve, reject) => {
+      let timer;
+      let settled = false;
+      const finish = (error, value) => {
+        if (settled) return;
+        settled = true;
+        if (timer !== undefined) clearTimeoutImpl(timer);
+        windowObject.removeEventListener('message', onMessage);
+        error ? reject(error) : resolve(value);
+      };
+      const onMessage = event => {
+        if (event.source !== opener || event.origin !== DEFAULT_PLATFORM_ORIGIN) return;
+        const data = event.data || {};
+        if (data.type !== 'ava-admin-session-response' || data.appId !== appId || data.launchTicket !== launch.launchTicket || data.launchNonce !== launch.launchNonce) return;
+        if (!stringValue(data.browserProof) || data.contract !== ADMIN_CONTRACT) return finish(new AdminConnectorError('ADMIN_BROWSER_BINDING_INVALID', 'browser-binding-response'));
+        const expiry = finiteExpiry(data.expiresAt);
+        if (!expiry || expiry <= now()) return finish(new AdminConnectorError('ADMIN_BROWSER_BINDING_EXPIRED', 'browser-binding-expired'));
+        finish(null, data);
+      };
+      timer = setTimeoutImpl(() => finish(new AdminConnectorError('ADMIN_BROWSER_BINDING_EXPIRED', 'browser-binding-timeout')), browserProofTimeoutMs);
+      windowObject.addEventListener('message', onMessage);
+      try {
+        opener.postMessage({ type: 'ava-admin-session-request', appId, launchTicket: launch.launchTicket, launchNonce: launch.launchNonce }, DEFAULT_PLATFORM_ORIGIN);
+      } catch (_) { finish(new AdminConnectorError('ADMIN_BROWSER_BINDING_REQUIRED', 'browser-binding-postmessage')); }
+    });
+  };
+
+  const exchangeAdminLaunch = async () => {
     if (launchConsumed) fail('ADMIN_LAUNCH_REPLAY', 'launch-replay');
     const generation = sessionGeneration;
-    const { launchTicket } = readLaunch();
+    const launch = readLaunch();
     launchConsumed = true;
     clearLaunch(locationObject, historyObject);
     stage('launch-context-valid');
+    const browser = await requestBrowserProof(launch);
+    assertGeneration(generation);
+    stage('browser-proof-established');
     stage('platform-exchange-requested');
     let exchangeResult;
     try {
       exchangeResult = await requestWithTimeout('exchange', { url: gasEndpoint, init: {
         method: 'POST', headers: jsonHeaders(),
-        body: JSON.stringify({ action: 'exchangeAppLaunch', appId, launchTicket })
+        body: JSON.stringify({ action: 'exchangeAdminSession', appId, launchTicket: launch.launchTicket, launchNonce: launch.launchNonce, browserProof: browser.browserProof })
       }});
     } catch (error) { throw currentError(error, 'ADMIN_EXCHANGE_NETWORK', 'platform-exchange-network'); }
     assertGeneration(generation);
     const { response, payload } = exchangeResult;
     if (!response.ok) fail('ADMIN_EXCHANGE_HTTP', 'platform-exchange-http');
     const expiry = finiteExpiry(payload?.expiresAt);
-    if (payload?.success !== true || payload.appId !== appId || payload.contract !== ADMIN_CONTRACT || !stringValue(payload.appGrant) || !expiry || expiry <= now()) fail('ADMIN_UNAUTHORIZED', 'platform-exchange-rejected');
-    appGrant = String(payload.appGrant);
-    grantExpiry = expiry;
+    if (payload?.success !== true || payload.appId !== appId || payload.contract !== ADMIN_CONTRACT || !stringValue(payload.adminSessionProof) || !expiry || expiry <= now()) fail('ADMIN_UNAUTHORIZED', 'platform-exchange-rejected');
+    adminSessionProof = String(payload.adminSessionProof);
+    sessionExpiry = expiry;
     setState('authorized');
-    stage('app-grant-established');
+    stage('admin-session-established');
     return { appId, compatibility: ADMIN_CONTRACT, connectorVersion: CONNECTOR_VERSION, expiresAt: String(payload.expiresAt) };
   };
 
   const initialize = () => {
     if (initializationPromise) return initializationPromise;
-    if (status === 'authorized' && grantExpiry > now()) return Promise.resolve({ appId, compatibility: ADMIN_CONTRACT, connectorVersion: CONNECTOR_VERSION, expiresAt: new Date(grantExpiry).toISOString() });
+    if (status === 'authorized' && sessionExpiry > now()) return Promise.resolve({ appId, compatibility: ADMIN_CONTRACT, connectorVersion: CONNECTOR_VERSION, expiresAt: new Date(sessionExpiry).toISOString() });
     setState('initializing');
-    initializationPromise = exchangeAppLaunch().catch(error => {
+    initializationPromise = exchangeAdminLaunch().catch(error => {
       const safeError = currentError(error, 'ADMIN_UNAUTHORIZED', 'initialization');
-      appGrant = '';
-      grantExpiry = 0;
+      adminSessionProof = '';
+      sessionExpiry = 0;
       if (safeError.code !== 'ADMIN_SESSION_CLEARED') setState('failed', safeError);
       throw safeError;
     });
@@ -205,10 +269,10 @@ export function createAdminConnector({
   };
 
   const ensureAuthorized = () => {
-    if (!appGrant) fail('ADMIN_PROOF_REQUIRED', 'authorized-request');
-    if (grantExpiry <= now()) {
-      appGrant = '';
-      grantExpiry = 0;
+    if (!adminSessionProof) fail('ADMIN_PROOF_REQUIRED', 'authorized-request');
+    if (sessionExpiry <= now()) {
+      adminSessionProof = '';
+      sessionExpiry = 0;
       setState('expired', new AdminConnectorError('ADMIN_SESSION_EXPIRED', 'session-expiry'));
       fail('ADMIN_SESSION_EXPIRED', 'session-expiry');
     }
@@ -218,7 +282,7 @@ export function createAdminConnector({
     if (!stringValue(action) || !stringValue(operation)) throw new TypeError('authorizedRequest requires action and operation');
     const generation = sessionGeneration;
     let result;
-    try { result = await requestWithTimeout('authorized', { url: gasEndpoint, init: { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ ...body, action, appId, operation, appGrant }) } }); }
+    try { result = await requestWithTimeout('authorized', { url: gasEndpoint, init: { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ ...body, action, appId, operation, adminSessionProof }) } }); }
     catch (error) { throw currentError(error, 'AUTHORIZED_REQUEST_NETWORK', 'authorized-request-network'); }
     assertGeneration(generation);
     const { response, payload } = result;
@@ -232,31 +296,34 @@ export function createAdminConnector({
     return payload;
   };
   const getAuthorizationState = () => {
-    if (appGrant && grantExpiry <= now()) { appGrant = ''; grantExpiry = 0; setState('expired', new AdminConnectorError('ADMIN_SESSION_EXPIRED', 'session-expiry')); }
-    return safeStateSnapshot({ status, appId, lastError, expiresAt: grantExpiry ? new Date(grantExpiry).toISOString() : null });
+    if (adminSessionProof && sessionExpiry <= now()) {
+      adminSessionProof = '';
+      sessionExpiry = 0;
+      setState('expired', new AdminConnectorError('ADMIN_SESSION_EXPIRED', 'session-expiry'));
+    }
+    return safeStateSnapshot({ status, appId, lastError, expiresAt: sessionExpiry ? new Date(sessionExpiry).toISOString() : null });
   };
   const clearSession = () => {
     sessionGeneration += 1;
     if (activeCancel) activeCancel(new AdminConnectorError('ADMIN_SESSION_CLEARED', 'session-clear'));
-    appGrant = '';
-    grantExpiry = 0;
+    adminSessionProof = '';
+    sessionExpiry = 0;
     setState('cleared');
   };
   const subscribeToStateChanges = listener => { if (typeof listener !== 'function') throw new TypeError('listener is required'); subscribers.add(listener); return () => subscribers.delete(listener); };
 
   return Object.freeze({
     initialize,
-    exchangeAppLaunch,
+    exchangeAppLaunch: exchangeAdminLaunch,
     authorizedRequest,
     getAuthorizationState,
-    isAuthorized: () => Boolean(appGrant && grantExpiry > now()),
+    isAuthorized: () => Boolean(adminSessionProof && sessionExpiry > now()),
     clearSession,
     subscribeToStateChanges,
     buildReturnUrl: () => returnToAvaUrl,
-    // The App Grant is the existing in-memory AVA Admin proof used by the
-    // Medical Official write contract. It is exposed only as an application
-    // gate for Official media orchestration; Firebase Storage never receives it.
-    getSessionProof: () => appGrant
+    // The current Admin Session proof is held in closure memory only. Firebase
+    // Storage never receives it; it is used only for Official Sheet requests.
+    getSessionProof: () => adminSessionProof
   });
 }
 

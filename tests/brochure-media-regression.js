@@ -22,7 +22,7 @@ for (const name of ['initializeApp', 'getStorage', 'ref', 'uploadBytesResumable'
 assert.doesNotMatch(firebase, /getAnalytics/);
 assert.match(orchestration, /medical\/official\/brochures\//);
 assert.match(orchestration, /application\/pdf|image\/jpeg|image\/png|image\/webp/);
-assert.match(orchestration, /admin-proof/);
+assert.doesNotMatch(orchestration, /admin-proof/);
 assert.match(orchestration, /FIREBASE_UPLOAD_TIMEOUT_MS = 120000/);
 assert.match(bootstrap, /MedicalFirebaseReady/);
 assert.match(sync, /record_type.*PLAN/);

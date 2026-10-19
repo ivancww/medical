@@ -5,9 +5,9 @@
   const PLATFORM_ORIGIN = "https://ivancww.github.io";
   const OFFICIAL_API = "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec";
   const EXCHANGE_TIMEOUT_MS = 15000;
-  const CONNECTOR_VERSION = "0.2.0";
-  const CONNECTOR_COMPATIBILITY = "ava-legacy-app-grant-v1";
-  const CONNECTOR_MODULE = "./ava-admin-connector.mjs?v=1.1.9";
+  const CONNECTOR_VERSION = "0.3.0";
+  const CONNECTOR_COMPATIBILITY = "ava-admin-session-v1";
+  const CONNECTOR_MODULE = "./ava-admin-connector.mjs?v=1.2.8";
   let connectorPromise;
   let connector;
 
@@ -17,14 +17,22 @@
 
   function userError(error) {
     const messages = {
-      ADMIN_LAUNCH_REQUIRED: "此管理入口必須由 AVA Studio 的安全視窗開啟。",
+      ADMIN_LAUNCH_REQUIRED: "必須由 AVA Studio 開啟 Medical Admin。",
+      ADMIN_BROWSER_BINDING_REQUIRED: "此管理入口需要由 AVA Studio 驗證後開啟。",
+      ADMIN_BROWSER_BINDING_INVALID: "AVA Studio 管理視窗驗證無效，請返回 AVA Studio 重新開啟 Medical。",
+      ADMIN_BROWSER_BINDING_EXPIRED: "AVA Studio 管理視窗驗證已逾時，請返回 AVA Studio 重新開啟 Medical。",
       ADMIN_EXCHANGE_TIMEOUT: "AVA 管理授權服務回應逾時，請返回 AVA Studio 再開啟 Medical。",
       ADMIN_EXCHANGE_NETWORK: "暫時未能連接 AVA 管理授權服務，請稍後再試。",
       ADMIN_EXCHANGE_HTTP: "AVA 管理授權服務拒絕此管理入口。",
       ADMIN_EXCHANGE_RESPONSE: "AVA 管理授權回應無效，請返回 AVA Studio 再開啟 Medical。",
-      ADMIN_UNAUTHORIZED: "此管理入口未能由 AVA Studio 授權。",
+      ADMIN_UNAUTHORIZED: "AVA 管理授權未能通過驗證。",
       ADMIN_LAUNCH_REPLAY: "此管理入口已使用，請返回 AVA Studio 重新開啟 Medical。",
-      ADMIN_SESSION_CLEARED: "AVA 管理授權已清除，請返回 AVA Studio 重新開啟 Medical。"
+      ADMIN_SESSION_CLEARED: "AVA 管理授權已清除，請返回 AVA Studio 重新開啟 Medical。",
+      ADMIN_SESSION_EXPIRED: "AVA 管理授權已逾時，請返回 AVA Studio 重新開啟 Medical。",
+      ADMIN_PROOF_REQUIRED: "需要有效的 AVA 管理授權才能發布官方資料。",
+      AUTHORIZED_REQUEST_TIMEOUT: "官方資料服務回應逾時，請稍後再試。",
+      AUTHORIZED_REQUEST_NETWORK: "官方資料服務暫時未能連線，請稍後再試。",
+      AUTHORIZED_REQUEST_HTTP: "官方資料服務拒絕此寫入要求。"
     };
     const safe = new Error(messages[error?.code] || "此管理入口需要由 AVA Studio 驗證後開啟。");
     safe.code = error?.code || "ADMIN_UNAUTHORIZED";

@@ -10,16 +10,29 @@ const app = fs.readFileSync('app.js', 'utf8');
 const sync = fs.readFileSync('medical-official-sync.js', 'utf8');
 
 assert.match(auth, /const APP_ID = "medical"/);
-assert.match(auth, /CONNECTOR_COMPATIBILITY = "ava-legacy-app-grant-v1"/);
+assert.match(auth, /CONNECTOR_COMPATIBILITY = "ava-admin-session-v1"/);
+assert.match(auth, /CONNECTOR_MODULE = "\.\/ava-admin-connector\.mjs\?v=1\.2\.8"/);
 assert.match(auth, /exchangeAppLaunch/);
-assert.doesNotMatch(auth, /exchangeAdminSession|browserProof|launchNonce|sessionStorage|localStorage|indexedDB/);
-assert.match(connector, /ADMIN_CONTRACT = 'ava-legacy-app-grant-v1'/);
-assert.match(connector, /action: 'exchangeAppLaunch'/);
-assert.match(connector, /payload\.appGrant/);
+assert.match(auth, /ADMIN_SESSION_EXPIRED/);
+assert.match(auth, /AUTHORIZED_REQUEST_TIMEOUT/);
+assert.doesNotMatch(auth, /sessionStorage|localStorage|indexedDB/);
+
+assert.match(connector, /ADMIN_CONTRACT = 'ava-admin-session-v1'/);
+assert.match(connector, /action: 'exchangeAdminSession'/);
+assert.match(connector, /browserProof/);
+assert.match(connector, /launchNonce/);
+assert.match(connector, /windowObject/);
+assert.match(connector, /windowObject\?\.opener/);
+assert.match(connector, /ava-admin-session-context/);
+assert.match(connector, /adminSessionProof/);
 assert.match(connector, /launchConsumed = true/);
 assert.match(connector, /clearLaunch\(locationObject, historyObject\)/);
-assert.match(connector, /getSessionProof: \(\) => appGrant/);
-assert.doesNotMatch(connector, /browserProof|launchNonce|windowObject|opener|postMessage|sessionStorage|localStorage|indexedDB/);
+assert.match(connector, /getSessionProof: \(\) => adminSessionProof/);
+assert.doesNotMatch(connector, /appGrant/);
+assert.doesNotMatch(connector, /sessionStorage|localStorage|indexedDB/);
+
+// Medical GAS must retain the current verification path and the temporary
+// legacy fallback for deployed compatibility; the frontend must not use it.
 assert.match(gas, /action: "exchangeAppLaunch"/);
 assert.match(gas, /action: "exchangeAdminSession"/);
 assert.match(gas, /action: "verifyAppGrant"/);
@@ -45,6 +58,5 @@ assert.match(official, /medicalVerifyAppGrant_\(body\.appGrant, operation\)/);
 assert.match(sync, /MedicalAdminAuth\.authorizedRequest/);
 assert.doesNotMatch(sync, /MedicalAdminAuth\?\.getSessionProof\?\.\(\)/);
 assert.match(app, /MedicalAdminAuth\.exchangeAppLaunch\(\)/);
-assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.7'/);
-console.log('Medical Legacy App Grant static contract checks passed');
-
+assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.8'/);
+console.log('Medical Admin Session v1 frontend, dual GAS contract and protected Official write checks passed');

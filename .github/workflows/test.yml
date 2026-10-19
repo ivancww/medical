@@ -76,6 +76,7 @@ jobs:
           node --check tests/claim-engine-regression.js
           node --check tests/mother-contract-regression.js
           node --check tests/medical-admin-auth-regression.js
+          node --check tests/medical-admin-session-v1-regression.js
           node --check tests/platform-entry-regression.js
           node --check tests/admin-startup-regression.js
           node --check tests/product-data-regression.js
@@ -84,6 +85,7 @@ jobs:
           node --check tests/release-version-regression.js
           node --check tests/post-v1.2.1-repair-regression.js
           node --check tests/brochure-file-selection-regression.js
+          node --check tests/brochure-media-regression.js
           node --check tests/post-v1.2.2-upload-scroll-regression.js
           node --check tests/medical-pages-deployment-regression.js
           node --check tests/android-browser-context-regression.js
@@ -104,6 +106,7 @@ jobs:
           grep -q "Simple Claim Illustration" docs/PRODUCT-RULES.md
           node tests/mother-contract-regression.js
           node tests/medical-admin-auth-regression.js
+          node tests/medical-admin-session-v1-regression.js
           node tests/platform-entry-regression.js
           node tests/admin-startup-regression.js
           node tests/automatic-update-regression.js
@@ -111,6 +114,7 @@ jobs:
           node tests/release-version-regression.js
           node tests/post-v1.2.1-repair-regression.js
           node tests/brochure-file-selection-regression.js
+          node tests/brochure-media-regression.js
           node tests/post-v1.2.2-upload-scroll-regression.js
           node tests/medical-pages-deployment-regression.js
           node tests/android-browser-context-regression.js
@@ -125,5 +129,5 @@ jobs:
           node tests/post-v1.2.4-module-summary-regression.js
       - name: Verify PWA and fixed contracts
         run: |
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js?v=1.2.7','medical-firebase-bootstrap.js?v=1.2.7','medical-official-sync.js?v=1.2.7','ava-admin-connector.mjs?v=1.2.7','medical-firebase.js?v=1.2.7','medical-firebase-module.js?v=1.2.7','product-data.js','ready-product.css','release-version.json'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js?v=1.2.7','medical-firebase-bootstrap.js?v=1.2.7','medical-official-sync.js?v=1.2.7','medical-firebase.js?v=1.2.7','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js?v=1.2.8','medical-firebase-bootstrap.js?v=1.2.8','medical-official-sync.js?v=1.2.8','ava-admin-connector.mjs?v=1.2.8','medical-firebase.js?v=1.2.8','medical-firebase-module.js?v=1.2.8','product-data.js','ready-product.css','release-version.json'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js?v=1.2.8','medical-firebase-bootstrap.js?v=1.2.8','medical-official-sync.js?v=1.2.8','medical-firebase.js?v=1.2.8','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
 
