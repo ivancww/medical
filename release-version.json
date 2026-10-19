@@ -1,5 +1,5 @@
 {
-  "appVersion": "v1.2.7",
+  "appVersion": "v1.2.8",
   "releaseType": "patch",
-  "scope": "Repair Medical Admin startup selector crash and harden startup regression coverage"
+  "scope": "Migrate Medical Official writes to AVA Admin Session v1"
 }

@@ -6,7 +6,7 @@ async function run() {
   const rejected = createAdminConnector({ appId: 'medical', gasEndpoint: 'https://gas.invalid/medical/exec', locationObject: location, fetchImpl: async () => { throw new Error('no network expected'); } });
   await assert.rejects(rejected.initialize(), error => error.code === 'ADMIN_LAUNCH_REQUIRED');
 
-  const copied = { href: 'https://ivancww.github.io/medical/?avaEntry=admin&avaAdminLaunch=expired-ticket' };
+  const copied = { href: 'https://ivancww.github.io/medical/?avaEntry=admin&avaAdminLaunch=expired-ticket&avaAdminLaunchNonce=expired-nonce' };
   let sent;
   const copiedConnector = createAdminConnector({
     appId: 'medical',
@@ -14,11 +14,9 @@ async function run() {
     locationObject: copied,
     fetchImpl: async (_url, options) => { sent = JSON.parse(options.body); return { ok: true, json: async () => ({ success: false, error: 'Invalid or expired Admin launch' }) }; }
   });
-  await assert.rejects(copiedConnector.initialize(), error => error.code === 'ADMIN_UNAUTHORIZED');
-  assert.equal(sent.action, 'exchangeAppLaunch');
-  assert.equal(Object.keys(sent).includes('browserProof'), false);
-  assert.equal(Object.keys(sent).includes('launchNonce'), false);
-  console.log('Missing ticket, expired ticket and browser-context independence regressions passed');
+  await assert.rejects(copiedConnector.initialize(), error => error.code === 'ADMIN_BROWSER_BINDING_REQUIRED');
+  assert.equal(sent, undefined);
+  console.log('Missing ticket, browser-bound Admin Session v1 and copied-launch rejection regressions passed');
 }
 
 run().catch(error => { console.error(error); process.exitCode = 1; });
