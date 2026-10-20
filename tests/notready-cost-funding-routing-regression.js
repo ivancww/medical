@@ -138,7 +138,7 @@ const routeResult = vm.runInNewContext(`
     ]
   };
   startJourneyAtPage('notready', 'N07');
-  state.answers = { N01: 'private', N02: 'private_tradeoff', N05: 'fund_savings', N07: 'reserve_fund' };
+  state.answers = { N01: 'private', N02: 'private_tradeoff', N05: 'fund_savings', N07: 'future_insurance' };
   state.medicalCostScenario = 'pci';
   state.medicalGrowthRate = 6;
   state.medicalCost = 100000;
@@ -206,7 +206,7 @@ assert.equal(routeResult.savedPage, 'N07');
 assert.equal(routeResult.answers.N01, 'private');
 assert.equal(routeResult.answers.N02, 'private_tradeoff');
 assert.equal(routeResult.answers.N05, 'fund_savings');
-assert.equal(routeResult.answers.N07, 'reserve_fund');
+assert.equal(routeResult.answers.N07, 'future_insurance');
 assert.equal(routeResult.scenario, 'pci');
 assert.equal(routeResult.growth, 6);
 assert.equal(routeResult.cost, 100000);
@@ -222,6 +222,7 @@ assert.doesNotMatch(routeResult.summaryHtml, /future_insurance/);
 assert.equal(routeResult.reservePage, 'NOTREADY_FINAL_SUMMARY');
 assert.equal(routeResult.maintainPage, 'NOTREADY_FINAL_SUMMARY');
 
+vm.runInNewContext(`state.answers = { N01: 'private', N02: 'private_tradeoff', N05: 'fund_savings', N07: 'future_insurance' }; state.medicalCostScenario = 'pci'; state.medicalGrowthRate = 6; state.medicalCost = 100000; state.fundingAmount = 600000;`, behaviorContext);
 const summaryResult = vm.runInNewContext(`
   notReadySummaryBlock();
 `, behaviorContext);
@@ -237,8 +238,8 @@ assert.match(summaryResult, /銀行存款/);
 assert.match(summaryResult, /HK\$100,000/);
 assert.match(summaryResult, /HK\$600,000/);
 assert.match(summaryResult, /餘額/);
-assert.match(summaryResult, /預留一筆醫療預備資金/);
-assert.doesNotMatch(summaryResult, /private|private_tradeoff|fund_savings|reserve_fund/);
+assert.match(summaryResult, /了解醫療保障可以負擔幾多/);
+assert.doesNotMatch(summaryResult, /private|private_tradeoff|fund_savings|reserve_fund|future_insurance/);
 vm.runInNewContext(`state.answers.N01 = 'public';`, behaviorContext);
 const changedSummary = vm.runInNewContext(`notReadySummaryBlock();`, behaviorContext);
 assert.match(changedSummary, /公立醫療/);
