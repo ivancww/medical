@@ -159,6 +159,11 @@ const routeResult = vm.runInNewContext(`
   navigateJourney(1);
   const summaryPage = pageId(journeyPages(state.journey)[state.index]);
   const summaryHtml = document.querySelector('#pageCard').innerHTML;
+  const returnedAnswers = { ...state.answers };
+  const returnedScenario = state.medicalCostScenario;
+  const returnedGrowth = state.medicalGrowthRate;
+  const returnedCost = state.medicalCost;
+  const returnedFunding = state.fundingAmount;
   startJourneyAtPage('notready', 'N07');
   state.answers.N07 = 'reserve_fund';
   navigateJourney(1);
@@ -170,11 +175,11 @@ const routeResult = vm.runInNewContext(`
   ({
     journey: state.journey,
     page: returnedPage,
-    answers: { ...state.answers },
-    scenario: state.medicalCostScenario,
-    growth: state.medicalGrowthRate,
-    cost: state.medicalCost,
-    funding: state.fundingAmount,
+    answers: returnedAnswers,
+    scenario: returnedScenario,
+    growth: returnedGrowth,
+    cost: returnedCost,
+    funding: returnedFunding,
     savedPage,
     returnedFromPlanInfo: true,
     nextHidden: returnedNext.hidden,
