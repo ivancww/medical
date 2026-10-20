@@ -70,7 +70,7 @@ assert.equal(sessionResult.company.coverage, 123000);
 assert.equal(sessionResult.company.wise, false);
 assert.equal(sessionResult.noMedical.pageId, 'R04', 'conditional restoration uses logical page identity');
 assert.equal(sessionResult.noMedical.hasR03, false);
-assert.match(app, /function startJourney\(j\)\{clearJourneySession\(\);resetJourneyPresentationState\(\)/, 'starting a new journey clears the resume pointer and state');
+assert.match(app, /function startJourney\(j,\{returnJourney=null\}=\{\}\)\{clearJourneySession\(\);resetJourneyPresentationState\(\)/, 'starting a new journey clears the resume pointer and state');
 assert.match(app, /function renderHome\(\)\{clearJourneySession\(\)/, 'deliberate Home navigation clears the resume pointer');
 assert.match(app, /persistJourneySession\(\);\s*try\{sessionStorage\.setItem\(SW_RELOAD_KEY/, 'service-worker reload persists the active conversation first');
 
