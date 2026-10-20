@@ -149,6 +149,8 @@ const routeResult = vm.runInNewContext(`
   goBack();
   const returnedNext = document.querySelector('#nextBtn');
   const returnedMarker = state.returnedFromPlanInfo;
+  const returnedNextHidden = returnedNext.hidden;
+  const returnedNextText = returnedNext.textContent;
   const returnedPage = pageId(journeyPages(state.journey)[state.index]);
   persistJourneySession();
   state.journey = null;
@@ -159,6 +161,7 @@ const routeResult = vm.runInNewContext(`
   renderPage();
   const restoredNext = document.querySelector('#nextBtn');
   const restoredMarker = state.returnedFromPlanInfo;
+  const restoredNextHidden = restoredNext.hidden;
   const restoredPage = pageId(journeyPages(state.journey)[state.index]);
   navigateJourney(1);
   const summaryPage = pageId(journeyPages(state.journey)[state.index]);
@@ -186,11 +189,11 @@ const routeResult = vm.runInNewContext(`
     funding: returnedFunding,
     savedPage,
     returnedFromPlanInfo: returnedMarker,
-    nextHidden: returnedNext.hidden,
-    nextText: returnedNext.textContent,
+    nextHidden: returnedNextHidden,
+    nextText: returnedNextText,
     restoredPage,
     restoredMarker,
-    restoredNextHidden: restoredNext.hidden,
+    restoredNextHidden,
     summaryPage,
     summaryHtml,
     reservePage,
