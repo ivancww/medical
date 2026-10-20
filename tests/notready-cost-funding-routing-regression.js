@@ -97,6 +97,7 @@ const behaviorNode = () => ({
 });
 const behaviorSession = new Map();
 const behaviorContext = {
+  behaviorOptionButtons,
   window: { AVA_MEDICAL_VERSION: 'v1.2.9', AVA_MEDICAL_BUILD: 'test', location: { search: '' }, scrollTo() {}, requestAnimationFrame: fn => fn() },
   document: {
     querySelector: selector => behaviorNodes.get(selector) || behaviorNodes.set(selector, behaviorNode()).get(selector),
