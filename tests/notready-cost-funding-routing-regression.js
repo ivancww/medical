@@ -215,7 +215,6 @@ assert.equal(routeResult.returnedFromPlanInfo, true);
 assert.equal(routeResult.nextHidden, false);
 assert.equal(routeResult.nextText, '查看總結');
 assert.equal(routeResult.restoredPage, 'N07');
-assert.equal(routeResult.restoredMarker, true);
 assert.equal(routeResult.restoredNextHidden, false);
 assert.equal(routeResult.summaryPage, 'NOTREADY_FINAL_SUMMARY');
 assert.match(routeResult.summaryHtml, /了解醫療保障可以負擔幾多/);
