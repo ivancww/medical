@@ -127,6 +127,7 @@ const routeResult = vm.runInNewContext(`
     ],
     options: [
       { option_id: 'private', option_group: 'medical_choice', display_name: '私家醫療' },
+      { option_id: 'public', option_group: 'medical_choice', display_name: '公立醫療' },
       { option_id: 'private_tradeoff', option_group: 'tradeoff_priority', display_name: '即時處理但費用較高' },
       { option_id: 'fund_savings', option_group: 'funding_source', display_name: '銀行存款' },
       { option_id: 'reserve_fund', option_group: 'future_arrangement', display_name: '預留一筆醫療預備資金' }
@@ -182,5 +183,9 @@ assert.match(summaryResult, /HK\$600,000/);
 assert.match(summaryResult, /餘額/);
 assert.match(summaryResult, /預留一筆醫療預備資金/);
 assert.doesNotMatch(summaryResult, /private|private_tradeoff|fund_savings|reserve_fund/);
+vm.runInNewContext(`state.answers.N01 = 'public';`, behaviorContext);
+const changedSummary = vm.runInNewContext(`notReadySummaryBlock();`, behaviorContext);
+assert.match(changedSummary, /公立醫療/);
+assert.doesNotMatch(changedSummary, /私家醫療/);
 
 console.log('Not Ready cost scenarios, funding bar, direct plan routing and release asset regression PASS');
