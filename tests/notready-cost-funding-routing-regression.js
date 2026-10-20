@@ -158,7 +158,7 @@ const routeResult = vm.runInNewContext(`
   futureInsuranceButton.onclick();
   const firstTapJourney = state.journey;
   const firstTapPage = pageId(journeyPages(state.journey)[state.index]);
-  const firstTapAnswer = state.answers.N07;
+  const firstTapAnswer = state.returnJourney.answers.N07;
   const savedPage = state.returnJourney.pageId;
   goBack();
   const returnedNext = document.querySelector('#nextBtn');
