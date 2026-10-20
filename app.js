@@ -77,7 +77,7 @@ function renderPage({scrollToTop=false}={}){const ps=journeyPages(state.journey)
   $$('[data-p7-delete]').forEach(button=>button.onclick=()=>{const model=p7UserModel();model.customItems=model.customItems.filter(item=>item.item_key!==button.dataset.p7Delete);saveP7UserModel(model);renderPage()});
   $('#p7AddUserItem')?.addEventListener('click',()=>{const model=p7UserModel(),key='user_p7_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);model.customItems.push({item_key:key,item_name:'自選項目',enabled:true,sort_order:effectiveComparisonItems(true).length+1,userCreated:true,values:blankComparisonValues()});saveP7UserModel(model);renderPage()});
  }
- if(id.toUpperCase()==='N04'){const r=$('#growthRate');if(r)r.oninput=()=>{state.medicalGrowthRate=+r.value;renderPage()};$('[data-medical-cost-scenario]').forEach(button=>button.onclick=()=>{state.medicalCostScenario=button.dataset.medicalCostScenario;state.medicalCost=medicalCostScenarioBase();renderPage()})}
+ if(id.toUpperCase()==='N04'){const r=$('#growthRate');if(r)r.oninput=()=>{state.medicalGrowthRate=+r.value;renderPage()};$$('[data-medical-cost-scenario]').forEach(button=>button.onclick=()=>{state.medicalCostScenario=button.dataset.medicalCostScenario;state.medicalCost=medicalCostScenarioBase();renderPage()})}
  if(id.toUpperCase()==='N06'){bindLiveFundingInput($('#fundingAmount'),'fundingAmount');bindLiveFundingInput($('#fundingMedicalCost'),'medicalCost')}
  applyEditMode();if(scrollToTop&&pageChanged)scrollJourneyPageToTop()}
 function hasCompanyMedical(){const v=state.answers.R02||state.answers.r02||state.answers.ready_existing||'';return v==='company_medical'}
