@@ -11,7 +11,7 @@ const sync = fs.readFileSync('medical-official-sync.js', 'utf8');
 
 assert.match(auth, /const APP_ID = "medical"/);
 assert.match(auth, /CONNECTOR_COMPATIBILITY = "ava-admin-session-v1"/);
-assert.match(auth, /CONNECTOR_MODULE = "\.\/ava-admin-connector\.mjs\?v=1\.2\.8"/);
+assert.match(auth, /CONNECTOR_MODULE = "\.\/ava-admin-connector\.mjs\?v=1\.2\.9"/);
 assert.match(auth, /exchangeAppLaunch/);
 assert.match(auth, /ADMIN_SESSION_EXPIRED/);
 assert.match(auth, /AUTHORIZED_REQUEST_TIMEOUT/);
