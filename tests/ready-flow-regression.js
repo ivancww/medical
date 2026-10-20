@@ -6,7 +6,9 @@ const css = fs.readFileSync('ready-product.css', 'utf8');
 const rules = fs.readFileSync('docs/PRODUCT-RULES.md', 'utf8');
 
 assert.match(app, /const READY_PAGE_ORDER=\['R01','R02','R03','R04','R05','R07','R09','R08','FINAL_SUMMARY'\]/);
-assert.match(app, /function goBack\(\)\{if\(!state\.journey\)\{renderHome\(\);return\}const ps=journeyPages\(state\.journey\);if\(state\.index>0&&ps\.length\)navigateJourney\(-1\);else renderHome\(\)\}/);
+assert.match(app, /function goBack\(\)\{if\(!state\.journey\)\{renderHome\(\);return\}/);
+assert.match(app, /state\.index>0&&ps\.length\)navigateJourney\(-1\)/);
+assert.match(app, /state\.returnJourney/);
 assert.match(app, /companyCoverage.*inputmode="numeric"/);
 assert.match(app, /function bindLiveNumericInput\(/);
 assert.match(app, /state\[key\]=value/);
