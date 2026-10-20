@@ -24,7 +24,7 @@ const context = {
   window: { AVA_MEDICAL_VERSION: 'v1.2.9', AVA_MEDICAL_BUILD: 'test', location: { search: '' } },
   document: { querySelector: selector => nodes.get(selector) || fakeNode(), querySelectorAll: () => [] },
   localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
-  sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+  sessionStorage: { getItem: key => behaviorSession.get(key) || null, setItem: (key, value) => behaviorSession.set(key, value), removeItem: key => behaviorSession.delete(key) },
   MedicalAdminAuth: { hasSession: () => false },
   URLSearchParams,
   Intl,
@@ -82,7 +82,7 @@ assert.match(app, /function notReadySummaryBlock\(/);
 assert.match(app, /function officialOptionLabel\(/);
 assert.match(app, /returnJourneyEntryPage/);
 assert.match(app, /isReturnEntry/);
-assert.match(app, /state\.answers\.N01/);
+assert.match(app, /returnedFromPlanInfo/);\nassert.match(app, /查看總結/);\nassert.match(app, /state\.answers\.N01/);
 assert.match(app, /state\.answers\.N02/);
 assert.match(app, /state\.answers\.N05/);
 assert.match(app, /state\.answers\.N07/);
@@ -92,6 +92,7 @@ const behaviorNode = () => ({
   hidden: false, textContent: '', innerHTML: '', dataset: {}, style: {},
   setAttribute() {}, addEventListener() {}, getBoundingClientRect: () => ({ top: 0, height: 0 })
 });
+const behaviorSession = new Map();
 const behaviorContext = {
   window: { AVA_MEDICAL_VERSION: 'v1.2.9', AVA_MEDICAL_BUILD: 'test', location: { search: '' }, scrollTo() {}, requestAnimationFrame: fn => fn() },
   document: {
@@ -130,7 +131,8 @@ const routeResult = vm.runInNewContext(`
       { option_id: 'public', option_group: 'medical_choice', display_name: '公立醫療' },
       { option_id: 'private_tradeoff', option_group: 'tradeoff_priority', display_name: '即時處理但費用較高' },
       { option_id: 'fund_savings', option_group: 'funding_source', display_name: '銀行存款' },
-      { option_id: 'reserve_fund', option_group: 'future_arrangement', display_name: '預留一筆醫療預備資金' }
+      { option_id: 'reserve_fund', option_group: 'future_arrangement', display_name: '預留一筆醫療預備資金' },
+      { option_id: 'future_insurance', option_group: 'future_arrangement', display_name: '了解醫療保障可以負擔幾多' }
     ]
   };
   startJourneyAtPage('notready', 'N07');
@@ -143,15 +145,47 @@ const routeResult = vm.runInNewContext(`
   const savedPage = pageId(journeyPages('notready')[state.index]);
   startJourneyAtPage('ready', 'R07', { returnJourney: true });
   goBack();
+  const returnedNext = document.querySelector('#nextBtn');
+  const returnedPage = pageId(journeyPages(state.journey)[state.index]);
+  persistJourneySession();
+  state.journey = null;
+  state.returnJourney = null;
+  state.returnJourneyEntryPage = null;
+  state.returnedFromPlanInfo = false;
+  restoreJourneySession();
+  renderPage();
+  const restoredNext = document.querySelector('#nextBtn');
+  const restoredPage = pageId(journeyPages(state.journey)[state.index]);
+  navigateJourney(1);
+  const summaryPage = pageId(journeyPages(state.journey)[state.index]);
+  const summaryHtml = document.querySelector('#pageCard').innerHTML;
+  startJourneyAtPage('notready', 'N07');
+  state.answers.N07 = 'reserve_fund';
+  navigateJourney(1);
+  const reservePage = pageId(journeyPages(state.journey)[state.index]);
+  startJourneyAtPage('notready', 'N07');
+  state.answers.N07 = 'maintain';
+  navigateJourney(1);
+  const maintainPage = pageId(journeyPages(state.journey)[state.index]);
   ({
     journey: state.journey,
-    page: pageId(journeyPages(state.journey)[state.index]),
+    page: returnedPage,
     answers: { ...state.answers },
     scenario: state.medicalCostScenario,
     growth: state.medicalGrowthRate,
     cost: state.medicalCost,
     funding: state.fundingAmount,
-    savedPage
+    savedPage,
+    returnedFromPlanInfo: true,
+    nextHidden: returnedNext.hidden,
+    nextText: returnedNext.textContent,
+    restoredPage,
+    restoredMarker: state.returnedFromPlanInfo,
+    restoredNextHidden: restoredNext.hidden,
+    summaryPage,
+    summaryHtml,
+    reservePage,
+    maintainPage
   });
 `, behaviorContext);
 assert.equal(routeResult.journey, 'notready');
@@ -165,6 +199,17 @@ assert.equal(routeResult.scenario, 'pci');
 assert.equal(routeResult.growth, 6);
 assert.equal(routeResult.cost, 100000);
 assert.equal(routeResult.funding, 600000);
+assert.equal(routeResult.returnedFromPlanInfo, true);
+assert.equal(routeResult.nextHidden, false);
+assert.equal(routeResult.nextText, '查看總結');
+assert.equal(routeResult.restoredPage, 'N07');
+assert.equal(routeResult.restoredMarker, true);
+assert.equal(routeResult.restoredNextHidden, false);
+assert.equal(routeResult.summaryPage, 'NOTREADY_FINAL_SUMMARY');
+assert.match(routeResult.summaryHtml, /了解醫療保障可以負擔幾多/);
+assert.doesNotMatch(routeResult.summaryHtml, /future_insurance/);
+assert.equal(routeResult.reservePage, 'NOTREADY_FINAL_SUMMARY');
+assert.equal(routeResult.maintainPage, 'NOTREADY_FINAL_SUMMARY');
 
 const summaryResult = vm.runInNewContext(`
   notReadySummaryBlock();
