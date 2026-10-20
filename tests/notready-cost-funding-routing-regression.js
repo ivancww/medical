@@ -90,6 +90,7 @@ assert.match(app, /state\.answers\.N05/);
 assert.match(app, /state\.answers\.N07/);
 
 const behaviorNodes = new Map();
+const behaviorOptionButtons = [];
 const behaviorNode = () => ({
   hidden: false, textContent: '', innerHTML: '', dataset: {}, style: {},
   setAttribute() {}, addEventListener() {}, getBoundingClientRect: () => ({ top: 0, height: 0 })
@@ -99,7 +100,7 @@ const behaviorContext = {
   window: { AVA_MEDICAL_VERSION: 'v1.2.9', AVA_MEDICAL_BUILD: 'test', location: { search: '' }, scrollTo() {}, requestAnimationFrame: fn => fn() },
   document: {
     querySelector: selector => behaviorNodes.get(selector) || behaviorNodes.set(selector, behaviorNode()).get(selector),
-    querySelectorAll: () => []
+    querySelectorAll: selector => selector === '.option-card' ? behaviorOptionButtons : []
   },
   localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
   sessionStorage: { getItem: key => behaviorSession.get(key) || null, setItem: (key, value) => behaviorSession.set(key, value), removeItem: key => behaviorSession.delete(key) },
@@ -138,14 +139,26 @@ const routeResult = vm.runInNewContext(`
     ]
   };
   startJourneyAtPage('notready', 'N07');
-  state.answers = { N01: 'private', N02: 'private_tradeoff', N05: 'fund_savings', N07: 'future_insurance' };
+  state.answers = { N01: 'private', N02: 'private_tradeoff', N05: 'fund_savings' };
   state.medicalCostScenario = 'pci';
   state.medicalGrowthRate = 6;
   state.medicalCost = 100000;
   state.fundingAmount = 600000;
-  persistJourneySession();
-  const savedPage = pageId(journeyPages('notready')[state.index]);
-  startJourneyAtPage('ready', 'R07', { returnJourney: true });
+  behaviorOptionButtons.push(...state.official.options
+    .filter(option => option.option_group === 'future_arrangement')
+    .map(option => ({
+      dataset: { key: option.option_id },
+      classList: { add() {} },
+      setAttribute() {},
+      onclick: null
+    })));
+  renderPage();
+  const futureInsuranceButton = behaviorOptionButtons.find(button => button.dataset.key === 'future_insurance');
+  futureInsuranceButton.onclick();
+  const firstTapJourney = state.journey;
+  const firstTapPage = pageId(journeyPages(state.journey)[state.index]);
+  const firstTapAnswer = state.answers.N07;
+  const savedPage = state.returnJourney.pageId;
   goBack();
   const returnedNext = document.querySelector('#nextBtn');
   const returnedMarker = state.returnedFromPlanInfo;
@@ -188,6 +201,9 @@ const routeResult = vm.runInNewContext(`
     cost: returnedCost,
     funding: returnedFunding,
     savedPage,
+    firstTapJourney,
+    firstTapPage,
+    firstTapAnswer,
     returnedFromPlanInfo: returnedMarker,
     nextHidden: returnedNextHidden,
     nextText: returnedNextText,
@@ -203,6 +219,9 @@ const routeResult = vm.runInNewContext(`
 assert.equal(routeResult.journey, 'notready');
 assert.equal(routeResult.page, 'N07');
 assert.equal(routeResult.savedPage, 'N07');
+assert.equal(routeResult.firstTapJourney, 'ready');
+assert.equal(routeResult.firstTapPage, 'R07');
+assert.equal(routeResult.firstTapAnswer, 'future_insurance');
 assert.equal(routeResult.answers.N01, 'private');
 assert.equal(routeResult.answers.N02, 'private_tradeoff');
 assert.equal(routeResult.answers.N05, 'fund_savings');
