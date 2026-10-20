@@ -46,6 +46,6 @@ assert.match(rules, /R01 Concern Setup → R02 Existing Medical[\s\S]*R07 Plan C
 
 console.log('Ready flow UX regression contract PASS');
 
-assert.match(app, /startJourneyAtPage\(j,pageIdValue\)/);
+assert.match(app, /startJourneyAtPage\(j,pageIdValue,options=\{\}\)/);
 assert.match(app, /directPlansBtn/);
 assert.doesNotMatch(app, /brochureIcon\(/);
