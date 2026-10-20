@@ -132,12 +132,13 @@ const routeResult = vm.runInNewContext(`
       { option_id: 'reserve_fund', option_group: 'future_arrangement', display_name: '預留一筆醫療預備資金' }
     ]
   };
+  startJourneyAtPage('notready', 'N07');
   state.answers = { N01: 'private', N02: 'private_tradeoff', N05: 'fund_savings', N07: 'reserve_fund' };
   state.medicalCostScenario = 'pci';
   state.medicalGrowthRate = 6;
   state.medicalCost = 100000;
   state.fundingAmount = 600000;
-  startJourneyAtPage('notready', 'N07');
+  persistJourneySession();
   const savedPage = pageId(journeyPages('notready')[state.index]);
   startJourneyAtPage('ready', 'R07', { returnJourney: true });
   goBack();
