@@ -100,7 +100,7 @@ const behaviorContext = {
     querySelectorAll: () => []
   },
   localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
-  sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+  sessionStorage: { getItem: key => behaviorSession.get(key) || null, setItem: (key, value) => behaviorSession.set(key, value), removeItem: key => behaviorSession.delete(key) },
   MedicalAdminAuth: { hasSession: () => false },
   URLSearchParams,
   Intl,
@@ -146,6 +146,7 @@ const routeResult = vm.runInNewContext(`
   startJourneyAtPage('ready', 'R07', { returnJourney: true });
   goBack();
   const returnedNext = document.querySelector('#nextBtn');
+  const returnedMarker = state.returnedFromPlanInfo;
   const returnedPage = pageId(journeyPages(state.journey)[state.index]);
   persistJourneySession();
   state.journey = null;
@@ -155,6 +156,7 @@ const routeResult = vm.runInNewContext(`
   restoreJourneySession();
   renderPage();
   const restoredNext = document.querySelector('#nextBtn');
+  const restoredMarker = state.returnedFromPlanInfo;
   const restoredPage = pageId(journeyPages(state.journey)[state.index]);
   navigateJourney(1);
   const summaryPage = pageId(journeyPages(state.journey)[state.index]);
@@ -181,11 +183,11 @@ const routeResult = vm.runInNewContext(`
     cost: returnedCost,
     funding: returnedFunding,
     savedPage,
-    returnedFromPlanInfo: true,
+    returnedFromPlanInfo: returnedMarker,
     nextHidden: returnedNext.hidden,
     nextText: returnedNext.textContent,
     restoredPage,
-    restoredMarker: state.returnedFromPlanInfo,
+    restoredMarker,
     restoredNextHidden: restoredNext.hidden,
     summaryPage,
     summaryHtml,
