@@ -11,7 +11,7 @@ const sync = fs.readFileSync('medical-official-sync.js', 'utf8');
 
 assert.match(auth, /const APP_ID = "medical"/);
 assert.match(auth, /CONNECTOR_COMPATIBILITY = "ava-admin-session-v1"/);
-assert.match(auth, /CONNECTOR_MODULE = "\.\/ava-admin-connector\.mjs\?v=1\.2\.8"/);
+assert.match(auth, /CONNECTOR_MODULE = "\.\/ava-admin-connector\.mjs\?v=1\.2\.9"/);
 assert.match(auth, /exchangeAppLaunch/);
 assert.match(auth, /ADMIN_SESSION_EXPIRED/);
 assert.match(auth, /AUTHORIZED_REQUEST_TIMEOUT/);
@@ -58,5 +58,5 @@ assert.match(official, /medicalVerifyAppGrant_\(body\.appGrant, operation\)/);
 assert.match(sync, /MedicalAdminAuth\.authorizedRequest/);
 assert.doesNotMatch(sync, /MedicalAdminAuth\?\.getSessionProof\?\.\(\)/);
 assert.match(app, /MedicalAdminAuth\.exchangeAppLaunch\(\)/);
-assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.8'/);
+assert.match(app, /APP_VERSION=window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.9'/);
 console.log('Medical Admin Session v1 frontend, dual GAS contract and protected Official write checks passed');

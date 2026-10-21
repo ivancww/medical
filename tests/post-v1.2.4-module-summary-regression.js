@@ -31,11 +31,11 @@ assert.match(sync, /sdk-import/);
 assert.doesNotMatch(sync, /admin-proof/);
 assert.match(sync, /object-verification/);
 assert.match(sync, /Firebase SDK 載入失敗/);
-assert.match(index, /medical-firebase-bootstrap\.js\?v=1\.2\.8/);
-assert.match(index, /medical-firebase\.js\?v=1\.2\.8/);
-assert.match(sw, /medical-firebase-bootstrap\.js\?v=1\.2\.8/);
-assert.match(sw, /medical-firebase\.js\?v=1\.2\.8/);
-assert.match(sw, /medical-firebase-module\.js\?v=1\.2\.8/);
+assert.match(index, /medical-firebase-bootstrap\.js\?v=1\.2\.9/);
+assert.match(index, /medical-firebase\.js\?v=1\.2\.9/);
+assert.match(sw, /medical-firebase-bootstrap\.js\?v=1\.2\.9/);
+assert.match(sw, /medical-firebase\.js\?v=1\.2\.9/);
+assert.match(sw, /medical-firebase-module\.js\?v=1\.2\.9/);
 assert.match(fs.readFileSync('firebase/storage.rules', 'utf8'), /match \/medical\/official\/brochures\/\{allPaths=\*\*\}/);
 assert.doesNotMatch(index, /1\.2\.3/);
 assert.doesNotMatch(sw, /1\.2\.3/);
@@ -44,7 +44,7 @@ const nodes = new Map();
 const fakeNode = () => ({ hidden: false, textContent: '', innerHTML: '', dataset: {}, className: '', setAttribute() {}, addEventListener() {} });
 const context = {
   window: {
-    AVA_MEDICAL_VERSION: 'v1.2.8',
+    AVA_MEDICAL_VERSION: 'v1.2.9',
     AVA_MEDICAL_BUILD: 'test',
     AVAMedicalProductData: {
       getProductData: () => [
@@ -103,4 +103,4 @@ html = summary('FLEXI');
 assert.match(html, /自付額<\/span><strong>不適用/);
 assert.doesNotMatch(html, /尊耀 HK\$16,000|睿選 HK\$8,800|睿選狀態|指定醫院/);
 
-console.log('Post-v1.2.8 Firebase module readiness and selected-plan summary regression PASS');
+console.log('Post-v1.2.9 Firebase module readiness and selected-plan summary regression PASS');
