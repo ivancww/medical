@@ -30,6 +30,9 @@ assert.doesNotMatch(sw, /1\.2\.3/);
 assert.match(sw, /release-version\.json/);
 assert.match(pages, /release-version\.json/);
 assert.match(pages, /AVA_MEDICAL_VERSION/);
+assert.match(pages, /version = release\["appVersion"\]/);
+assert.match(pages, /expected = f"\{asset\}\?v=\{version\}"/);
+assert.doesNotMatch(pages, /\?v=1\.2\.8/);
 assert.match(connectorPin, /Medical release: \`v1\.2\.9\`/);
 
 console.log('Medical frontend release identity v1.2.9 is consistent across source, build and PWA metadata');

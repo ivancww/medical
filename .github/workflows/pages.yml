@@ -38,7 +38,8 @@ jobs:
           assert manifest["start_url"] == "/medical/"
           assert manifest["scope"] == "/medical/"
           assert manifest["display"] == "standalone"
-          assert release["appVersion"] == "v1.2.9"
+          version = release["appVersion"]
+          assert re.fullmatch(r"v\d+\.\d+\.\d+", version), f"Invalid appVersion: {version}"
           assert 'href="manifest.json"' in html
           assert "claim-engine.js" in html and "app.js" in html
           assert "medical-official-sync.js" in html
@@ -55,12 +56,25 @@ jobs:
           assert "./styles.css" in service_worker
           assert "medical-admin-auth.js" in html
           assert "medical-official-sync.js" in service_worker
-          assert "medical-firebase-bootstrap.js?v=1.2.8" in html and "medical-firebase-bootstrap.js?v=1.2.8" in service_worker
-          assert "medical-firebase.js?v=1.2.8" in html and "medical-firebase.js?v=1.2.8" in service_worker
-          assert "medical-firebase-module.js?v=1.2.8" in service_worker
-          assert "ava-admin-connector.mjs" in service_worker
-          assert "medical-official-sync.js?v=1.2.8" in html
-          assert "app.js?v=1.2.8" in html
+          versioned_assets = [
+              "medical-admin-auth.js",
+              "medical-firebase-bootstrap.js",
+              "medical-firebase.js",
+              "medical-official-sync.js",
+              "app.js",
+          ]
+          for asset in versioned_assets:
+              expected = f"{asset}?v={version}"
+              assert expected in html, f"index.html missing {expected}"
+              assert expected in service_worker, f"sw.js missing {expected}"
+
+          sw_only_versioned_assets = [
+              "medical-firebase-module.js",
+              "ava-admin-connector.mjs",
+          ]
+          for asset in sw_only_versioned_assets:
+              expected = f"{asset}?v={version}"
+              assert expected in service_worker, f"sw.js missing {expected}"
           assert not re.search(r'(?:href|src)=["\']/[^/]', html)
           print("Medical /medical/ deployment contract PASS")
           PY
