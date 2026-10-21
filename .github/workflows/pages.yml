@@ -40,6 +40,7 @@ jobs:
           assert manifest["display"] == "standalone"
           version = release["appVersion"]
           assert re.fullmatch(r"v\d+\.\d+\.\d+", version), f"Invalid appVersion: {version}"
+          asset_version = version.removeprefix("v")
           assert 'href="manifest.json"' in html
           assert "claim-engine.js" in html and "app.js" in html
           assert "medical-official-sync.js" in html
@@ -64,7 +65,7 @@ jobs:
               "app.js",
           ]
           for asset in versioned_assets:
-              expected = f"{asset}?v={version}"
+              expected = f"{asset}?v={asset_version}"
               assert expected in html, f"index.html missing {expected}"
               assert expected in service_worker, f"sw.js missing {expected}"
 
@@ -73,7 +74,7 @@ jobs:
               "ava-admin-connector.mjs",
           ]
           for asset in sw_only_versioned_assets:
-              expected = f"{asset}?v={version}"
+              expected = f"{asset}?v={asset_version}"
               assert expected in service_worker, f"sw.js missing {expected}"
           assert not re.search(r'(?:href|src)=["\']/[^/]', html)
           print("Medical /medical/ deployment contract PASS")
