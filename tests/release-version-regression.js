@@ -31,8 +31,28 @@ assert.match(sw, /release-version\.json/);
 assert.match(pages, /release-version\.json/);
 assert.match(pages, /AVA_MEDICAL_VERSION/);
 assert.match(pages, /version = release\["appVersion"\]/);
-assert.match(pages, /expected = f"\{asset\}\?v=\{version\}"/);
+assert.match(pages, /asset_version = version\.removeprefix\("v"\)/);
+assert.match(pages, /expected = f"\{asset\}\?v=\{asset_version\}"/);
+assert.doesNotMatch(pages, /expected = f"\{asset\}\?v=\{version\}"/);
 assert.doesNotMatch(pages, /\?v=1\.2\.8/);
+
+const assetVersion = release.appVersion.replace(/^v/, '');
+assert.equal(assetVersion, '1.2.9');
+for (const asset of [
+  'medical-admin-auth.js',
+  'medical-firebase-bootstrap.js',
+  'medical-firebase.js',
+  'medical-official-sync.js',
+  'app.js'
+]) {
+  const expected = `${asset}?v=${assetVersion}`;
+  assert.ok(index.includes(expected), `index.html missing ${expected}`);
+  assert.ok(sw.includes(expected), `sw.js missing ${expected}`);
+}
+for (const asset of ['medical-firebase-module.js', 'ava-admin-connector.mjs']) {
+  const expected = `${asset}?v=${assetVersion}`;
+  assert.ok(sw.includes(expected), `sw.js missing ${expected}`);
+}
 assert.match(connectorPin, /Medical release: \`v1\.2\.9\`/);
 
 console.log('Medical frontend release identity v1.2.9 is consistent across source, build and PWA metadata');
