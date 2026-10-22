@@ -100,8 +100,8 @@ assert.match(projectionCases.endoscopy.sixPercentMarkup, /所選醫療情境的�
 assert.match(projectionCases.cancer.sixPercentMarkup, /實際未來醫療費會因醫院/);
 
 
-assert.match(index, /app\.js\?v=1\.2\.9/);
-assert.match(sw, /app\.js\?v=1\.2\.9/);
+assert.match(index, /app\.js\?v=1\.2\.10/);
+assert.match(sw, /app\.js\?v=1\.2\.10/);
 assert.doesNotMatch(index, /v=1\.2\.8/);
 assert.doesNotMatch(sw, /v=1\.2\.8/);
 
