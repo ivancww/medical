@@ -21,7 +21,7 @@ assert.match(css, /@media\(max-width:760px\)\{\.medical-cost-scenarios\{grid-tem
 const nodes = new Map();
 const fakeNode = () => ({ hidden: false, textContent: '', innerHTML: '', dataset: {}, className: '', setAttribute() {}, addEventListener() {} });
 const context = {
-  window: { AVA_MEDICAL_VERSION: 'v1.2.9', AVA_MEDICAL_BUILD: 'test', location: { search: '' } },
+  window: { AVA_MEDICAL_VERSION: 'v1.2.10', AVA_MEDICAL_BUILD: 'test', location: { search: '' } },
   document: { querySelector: selector => nodes.get(selector) || fakeNode(), querySelectorAll: () => [] },
   localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
   sessionStorage: { getItem: key => behaviorSession.get(key) || null, setItem: (key, value) => behaviorSession.set(key, value), removeItem: key => behaviorSession.delete(key) },
@@ -71,6 +71,35 @@ assert.match(result.funding, /value="600,000"/);
 assert.match(result.funding, /self-paid/);
 assert.match(result.funding, /自己比/);
 
+const projectionCases = vm.runInNewContext(`
+  const cases = {};
+  for (const id of ['endoscopy', 'cancer', 'pci']) {
+    state.medicalCostScenario = id;
+    state.medicalGrowthRate = 6;
+    const sixPercentMarkup = inflationBlock();
+    state.medicalGrowthRate = 9;
+    const ninePercentMarkup = inflationBlock();
+    cases[id] = { sixPercentMarkup, ninePercentMarkup };
+  }
+  cases;
+`, context);
+const formatMoney = value => new Intl.NumberFormat('en-HK', { style: 'currency', currency: 'HKD', maximumFractionDigits: 0 }).format(value);
+const scenarioBounds = { endoscopy: [10000, 25000], cancer: [200000, 500000], pci: [100000, 160000] };
+for (const [id, [min, max]] of Object.entries(scenarioBounds)) {
+  const suffix = id === 'cancer' ? '+' : '';
+  for (const rate of [6, 9]) {
+    const markup = rate === 6 ? projectionCases[id].sixPercentMarkup : projectionCases[id].ninePercentMarkup;
+    for (const years of [0, 5, 10, 20]) {
+      const factor = Math.pow(1 + rate / 100, years);
+      const expected = formatMoney(min * factor) + ' – ' + formatMoney(max * factor) + suffix;
+      assert.ok(markup.includes(expected), `${id} ${rate}% ${years}-year projection includes both range bounds`);
+    }
+  }
+}
+assert.match(projectionCases.endoscopy.sixPercentMarkup, /所選醫療情境的費用範圍/);
+assert.match(projectionCases.cancer.sixPercentMarkup, /實際未來醫療費會因醫院/);
+
+
 assert.match(index, /app\.js\?v=1\.2\.9/);
 assert.match(sw, /app\.js\?v=1\.2\.9/);
 assert.doesNotMatch(index, /v=1\.2\.8/);
@@ -98,7 +127,7 @@ const behaviorNode = () => ({
 const behaviorSession = new Map();
 const behaviorContext = {
   behaviorOptionButtons,
-  window: { AVA_MEDICAL_VERSION: 'v1.2.9', AVA_MEDICAL_BUILD: 'test', location: { search: '' }, scrollTo() {}, requestAnimationFrame: fn => fn() },
+  window: { AVA_MEDICAL_VERSION: 'v1.2.10', AVA_MEDICAL_BUILD: 'test', location: { search: '' }, scrollTo() {}, requestAnimationFrame: fn => fn() },
   document: {
     querySelector: selector => behaviorNodes.get(selector) || behaviorNodes.set(selector, behaviorNode()).get(selector),
     querySelectorAll: selector => selector === '.option-card' ? behaviorOptionButtons : []
@@ -264,5 +293,23 @@ vm.runInNewContext(`state.answers.N01 = 'public';`, behaviorContext);
 const changedSummary = vm.runInNewContext(`notReadySummaryBlock();`, behaviorContext);
 assert.match(changedSummary, /公立醫療/);
 assert.doesNotMatch(changedSummary, /私家醫療/);
+
+const summaryRangeCases = vm.runInNewContext(`
+  ['endoscopy', 'cancer', 'pci'].map(id => {
+    state.medicalCostScenario = id;
+    state.medicalGrowthRate = 6;
+    return { id, html: notReadySummaryBlock() };
+  });
+`, behaviorContext);
+for (const { id, html } of summaryRangeCases) {
+  const [min, max] = { endoscopy: [10000, 25000], cancer: [200000, 500000], pci: [100000, 160000] }[id];
+  const suffix = id === 'cancer' ? '+' : '';
+  for (const years of [0, 5, 10, 20]) {
+    const factor = Math.pow(1.06, years);
+    const expected = formatMoney(min * factor) + ' – ' + formatMoney(max * factor) + suffix;
+    assert.ok(html.includes(expected), `${id} summary ${years}-year projection includes both range bounds`);
+  }
+}
+
 
 console.log('Not Ready cost scenarios, funding bar, direct plan routing and release asset regression PASS');
