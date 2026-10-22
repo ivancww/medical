@@ -7,7 +7,7 @@
   const EXCHANGE_TIMEOUT_MS = 15000;
   const CONNECTOR_VERSION = "0.3.0";
   const CONNECTOR_COMPATIBILITY = "ava-admin-session-v1";
-  const CONNECTOR_MODULE = "./ava-admin-connector.mjs?v=1.2.9";
+  const CONNECTOR_MODULE = "./ava-admin-connector.mjs?v=1.2.10";
   let connectorPromise;
   let connector;
 
