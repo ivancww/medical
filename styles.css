@@ -30,3 +30,8 @@
 .funding-bar .self-paid{background:#16a34a;color:#fff}
 .funding-bar .funding-balance{background:#eef2f7;color:#334155}
 @media(max-width:760px){.medical-cost-scenarios{grid-template-columns:1fr}}
+
+.medical-cost-projections{grid-template-columns:repeat(2,minmax(0,1fr))}
+.medical-projection-card{min-width:0}
+.medical-projection-range{font-size:clamp(16px,2.35vw,22px);font-weight:800;line-height:1.4;overflow-wrap:anywhere;white-space:normal;font-variant-numeric:tabular-nums}
+@media(max-width:650px){.medical-cost-projections{grid-template-columns:1fr}}

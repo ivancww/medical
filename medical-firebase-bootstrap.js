@@ -1,7 +1,7 @@
 /* Classic bootstrap: expose one deterministic Storage provider readiness gate. */
 (function (global) {
   "use strict";
-  const RELEASE = "v1.2.9";
+  const RELEASE = "v1.2.10";
   const MODULE_URL = "./medical-firebase-module.js?v=" + RELEASE;
   const MODULE_LOAD_TIMEOUT_MS = 18000;
 

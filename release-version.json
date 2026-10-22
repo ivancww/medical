@@ -1,5 +1,5 @@
 {
-  "appVersion": "v1.2.9",
+  "appVersion": "v1.2.10",
   "releaseType": "patch",
-  "scope": "Refine Not Ready cost scenarios, funding report and plan routing"
+  "scope": "Project full Not Ready medical-cost ranges"
 }
