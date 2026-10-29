@@ -6,9 +6,9 @@ const app = fs.readFileSync('app.js', 'utf8');
 const syncSource = fs.readFileSync('medical-official-sync.js', 'utf8');
 
 const p7 = app.slice(app.indexOf('function planFeaturesBlockV2'), app.indexOf('function brochureButton'));
-assert.match(p7, /p\.id==='WISE'\?wiseStatusBlock\(\):''/, 'Wise eligibility is composed inside the Wise product card');
+assert.match(p7, /p\.id==='WISE'\?wiseStatusBlock\(\):p\.id==='FLEXI'\?flexiNetworkStatusBlock\(\):''/, 'Wise and Flexi controls remain scoped to their respective product cards');
 assert.doesNotMatch(p7, /const wise=|\+wise\+/, 'no standalone Wise eligibility block remains');
-assert.doesNotMatch(p7.replace(/p\.id==='WISE'\?wiseStatusBlock\(\):''/, ''), /wise-condition-toggle/, 'Elite and Flexi cards do not receive Wise controls');
+assert.doesNotMatch(p7.replace(/p\.id==='WISE'\?wiseStatusBlock\(\):p\.id==='FLEXI'\?flexiNetworkStatusBlock\(\):''/, ''), /wise-condition-toggle/, 'Elite and Flexi cards do not receive Wise controls');
 assert.match(app, /符合條件（享半私家）/);
 assert.match(app, /條件未符（降為普通房級別）/);
 assert.match(app, /WISE_CONDITION_KEYS/);
