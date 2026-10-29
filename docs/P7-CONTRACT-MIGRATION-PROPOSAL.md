@@ -75,3 +75,13 @@ PR #48 currently prepares only the missing-room display and tests. It does not
 implement the contract above, the new rows, colour highlighting, AVF surgical
 details, SMM or v1.2.11 release. No screenshots or production compatibility
 claim are supported until these are implemented and tested.
+
+## Product-owner scope resolution — 2026-10-29
+
+For Wise P7 display, the product owner explicitly approved **exactly three** existing eligibility checkboxes: designated hospital, network doctor arrangement, and preapproval. All three true select WISE_SEMI_PRIVATE. Otherwise select WISE_GENERAL_ROOM. Do not introduce a separate Wise network/non-network selector or apply an additional gate to this approved presentation rule.
+
+AVF has an independent, default-off **non-network service** checkbox. The ordinary-room AVF baseline uses FLEXI DEFAULT (network); checked uses FLEXI_NON_NETWORK. These are separate from Wise eligibility and must not impact other plans or claims calculation. Current Official Sheet Plan_Comparison has rows for misc expenses, surgeon fees (four classifications) and room and board in both AVF contexts. This is a customer-facing benefit comparison, not an entitlement/claims determination.
+
+The product owner manually verified that the Google Sheet URL and GAS check/read URL work. This is a **connectivity confirmation**, not independent proof of deployed GAS source parity, PWA data refresh or browser UI. Actual production Sheet was updated with 15 rows for the three new comparison items (including AVF non-network variants) on 2026-10-29. GAS code was not edited. The earlier \"production Sheet unchanged\" and \"new rows/colouring not implemented\" statements in this proposal were historical, and are superseded by this section.
+
+Remaining follow-up outside this focused release: verified structured surgical conditions/SMM (where necessary for advanced eligibility and claims interpretation), deployed GAS source parity and live iPad visual QA. Keep claims engines and monetary calculations untouched.
