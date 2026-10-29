@@ -21,8 +21,8 @@ const cancer = { values: { WISE: { WISE_SEMI_PRIVATE: { main_value: '', sub_valu
 const roomSensitive = { values: { WISE: { WISE_SEMI_PRIVATE: { main_value: '半私家值', sub_value: '' }, WISE_GENERAL_ROOM: { main_value: '普通房值', sub_value: '' } } } };
 resolverContext.cancer = cancer;
 resolverContext.roomSensitive = roomSensitive;
-assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(cancer,'WISE',true)", resolverContext)), JSON.stringify(['全數賠償', '']), 'Wise semi-private falls back to the sole applicable cancer value');
-assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(cancer,'WISE',false)", resolverContext)), JSON.stringify(['全數賠償', '']), 'Wise general-room keeps the room-independent cancer value');
+assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(cancer,'WISE',true)", resolverContext)), JSON.stringify(['資料待核實', '']), 'Wise semi-private must not inherit an unverified general-room cancer value');
+assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(cancer,'WISE',false)", resolverContext)), JSON.stringify(['全數賠償', '']), 'Wise general-room keeps its own cancer value');
 assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(roomSensitive,'WISE',true)", resolverContext)), JSON.stringify(['半私家值', '']), 'room-sensitive Wise values prefer the exact state');
 assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(roomSensitive,'WISE',false)", resolverContext)), JSON.stringify(['普通房值', '']), 'room-sensitive Wise values switch to general-room state');
 
