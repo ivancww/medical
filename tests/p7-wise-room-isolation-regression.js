@@ -1,0 +1,30 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const source = fs.readFileSync('app.js', 'utf8');
+const getFunction = name => source.match(new RegExp('function ' + name + '\\([^\\n]+'))[0];
+const sandbox = {};
+vm.createContext(sandbox);
+vm.runInContext(getFunction('comparisonHasDisplayData') + '\n' + getFunction('planFeatureValue'), sandbox);
+const semi = { main_value: 'semi fixture', sub_value: 'semi conditions' };
+const general = { main_value: 'general fixture', sub_value: 'general conditions' };
+const item = { values: { WISE: { WISE_SEMI_PRIVATE: semi, WISE_GENERAL_ROOM: general } } };
+const actual = { window: { location: { search: '' } }, document: { querySelector: () => null, querySelectorAll: () => [] }, console, URLSearchParams };
+vm.createContext(actual);
+vm.runInContext(source.slice(0, source.indexOf('setEntry();')), actual);
+for (let bits = 0; bits < 8; bits++) {
+  const conditions = [Boolean(bits & 1), Boolean(bits & 2), Boolean(bits & 4)];
+  const qualified = conditions.every(Boolean);
+  assert.equal(sandbox.planFeatureValue(item, 'WISE', qualified)[0], qualified ? semi.main_value : general.main_value);
+  actual.caseConditions = { hospital: conditions[0], networkDoctor: conditions[1], preapproval: conditions[2] };
+  actual.caseItem = item;
+  const result = vm.runInContext(`state.wiseConditions = caseConditions; ({status:wiseStatusBlock(), selected:planFeatureValue(caseItem,'WISE',WISE_CONDITION_KEYS.every(key=>state.wiseConditions[key]!==false))[0]})`, actual);
+  assert.match(result.status, qualified ? /符合條件（享半私家）/ : /條件未符（降為普通房級別）/);
+  assert.equal(result.selected, qualified ? semi.main_value : general.main_value);
+}
+assert.deepEqual(Array.from(sandbox.planFeatureValue({ values: { WISE: { WISE_GENERAL_ROOM: general } } }, 'WISE', true)), ['資料待核實', '']);
+assert.deepEqual(Array.from(sandbox.planFeatureValue({ values: { WISE: { WISE_SEMI_PRIVATE: semi } } }, 'WISE', false)), ['資料待核實', '']);
+assert.deepEqual(Array.from(sandbox.planFeatureValue({}, 'FLEXI', true)), ['資料待核實', '']);
+assert.match(source, /WISE_CONDITION_KEYS=\['hospital','networkDoctor','preapproval'\]/);
+assert.match(source, /WISE_CONDITION_KEYS\.every\(key=>state\.wiseConditions\[key\]!==false\)/);
+console.log('P7 Wise room isolation and eight eligibility combinations passed');

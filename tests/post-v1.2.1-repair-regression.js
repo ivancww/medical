@@ -6,9 +6,9 @@ const app = fs.readFileSync('app.js', 'utf8');
 const syncSource = fs.readFileSync('medical-official-sync.js', 'utf8');
 
 const p7 = app.slice(app.indexOf('function planFeaturesBlockV2'), app.indexOf('function brochureButton'));
-assert.match(p7, /p\.id==='WISE'\?wiseStatusBlock\(\):''/, 'Wise eligibility is composed inside the Wise product card');
+assert.match(p7, /p\.id==='WISE'\?wiseStatusBlock\(\):p\.id==='FLEXI'\?flexiNetworkStatusBlock\(\):''/, 'Wise and Flexi controls remain scoped to their respective product cards');
 assert.doesNotMatch(p7, /const wise=|\+wise\+/, 'no standalone Wise eligibility block remains');
-assert.doesNotMatch(p7.replace(/p\.id==='WISE'\?wiseStatusBlock\(\):''/, ''), /wise-condition-toggle/, 'Elite and Flexi cards do not receive Wise controls');
+assert.doesNotMatch(p7.replace(/p\.id==='WISE'\?wiseStatusBlock\(\):p\.id==='FLEXI'\?flexiNetworkStatusBlock\(\):''/, ''), /wise-condition-toggle/, 'Elite and Flexi cards do not receive Wise controls');
 assert.match(app, /符合條件（享半私家）/);
 assert.match(app, /條件未符（降為普通房級別）/);
 assert.match(app, /WISE_CONDITION_KEYS/);
@@ -21,8 +21,8 @@ const cancer = { values: { WISE: { WISE_SEMI_PRIVATE: { main_value: '', sub_valu
 const roomSensitive = { values: { WISE: { WISE_SEMI_PRIVATE: { main_value: '半私家值', sub_value: '' }, WISE_GENERAL_ROOM: { main_value: '普通房值', sub_value: '' } } } };
 resolverContext.cancer = cancer;
 resolverContext.roomSensitive = roomSensitive;
-assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(cancer,'WISE',true)", resolverContext)), JSON.stringify(['全數賠償', '']), 'Wise semi-private falls back to the sole applicable cancer value');
-assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(cancer,'WISE',false)", resolverContext)), JSON.stringify(['全數賠償', '']), 'Wise general-room keeps the room-independent cancer value');
+assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(cancer,'WISE',true)", resolverContext)), JSON.stringify(['資料待核實', '']), 'Wise semi-private must not inherit an unverified general-room cancer value');
+assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(cancer,'WISE',false)", resolverContext)), JSON.stringify(['全數賠償', '']), 'Wise general-room keeps its own cancer value');
 assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(roomSensitive,'WISE',true)", resolverContext)), JSON.stringify(['半私家值', '']), 'room-sensitive Wise values prefer the exact state');
 assert.equal(JSON.stringify(vm.runInNewContext("planFeatureValue(roomSensitive,'WISE',false)", resolverContext)), JSON.stringify(['普通房值', '']), 'room-sensitive Wise values switch to general-room state');
 
