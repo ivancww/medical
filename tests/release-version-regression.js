@@ -11,20 +11,20 @@ const connectorPin = fs.readFileSync('docs/MEDICAL-ADMIN-CONNECTOR-PIN.md', 'utf
 
 assert.equal(release.appVersion, 'v1.2.11');
 assert.equal(release.releaseType, 'patch');
-assert.match(app, /window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.10'/);
-assert.match(build, /AVA_MEDICAL_VERSION.*v1\.2\.10/);
+assert.match(app, /window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.11'/);
+assert.match(build, /AVA_MEDICAL_VERSION.*v1\.2\.11/);
 assert.match(app, /\$\('#appVersion'\)\.textContent=APP_VERSION/);
 assert.doesNotMatch(app, /\$\('#appVersion'\)\.textContent=.*APP_BUILD/);
-assert.match(index, /medical-admin-auth\.js\?v=1\.2\.10/);
-assert.match(index, /medical-official-sync\.js\?v=1\.2\.10/);
-assert.match(index, /app\.js\?v=1\.2\.10/);
-assert.match(index, /medical-firebase-bootstrap\.js\?v=1\.2\.10/);
-assert.match(index, /medical-firebase\.js\?v=1\.2\.10/);
-assert.match(sw, /medical-admin-auth\.js\?v=1\.2\.10/);
-assert.match(sw, /medical-official-sync\.js\?v=1\.2\.10/);
-assert.match(sw, /medical-firebase-bootstrap\.js\?v=1\.2\.10/);
-assert.match(sw, /medical-firebase\.js\?v=1\.2\.10/);
-assert.match(sw, /medical-firebase-module\.js\?v=1\.2\.10/);
+assert.match(index, /medical-admin-auth\.js\?v=1\.2\.11/);
+assert.match(index, /medical-official-sync\.js\?v=1\.2\.11/);
+assert.match(index, /app\.js\?v=1\.2\.11/);
+assert.match(index, /medical-firebase-bootstrap\.js\?v=1\.2\.11/);
+assert.match(index, /medical-firebase\.js\?v=1\.2\.11/);
+assert.match(sw, /medical-admin-auth\.js\?v=1\.2\.11/);
+assert.match(sw, /medical-official-sync\.js\?v=1\.2\.11/);
+assert.match(sw, /medical-firebase-bootstrap\.js\?v=1\.2\.11/);
+assert.match(sw, /medical-firebase\.js\?v=1\.2\.11/);
+assert.match(sw, /medical-firebase-module\.js\?v=1\.2\.11/);
 assert.doesNotMatch(index, /1\.2\.3/);
 assert.doesNotMatch(sw, /1\.2\.3/);
 assert.match(sw, /release-version\.json/);
@@ -53,7 +53,7 @@ for (const asset of ['medical-firebase-module.js', 'ava-admin-connector.mjs']) {
   const expected = `${asset}?v=${assetVersion}`;
   assert.ok(sw.includes(expected), `sw.js missing ${expected}`);
 }
-assert.match(connectorPin, /Medical release: \`v1\.2\.10\`/);
+assert.match(connectorPin, /Medical release: \`v1\.2\.11\`/);
 
 console.log('Medical frontend release identity v1.2.11 is consistent across source, build and PWA metadata');
 
