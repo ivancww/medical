@@ -47,11 +47,11 @@ assert.doesNotMatch(sync, /MedicalAdminAuth\?\.getSessionProof\?\.\(\)/);
 assert.match(sync, /authorizedRequest\(\{ action: "updateOfficialRecord"/);
 assert.match(sync, /official-verification/);
 assert.match(sync, /pendingBrochureUploads\.delete\(recordIdValue\)/);
-assert.match(index, /medical-firebase-bootstrap\.js\?v=1\.2\.10/);
-assert.match(index, /medical-firebase\.js\?v=1\.2\.10/);
-assert.match(sw, /medical-firebase-bootstrap\.js\?v=1\.2\.10/);
-assert.match(sw, /medical-firebase\.js\?v=1\.2\.10/);
-assert.match(sw, /medical-firebase-module\.js\?v=1\.2\.10/);
+assert.match(index, /medical-firebase-bootstrap\.js\?v=1\.2\.11/);
+assert.match(index, /medical-firebase\.js\?v=1\.2\.11/);
+assert.match(sw, /medical-firebase-bootstrap\.js\?v=1\.2\.11/);
+assert.match(sw, /medical-firebase\.js\?v=1\.2\.11/);
+assert.match(sw, /medical-firebase-module\.js\?v=1\.2\.11/);
 
 assert.match(rules, /match \/critical-illness\/official\/\{planId\}\/\{allPaths=\*\*\}[\s\S]*?allow read: if true;[\s\S]*?allow create, update: if validMedia\(\);[\s\S]*?allow delete: if false;/);
 assert.match(rules, /match \/critical-illness\/users\/\{userScope\}\/\{allPaths=\*\*\}/);
