@@ -1,3 +1,3 @@
-window.AVA_MEDICAL_VERSION = window.AVA_MEDICAL_VERSION || 'v1.2.10';
+window.AVA_MEDICAL_VERSION = window.AVA_MEDICAL_VERSION || 'v1.2.11';
 window.AVA_MEDICAL_BUILD = window.AVA_MEDICAL_BUILD || 'local';
 
