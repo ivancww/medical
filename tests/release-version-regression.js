@@ -9,7 +9,7 @@ const sw = fs.readFileSync('sw.js', 'utf8');
 const pages = fs.readFileSync('.github/workflows/pages.yml', 'utf8');
 const connectorPin = fs.readFileSync('docs/MEDICAL-ADMIN-CONNECTOR-PIN.md', 'utf8');
 
-assert.equal(release.appVersion, 'v1.2.10');
+assert.equal(release.appVersion, 'v1.2.11');
 assert.equal(release.releaseType, 'patch');
 assert.match(app, /window\.AVA_MEDICAL_VERSION\|\|'v1\.2\.10'/);
 assert.match(build, /AVA_MEDICAL_VERSION.*v1\.2\.10/);
@@ -37,7 +37,7 @@ assert.doesNotMatch(pages, /expected = f"\{asset\}\?v=\{version\}"/);
 assert.doesNotMatch(pages, /\?v=1\.2\.8/);
 
 const assetVersion = release.appVersion.replace(/^v/, '');
-assert.equal(assetVersion, '1.2.10');
+assert.equal(assetVersion, '1.2.11');
 for (const asset of [
   'medical-admin-auth.js',
   'medical-firebase-bootstrap.js',
@@ -55,5 +55,5 @@ for (const asset of ['medical-firebase-module.js', 'ava-admin-connector.mjs']) {
 }
 assert.match(connectorPin, /Medical release: \`v1\.2\.10\`/);
 
-console.log('Medical frontend release identity v1.2.10 is consistent across source, build and PWA metadata');
+console.log('Medical frontend release identity v1.2.11 is consistent across source, build and PWA metadata');
 
