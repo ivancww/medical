@@ -21,7 +21,7 @@ assert.match(css, /@media\(max-width:760px\)\{\.medical-cost-scenarios\{grid-tem
 const nodes = new Map();
 const fakeNode = () => ({ hidden: false, textContent: '', innerHTML: '', dataset: {}, className: '', setAttribute() {}, addEventListener() {} });
 const context = {
-  window: { AVA_MEDICAL_VERSION: 'v1.2.10', AVA_MEDICAL_BUILD: 'test', location: { search: '' } },
+  window: { AVA_MEDICAL_VERSION: 'v1.2.11', AVA_MEDICAL_BUILD: 'test', location: { search: '' } },
   document: { querySelector: selector => nodes.get(selector) || fakeNode(), querySelectorAll: () => [] },
   localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
   sessionStorage: { getItem: key => behaviorSession.get(key) || null, setItem: (key, value) => behaviorSession.set(key, value), removeItem: key => behaviorSession.delete(key) },
@@ -100,8 +100,8 @@ assert.match(projectionCases.endoscopy.sixPercentMarkup, /所選醫療情境的�
 assert.match(projectionCases.cancer.sixPercentMarkup, /實際未來醫療費會因醫院/);
 
 
-assert.match(index, /app\.js\?v=1\.2\.10/);
-assert.match(sw, /app\.js\?v=1\.2\.10/);
+assert.match(index, /app\.js\?v=1\.2\.11/);
+assert.match(sw, /app\.js\?v=1\.2\.11/);
 assert.doesNotMatch(index, /v=1\.2\.8/);
 assert.doesNotMatch(sw, /v=1\.2\.8/);
 
@@ -127,7 +127,7 @@ const behaviorNode = () => ({
 const behaviorSession = new Map();
 const behaviorContext = {
   behaviorOptionButtons,
-  window: { AVA_MEDICAL_VERSION: 'v1.2.10', AVA_MEDICAL_BUILD: 'test', location: { search: '' }, scrollTo() {}, requestAnimationFrame: fn => fn() },
+  window: { AVA_MEDICAL_VERSION: 'v1.2.11', AVA_MEDICAL_BUILD: 'test', location: { search: '' }, scrollTo() {}, requestAnimationFrame: fn => fn() },
   document: {
     querySelector: selector => behaviorNodes.get(selector) || behaviorNodes.set(selector, behaviorNode()).get(selector),
     querySelectorAll: selector => selector === '.option-card' ? behaviorOptionButtons : []
