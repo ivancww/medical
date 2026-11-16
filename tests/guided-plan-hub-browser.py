@@ -80,12 +80,13 @@ def run():
             check(page.locator('.company-reflection-questions article').count() == 2 and page.locator('.company-reflection-questions p').all_inner_texts() == ['💭 '+q for q in QUESTIONS], 'Exactly two reflection cards with emoji and exact Chinese wording')
             check(page.locator('.company-reflection-questions').inner_text().replace('\n', '') == ''.join('💭 '+q for q in QUESTIONS), 'Question area has only the two emoji-prefixed sentences')
             check(page.locator('.company-reimbursement-bar').evaluate("e=>['plan','customer'].map(c=>getComputedStyle(e.querySelector('.'+c)).backgroundColor)") == r05_palette, 'R03 insurer/customer colors match the accepted R05 palette')
-            for cost, coverage, rate, paid in [(100000,80000,80,64000),(50000,80000,80,40000),(100000,80000,0,0),(100000,80000,100,80000),(100000,0,80,0),(0,80000,80,0)]:
+            for cost, coverage, rate, paid in [(100000,80000,80,64000),(50000,80000,80,40000),(100000,80000,0,0),(100000,80000,100,80000),(100000,0,80,0),(0,80000,80,0),(100000,1000,100,1000),(100000,99000,100,99000)]:
                 page.locator('#companyMedicalExpense').fill(str(cost))
                 page.locator('#companyCoverage').fill(str(coverage))
                 page.locator('#companyRate').fill(str(rate))
                 amounts = page.locator('#companyMedicalBreakdown strong').all_inner_texts()
                 check(amounts == [fixture_money(cost),fixture_money(paid),fixture_money(cost-paid)] and page.evaluate('state.companyPaid') == paid, f'Company live breakdown {cost}/{coverage}/{rate}%')
+                check_company_bar(page,f'Company {cost}/{coverage}/{rate}%')
             page.locator('#companyMedicalExpense').fill('100000')
             page.locator('#companyCoverage').fill('80000')
             page.locator('#companyRate').fill('80')
@@ -192,6 +193,16 @@ def run():
                 page.evaluate("setMode('presentation')")
                 check(page.get_by_role('link',name='返回 AVA',exact=True).is_visible(),f'{name} Return to AVA remains in presentation')
                 page.evaluate("setMode('use')")
+            for width in [320,390]:
+                page.set_viewport_size({'width':width,'height':844})
+                for paid in [1000,99000]:
+                    at(page,'R03')
+                    page.locator('#companyMedicalExpense').fill('100000')
+                    page.locator('#companyCoverage').fill(str(paid))
+                    page.locator('#companyRate').fill('100')
+                    check_company_bar(page,f'{width}px tiny '+('company' if paid==1000 else 'customer'))
+                    check(page.evaluate('document.documentElement.scrollWidth<=innerWidth'),'R03 narrow small-segment scenario has no overflow')
+                    if width==390:screenshot(page,'mobile-r03-small-'+('company' if paid==1000 else 'customer'))
             at(page,'R03')
             page.evaluate("state.entry='user';setMode('edit')")
             page.locator('#viewPlansBtn').click()
@@ -210,7 +221,21 @@ def fixture_money(n):
     return f'HK${round(n):,}'
 
 
+def check_company_bar(page,label):
+    data=page.locator('.company-reimbursement-bar').evaluate("""e=>({width:e.getBoundingClientRect().width,segments:[...e.children].map(s=>{const b=s.querySelector('b');return {text:b.textContent,x:s.getBoundingClientRect().x,width:s.getBoundingClientRect().width,color:getComputedStyle(s).backgroundColor,visible:getComputedStyle(b).visibility!=='hidden',labelWidth:b.getBoundingClientRect().width}})})""")
+    cost,paid=page.evaluate('[state.claimCost,state.companyPaid]')
+    expected=[paid/cost if cost else 0,(cost-paid)/cost if cost else 0]
+    segments=data['segments']
+    check([x['text'] for x in segments]==['公司','自己'] and segments[0]['x']<=segments[1]['x'],label+' company stays LEFT and customer stays RIGHT')
+    check([x['color'] for x in segments]==['rgb(220, 252, 231)','rgb(219, 234, 254)'],label+' exact company green and customer blue')
+    check(all(abs(x['width']-data['width']*fraction)<=1 for x,fraction in zip(segments,expected)),label+' segment widths match actual calculated amounts')
+    check(all(not x['visible'] or x['labelWidth']<=x['width'] for x in segments),label+' no inside label is clipped')
+    check(all(x['visible'] for x in segments if x['width']>33),label+' readable segments display their inside labels')
+    check(page.locator('.company-bar-amounts > span').all_inner_texts()==['公司 '+fixture_money(paid),'自己 '+fixture_money(cost-paid)],label+' amounts remain underneath in company/customer order')
+
+
 def check_visual(page,label):
+    if page.locator('.company-reimbursement-bar').count():check_company_bar(page,label)
     if page.locator('.plan-hub-nav').count():
         nav=page.locator('.plan-hub-nav')
         check(nav.locator(':scope > button').all_inner_texts()==['返回 Guided Flow','三個醫療計劃','保費參考','索償案例／索償示範'],label+' navigation order is Return, Plans, Premium, Claims in one container')

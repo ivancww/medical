@@ -26,7 +26,10 @@ const headers = [
 const comparisonRows = [
   ['CMP-1', 'post_discharge_followup', '出院後覆診', 'ELITE', 'DEFAULT', 'fixture elite', 'fixture source', true, 1, 'fixture', '', true, ''],
   ['CMP-2', 'post_discharge_followup', '出院後覆診', 'WISE', 'WISE_SEMI_PRIVATE', 'fixture wise semi', 'fixture source', true, 2, 'fixture', '', true, ''],
-  ['CMP-3', 'post_discharge_followup', '出院後覆診', 'WISE', 'WISE_GENERAL_ROOM', 'fixture wise general', 'fixture source', true, 3, 'fixture', '', true, '']
+  ['CMP-3', 'post_discharge_followup', '出院後覆診', 'WISE', 'WISE_GENERAL_ROOM', 'fixture wise general', 'fixture source', true, 3, 'fixture', '', true, ''],
+  ['CMP-4', 'post_discharge_followup', '出院後覆診', 'FLEXI', 'DEFAULT', 'fixture flexi', 'fixture source', true, 4, 'fixture', '', false, ''],
+  ['CMP-5', 'post_discharge_followup', '出院後覆診', 'FLEXI', 'FLEXI_NON_NETWORK', 'fixture flexi non-network', 'fixture source', true, 5, 'fixture', '', true, ''],
+  ['CMP-6', 'disabled', 'Disabled fixture', 'ELITE', 'DEFAULT', 'fixture disabled', '', false, 6, 'fixture', '', true, '']
 ];
 
 class FakeSheet {
@@ -75,15 +78,18 @@ vm.createContext(sandbox);
 vm.runInContext(source, sandbox, { filename: 'MedicalProductionFinal.gs' });
 
 const first = sandbox.medicalOfficialReadSnapshot_();
-assert.equal(first.planComparison.length, 3);
+assert.equal(first.planComparison.length, comparisonRows.length);
 assert.equal(first.adminDatasets.planComparison[0].comparison_id, 'CMP-1');
 assert.match(first.revision, /^[a-f0-9]{64}$/);
-assert.equal(sandbox.medicalFullBootstrap_().planComparison.length, 3, 'full bootstrap includes planComparison');
+assert.equal(sandbox.medicalFullBootstrap_().planComparison.length, comparisonRows.length, 'full bootstrap includes planComparison');
 for (const alias of ['planComparison', 'plan_comparison', 'comparisonItems', 'comparison_items']) {
   const result = sandbox.getDataset_(alias);
   assert.equal(result.status, 'success');
-  assert.equal(result.data.length, 3, alias + ' returns comparison rows');
+  assert.equal(result.data.length, comparisonRows.length, alias + ' returns comparison rows');
 }
+
+assert.equal(first.planComparison.find(row=>row.comparison_id==='CMP-6').enabled,false,'GAS preserves disabled rows; applicability belongs to the client');
+assert.equal(first.planComparison.find(row=>row.comparison_id==='CMP-4').verified,false,'GAS must not filter unverified publication metadata');
 
 const beforeRevision = first.revision;
 sheets.Plan_Comparison.values[1][5] = 'fixture elite changed';

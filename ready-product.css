@@ -59,5 +59,14 @@
 .company-reflection-questions { display: grid; gap: var(--ava-gap-component); margin-top: var(--ava-gap-section); }
 .company-reflection-questions p { margin: 0; font-size: var(--ava-type-section); font-weight: var(--ava-weight-bold); line-height: var(--ava-line-copy); overflow-wrap: anywhere; }
 .company-breakdown { margin-top: var(--ava-gap-section); }
-.company-reimbursement-bar { margin-top: var(--ava-space-16); }
+.company-reimbursement-bar { margin-top: var(--ava-space-16); direction: ltr; flex-direction: row; }
 .claim-flow strong, .company-breakdown strong { overflow-wrap: anywhere; }
+
+/* Segment labels disappear only when their own measured segment cannot fit them.
+   Ordered amount labels below remain available at every width, including zero. */
+.company-reimbursement-bar > span { padding-inline: 0; flex-shrink: 0; container-type: inline-size; }
+.company-bar-label { white-space: nowrap; }
+@container (max-width: 32px) { .company-bar-label { visibility: hidden; } }
+.company-bar-amounts { direction: ltr; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.company-bar-amounts > span { min-width: 0; overflow-wrap: anywhere; }
+.company-bar-amounts > span:last-child { text-align: right; }

@@ -21,6 +21,10 @@ R03 adds a medical-expense input sharing `claimCost` with existing illustrations
 
 The existing claim engine now accepts the full bill and company payment, computes eligible deductible credit and remaining deductible, and clamps reimbursement/customer payment so an expense cannot be paid twice. R05 retains its cards, selectors, bars and typography. Amount-dependent bar text is omitted from segments too narrow to read; a break opportunity after HK$ and amount wrapping prevent unfolded-viewport overflow without rearranging the cards.
 
+## R03 labels and Plan Comparison audit follow-up
+
+See the [read-only Sheet-to-UI pipeline audit](PLAN-COMPARISON-PIPELINE-AUDIT.md) for the latest scope, 35-row Sheet evidence, deployed-endpoint verification boundary and mapping/cache regressions. R03 now labels its green LEFT segment 公司 and blue RIGHT segment 自己, with ordered amounts beneath and no clipped inside labels. Both 💭 questions and the accepted R05 remain unchanged. The latest local suites pass 31 Node scripts, 582 Guided Flow/Hub/R03 browser assertions and 24 synthetic pipeline/browser checks, plus the existing Ready suite. Live GAS access from this workspace remains HTTP 403; CI performs the separate read-only live audit and captured-payload rendering checks.
+
 ## Final UI polish on the same Draft PR
 
 Continued PR #50 from its fetched head `f96a1eb3e7b2a93a5909206787cd35d37e49a1ee`; the target remains v1.2.12. R03 now reuses the accepted R05 reimbursement palette: insurance reimbursement is green (`#dcfce7`), and customer unpaid expense is blue (`#dbeafe`). The two existing question sentences each have a 💭 prefix; their wording, card structure and calculation inputs remain unchanged.

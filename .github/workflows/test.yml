@@ -21,6 +21,10 @@ jobs:
   official-data-contract:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Check Medical Official GAS
         run: |
           set -e
@@ -55,6 +59,12 @@ jobs:
           if(!datasets.claimCases.length) console.log('Claim Cases empty: unavailable state is confined to the Plan Hub');
           if(!datasets.premiumSettings.length) console.log('Premium Settings empty: use retained premium datasets; do not fabricate premiums');
           NODE
+
+      - name: Audit deployed Plan Comparison data and aliases (read only)
+        run: |
+          curl -fsSL --retry 2 --max-time 20 "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec?action=getDataset&dataset=planComparison" -o comparison-camel.json
+          curl -fsSL --retry 2 --max-time 20 "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec?action=getDataset&dataset=plan_comparison" -o comparison-snake.json
+          node tests/helpers/plan-comparison-audit.js official.json comparison-camel.json comparison-snake.json
 
   static-contract:
     runs-on: ubuntu-latest
@@ -126,6 +136,7 @@ jobs:
           node tests/medical-firebase-auth-regression.js
           node tests/medical-firebase-architecture-regression.js
           node tests/plan-comparison-regression.js
+          node tests/plan-comparison-pipeline-regression.js
           node tests/official-sync-contract.js
           node tests/medical-official-write-confirmation.js
           node tests/ready-flow-regression.js
@@ -161,6 +172,14 @@ jobs:
         run: |
           python tests/ready-product-browser.py
           python tests/guided-plan-hub-browser.py
+      - name: Verify comparison cache/UI with a captured live payload (read only)
+        env:
+          AVA_MOTHER_ROOT: ${{ github.workspace }}/.qa-mother
+          MEDICAL_QA_SCREENSHOTS: ${{ runner.temp }}/medical-v1.2.12-screenshots
+          MEDICAL_LIVE_OFFICIAL_PATH: ${{ runner.temp }}/medical-official.json
+        run: |
+          curl -fsSL --retry 2 --max-time 20 "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec" -o "$MEDICAL_LIVE_OFFICIAL_PATH"
+          python tests/plan-comparison-pipeline-browser.py
       - name: Save browser screenshots
         if: always()
         uses: actions/upload-artifact@v4
