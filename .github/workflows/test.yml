@@ -14,6 +14,8 @@ jobs:
           node-version: '22'
       - name: Run claim engine regression
         run: node -e "require('./claim-engine.js'); require('./tests/claim-engine-regression.js').run()"
+      - name: Run guided flow and deductible coordination regression
+        run: node tests/guided-plan-hub-regression.js
       - name: Run Ready product and premium regression
         run: node tests/product-data-regression.js
   official-data-contract:
@@ -50,7 +52,7 @@ jobs:
           if(String(byPlan.get('WISE').illustration_method)!=='deductible_then_cover') throw Error('WISE illustration method invalid');
           if(Number(byPlan.get('FLEXI').default_rate)!==0.85) throw Error('FLEXI default illustration rate must be 0.85');
           console.log('Simple Claim Illustration contract PASS');
-          if(!datasets.claimCases.length) console.log('Claim Cases empty: R04 remains blocked until an authoritative case is published');
+          if(!datasets.claimCases.length) console.log('Claim Cases empty: unavailable state is confined to the Plan Hub');
           if(!datasets.premiumSettings.length) console.log('Premium Settings empty: use retained premium datasets; do not fabricate premiums');
           NODE
 
@@ -131,5 +133,37 @@ jobs:
           node tests/notready-cost-funding-routing-regression.js
       - name: Verify PWA and fixed contracts
         run: |
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js?v=1.2.11','medical-firebase-bootstrap.js?v=1.2.11','medical-official-sync.js?v=1.2.11','ava-admin-connector.mjs?v=1.2.11','medical-firebase.js?v=1.2.11','medical-firebase-module.js?v=1.2.11','product-data.js','ready-product.css','release-version.json'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js?v=1.2.11','medical-firebase-bootstrap.js?v=1.2.11','medical-official-sync.js?v=1.2.11','medical-firebase.js?v=1.2.11','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js?v=1.2.12','medical-firebase-bootstrap.js?v=1.2.12','medical-official-sync.js?v=1.2.12','ava-admin-connector.mjs?v=1.2.12','medical-firebase.js?v=1.2.12','medical-firebase-module.js?v=1.2.12','product-data.js','ready-product.css','release-version.json'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js?v=1.2.12','medical-firebase-bootstrap.js?v=1.2.12','medical-official-sync.js?v=1.2.12','medical-firebase.js?v=1.2.12','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
 
+
+  browser-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read canonical AVA presentation styles
+        uses: actions/checkout@v4
+        with:
+          repository: ivancww/avaplatform
+          ref: a12beaea002df9ae13e676f890c16951d4f21b28
+          path: .qa-mother
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install browser test runtime
+        run: |
+          pip install playwright==1.62.0
+          python -m playwright install --with-deps chromium
+      - name: Test Ready journey, Plan Hub and responsive presentation
+        env:
+          AVA_MOTHER_ROOT: ${{ github.workspace }}/.qa-mother
+          MEDICAL_QA_SCREENSHOTS: ${{ runner.temp }}/medical-v1.2.12-screenshots
+        run: |
+          python tests/ready-product-browser.py
+          python tests/guided-plan-hub-browser.py
+      - name: Save browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: medical-v1.2.12-browser-screenshots
+          path: ${{ runner.temp }}/medical-v1.2.12-screenshots

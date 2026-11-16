@@ -13,7 +13,7 @@ assert.match(app, /data-medical-cost-scenario/);
 assert.match(app, /function fundingBarModel\(/);
 assert.match(app, /function bindLiveFundingInput\(/);
 assert.match(app, /type="text" autocomplete="off" value="/);
-assert.match(app, /startJourneyAtPage\('ready','R07',\{returnJourney:true\}\)/);
+assert.match(app, /openPlanHub\(\)/);
 assert.match(css, /\.medical-cost-scenarios\{[^}]*grid-template-columns:repeat\(3/);
 assert.match(css, /\.funding-bar \.self-paid\{background:#16a34a/);
 assert.match(css, /@media\(max-width:760px\)\{\.medical-cost-scenarios\{grid-template-columns:1fr\}\}/);
@@ -21,7 +21,7 @@ assert.match(css, /@media\(max-width:760px\)\{\.medical-cost-scenarios\{grid-tem
 const nodes = new Map();
 const fakeNode = () => ({ hidden: false, textContent: '', innerHTML: '', dataset: {}, className: '', setAttribute() {}, addEventListener() {} });
 const context = {
-  window: { AVA_MEDICAL_VERSION: 'v1.2.11', AVA_MEDICAL_BUILD: 'test', location: { search: '' } },
+  window: { AVA_MEDICAL_VERSION: 'v1.2.12', AVA_MEDICAL_BUILD: 'test', location: { search: '' } },
   document: { querySelector: selector => nodes.get(selector) || fakeNode(), querySelectorAll: () => [] },
   localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
   sessionStorage: { getItem: key => behaviorSession.get(key) || null, setItem: (key, value) => behaviorSession.set(key, value), removeItem: key => behaviorSession.delete(key) },
@@ -100,8 +100,8 @@ assert.match(projectionCases.endoscopy.sixPercentMarkup, /所選醫療情境的�
 assert.match(projectionCases.cancer.sixPercentMarkup, /實際未來醫療費會因醫院/);
 
 
-assert.match(index, /app\.js\?v=1\.2\.11/);
-assert.match(sw, /app\.js\?v=1\.2\.11/);
+assert.match(index, /app\.js\?v=1\.2\.12/);
+assert.match(sw, /app\.js\?v=1\.2\.12/);
 assert.doesNotMatch(index, /v=1\.2\.8/);
 assert.doesNotMatch(sw, /v=1\.2\.8/);
 
@@ -127,7 +127,7 @@ const behaviorNode = () => ({
 const behaviorSession = new Map();
 const behaviorContext = {
   behaviorOptionButtons,
-  window: { AVA_MEDICAL_VERSION: 'v1.2.11', AVA_MEDICAL_BUILD: 'test', location: { search: '' }, scrollTo() {}, requestAnimationFrame: fn => fn() },
+  window: { AVA_MEDICAL_VERSION: 'v1.2.12', AVA_MEDICAL_BUILD: 'test', location: { search: '' }, scrollTo() {}, requestAnimationFrame: fn => fn() },
   document: {
     querySelector: selector => behaviorNodes.get(selector) || behaviorNodes.set(selector, behaviorNode()).get(selector),
     querySelectorAll: selector => selector === '.option-card' ? behaviorOptionButtons : []
@@ -186,9 +186,9 @@ const routeResult = vm.runInNewContext(`
   const futureInsuranceButton = behaviorOptionButtons.find(button => button.dataset.key === 'future_insurance');
   futureInsuranceButton.onclick();
   const firstTapJourney = state.journey;
-  const firstTapPage = pageId(journeyPages(state.journey)[state.index]);
-  const firstTapAnswer = state.returnJourney.answers.N07;
-  const savedPage = state.returnJourney.pageId;
+  const firstTapPage = state.planHubOpen ? 'R07' : pageId(journeyPages(state.journey)[state.index]);
+  const firstTapAnswer = state.answers.N07;
+  const savedPage = journeySessionSnapshot().pageId;
   goBack();
   const returnedNext = document.querySelector('#nextBtn');
   const returnedMarker = state.returnedFromPlanInfo;
@@ -249,7 +249,7 @@ const routeResult = vm.runInNewContext(`
 assert.equal(routeResult.journey, 'notready');
 assert.equal(routeResult.page, 'N07');
 assert.equal(routeResult.savedPage, 'N07');
-assert.equal(routeResult.firstTapJourney, 'ready');
+assert.equal(routeResult.firstTapJourney, 'notready');
 assert.equal(routeResult.firstTapPage, 'R07');
 assert.equal(routeResult.firstTapAnswer, 'future_insurance');
 assert.equal(routeResult.answers.N01, 'private');

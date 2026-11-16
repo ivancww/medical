@@ -54,3 +54,12 @@
 .plan-brochure-action { margin-top: auto; padding-top: 14px; }
 .plan-brochure-action .plan-brochure-link { width: 100%; justify-content: center; text-decoration: none; }
 .home-direct-actions { justify-content: flex-end; margin-top: 16px; }
+.plan-hub-nav { display: flex; flex-wrap: wrap; gap: var(--ava-gap-component); margin-block: var(--ava-space-16); }
+.plan-hub-nav [aria-current="page"] { color: var(--ava-color-brand); background: var(--ava-color-selected); border-color: var(--ava-color-brand); }
+.company-reflection-questions { display: grid; gap: var(--ava-gap-component); margin-top: var(--ava-gap-section); }
+.company-reflection-questions p { margin: 0; font-size: var(--ava-type-section); font-weight: var(--ava-weight-bold); line-height: var(--ava-line-copy); overflow-wrap: anywhere; }
+.company-breakdown { margin-top: var(--ava-gap-section); }
+.company-reimbursement-bar { margin-top: var(--ava-space-16); }
+.company-reimbursement-bar .plan { background: var(--ava-color-success-soft); }
+.company-reimbursement-bar .customer { background: var(--ava-color-warning-soft); }
+.claim-flow strong, .company-breakdown strong { overflow-wrap: anywhere; }
