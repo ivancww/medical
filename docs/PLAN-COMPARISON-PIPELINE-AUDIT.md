@@ -39,6 +39,16 @@ For an order-independent comparison with the deployed response, the normalized d
 
 This is audit evidence, not a hardcoded runtime data source or fallback benefit table. Existing records were not copied into production code.
 
+## Executed live-read result
+
+[GitHub CI run 43918053812](https://github.com/ivancww/medical/actions/runs/43918053812) passed all four jobs on code head `c0cc753814c6adc5f33b289b4f6a93befd3fb99f`. The read-only endpoint audit returned **35 rows, all enabled**, with ELITE 8 / WISE 16 / FLEXI 11 and all eight item keys. Both `getDataset` aliases returned the same 35-row display digest as the full bootstrap.
+
+The deployed response's digest is exactly the Sheet digest above: **`f31ee7bbe48e28b9325c821449b1f29f67e6e67ce2561de0a0ca52bd1ef7294d`**. This verifies that the populated Sheet display data reached the deployed Official response in the audited read, without missing enabled cells. The frontend mapper checked every applicable live row, including both Wise variants sharing a source comparison ID. No missing benefit values were invented.
+
+The browser job also loaded that captured 35-row response through the app's cache/transport boundary and rendered the existing three cards successfully. Its artifact contains [19 screenshots, including captured live comparison](https://github.com/ivancww/medical/actions/runs/43918053812/artifacts/14250317517). The browser replay now explicitly checks Elite, Wise and Flexi DOM cells across the room/network combinations; latest execution of that additional coverage is reported in the PR's current CI result.
+
+The direct workspace request remains **BLOCKED (HTTP 403)**. CI's successful read does not remove that environment limitation, establish GAS source/deployment equivalence or certify production-browser CORS/PWA behavior.
+
 ## Pipeline findings
 
 | Stage | Finding / evidence |
@@ -46,13 +56,13 @@ This is audit evidence, not a hardcoded runtime data source or fallback benefit 
 | Sheet → repository GAS reader | `medicalOfficialReadObjects_` / `readObjectSheet_` read all nonblank rows from the existing `Plan_Comparison` tab. No enabled/verified/product whitelist filter is applied in the reader. The regression includes all three plans, both Wise states, Flexi non-network, a disabled row and verified=false publication metadata. |
 | GAS snapshot / routes | `medicalOfficialReadSnapshot_` includes `planComparison` in both the payload and its revision hash. `medicalFullBootstrap_` returns `planComparison`. `getDataset` aliases `planComparison` and `plan_comparison` both resolve to the same Sheet. These statements describe repository source, not independent proof of deployed-source parity. |
 | Deployed endpoint from this Cloud workspace | **BLOCKED: HTTP 403** on the canonical `/exec` URL. No production integration success is inferred from repository source or synthetic fixtures. |
-| Deployed endpoint from GitHub CI | A new read-only audit reads the actual full response and both `getDataset` aliases. It requires populated rows for all three plans, checks every applicable cell using the real frontend mapper, and logs row/state counts and a display digest. Alias digests must match the full response. Actual execution/results are linked in the PR; the local 403 is not labelled PASS. |
+| Deployed endpoint from GitHub CI | A new read-only audit reads the actual full response and both `getDataset` aliases. It requires populated rows for all three plans, checks every applicable cell using the real frontend mapper, and logs row/state counts and a display digest. Alias digests must match the full response. Executed successfully in run 43918053812: all 35 rows and both aliases match the canonical Sheet display digest. The local 403 remains BLOCKED. |
 | Payload → frontend | Fixed empty camelCase arrays masking populated snake_case/nested arrays; selection now uses the first populated supported Official array, then a valid empty array. Populated camelCase retains precedence. The frontend does not merge aliases or fabricate values. |
 | Row mapping | Item keys retain their stable identity; plan IDs and condition states are trimmed and uppercased. All enabled nonblank values are grouped dynamically. `verified` is publication metadata, not an additional display gate. No hardcoded item whitelist. Missing room/network variants never inherit another context's value. |
 | Official cache refresh | Version changes or revision changes fetch and replace the validated Official payload; unchanged version/revision reuse the cache. An absent revision retains the existing full-read fallback. Invalid full responses cannot replace valid in-memory or stored cache. User overrides are untouched. |
 | Cache / connection failures | R07 distinguishes a missing dataset field (尚未載入), an explicitly empty dataset (暫未提供), a failed connection with cached values (未能連線…本機已儲存), and an invalid response (資料格式有誤). Healthy data adds no notice. Missing cells retain 資料待核實. |
 | Cache → UI | The existing three cards and aligned comparison columns remain. Tests cover all supported aliases, every Wise condition, Flexi network/non-network, dynamically added item keys, sub-value-only rows and repeated comparison IDs across distinct conditions. |
-| Captured live payload → browser | CI captures the real full payload, then replays it through the existing cache/transport boundary in Chromium and verifies Wise condition cells and the existing three cards. This verifies captured-data rendering, not production browser CORS/authentication, installed-PWA delivery or physical-device acceptance. |
+| Captured live payload → browser | CI captures the real full payload, then replays it through the existing cache/transport boundary in Chromium and verifies selected Elite/Wise/Flexi cells and the existing three cards. This verifies captured-data rendering, not production browser CORS/authentication, installed-PWA delivery or physical-device acceptance. |
 
 The complete deployed GAS project's source/version and binding configuration remain unverified. Matching live response data to the Sheet, if observed, establishes response equivalence for the audited read; it does not establish deployed-source identity or certify Official writes.
 

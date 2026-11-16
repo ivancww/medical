@@ -23,7 +23,7 @@ The existing claim engine now accepts the full bill and company payment, compute
 
 ## R03 labels and Plan Comparison audit follow-up
 
-See the [read-only Sheet-to-UI pipeline audit](PLAN-COMPARISON-PIPELINE-AUDIT.md) for the latest scope, 35-row Sheet evidence, deployed-endpoint verification boundary and mapping/cache regressions. R03 now labels its green LEFT segment 公司 and blue RIGHT segment 自己, with ordered amounts beneath and no clipped inside labels. Both 💭 questions and the accepted R05 remain unchanged. The latest local suites pass 31 Node scripts, 582 Guided Flow/Hub/R03 browser assertions and 24 synthetic pipeline/browser checks, plus the existing Ready suite. Live GAS access from this workspace remains HTTP 403; CI performs the separate read-only live audit and captured-payload rendering checks.
+See the [read-only Sheet-to-UI pipeline audit](PLAN-COMPARISON-PIPELINE-AUDIT.md) for the latest scope, 35-row Sheet evidence, deployed-endpoint verification boundary and mapping/cache regressions. R03 now labels its green LEFT segment 公司 and blue RIGHT segment 自己, with ordered amounts beneath and no clipped inside labels. Both 💭 questions and the accepted R05 remain unchanged. The latest local suites pass 31 Node scripts, 582 Guided Flow/Hub/R03 browser assertions and 24 synthetic pipeline/browser checks, plus the existing Ready suite. Live GAS access from this workspace remains HTTP 403; CI run 43918053812 independently returned all 35 rows from the deployed endpoint and both aliases, with the exact display digest of the read-only canonical Sheet snapshot; captured-payload rendering also passed. Latest all-plan DOM coverage is recorded in the pipeline audit and PR checks.
 
 ## Final UI polish on the same Draft PR
 

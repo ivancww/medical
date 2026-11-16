@@ -83,10 +83,12 @@ def run():
             check(page.locator('.plan-feature').count()==3,'Captured live payload renders existing three parallel cards')
             for qualified,nonnetwork in [(True,False),(False,False),(True,True),(False,True)]:
                 page.evaluate('''({qualified,nonnetwork})=>{state.wiseConditions={hospital:qualified,networkDoctor:true,preapproval:true};state.flexiNonNetwork=nonnetwork;renderPage()}''',{'qualified':qualified,'nonnetwork':nonnetwork})
-                applicable=[r for r in rows if (r.get('enabled') is True or str(r.get('enabled','TRUE')).upper()=='TRUE') and (str(r.get('main_value','')).strip() or str(r.get('sub_value','')).strip()) and str(r.get('condition_state','')).strip().upper()==('WISE_SEMI_PRIVATE' if qualified else 'WISE_GENERAL_ROOM') and str(r.get('plan_id','')).strip().upper()=='WISE']
+                expected_state={'ELITE':'DEFAULT','WISE':'WISE_SEMI_PRIVATE' if qualified else 'WISE_GENERAL_ROOM','FLEXI':'FLEXI_NON_NETWORK' if nonnetwork else 'DEFAULT'}
+                applicable=[r for r in rows if (r.get('enabled') is True or str(r.get('enabled','TRUE')).upper()=='TRUE') and (str(r.get('main_value','')).strip() or str(r.get('sub_value','')).strip()) and str(r.get('condition_state','')).strip().upper()==expected_state.get(str(r.get('plan_id','')).strip().upper())]
                 for row in applicable:
                     item=page.locator('.comparison-row').filter(has=page.get_by_text(row['item_name'],exact=True))
-                    check(item.locator('[data-plan-column="WISE"] strong').inner_text()==str(row.get('main_value','')),'Captured live Wise cell maps '+row['item_key']+'/'+row['condition_state'])
+                    plan=str(row['plan_id']).strip().upper()
+                    check(item.locator(f'[data-plan-column="{plan}"] strong').inner_text()==str(row.get('main_value','')),'Captured live '+plan+' cell maps '+row['item_key']+'/'+row['condition_state'])
                 check(page.evaluate('document.documentElement.scrollWidth<=innerWidth'),'Captured live comparison has no horizontal overflow')
             hub.screenshot(page,'captured-live-plan-comparison')
             print('CAPTURED_LIVE_ROWS',len(rows),flush=True)
