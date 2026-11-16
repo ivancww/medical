@@ -17,9 +17,17 @@ The existing three parallel Elite / Wise / Flexi cards, comparison content, sele
 
 Active Ready order is R01 → R02 → conditional R03 → R05 → R07 Hub → R08 → FINAL_SUMMARY. R04 and R09 remain Official stable IDs. Old R04 session pointers resume at R05; old R09 pointers resume at the Hub premium section. All verified, enabled, complete real cases appear in the Hub, separately from the existing claim simulation. An unavailable real-case message is confined to that area.
 
-R03 adds a medical-expense input sharing `claimCost` with existing illustrations. Its breakdown uses `min(expense, applicable eligible-expense ceiling) × rate`; the assumption is visible outside the reflection-question area. The actual derived reimbursement is retained in `companyPaid`. Exactly the two requested Chinese question sentences appear in two separate cards with no extra text inside that area.
+R03 adds a medical-expense input sharing `claimCost` with existing illustrations. Its breakdown uses `min(expense, applicable eligible-expense ceiling) × rate`; the assumption is visible outside the reflection-question area. The actual derived reimbursement is retained in `companyPaid`. Exactly the two requested Chinese question sentences appear in two separate cards, each prefixed with 💭, with no subtitles or additional descriptions.
 
 The existing claim engine now accepts the full bill and company payment, computes eligible deductible credit and remaining deductible, and clamps reimbursement/customer payment so an expense cannot be paid twice. R05 retains its cards, selectors, bars and typography. Amount-dependent bar text is omitted from segments too narrow to read; a break opportunity after HK$ and amount wrapping prevent unfolded-viewport overflow without rearranging the cards.
+
+## Final UI polish on the same Draft PR
+
+Continued PR #50 from its fetched head `f96a1eb3e7b2a93a5909206787cd35d37e49a1ee`; the target remains v1.2.12. R03 now reuses the accepted R05 reimbursement palette: insurance reimbursement is green (`#dcfce7`), and customer unpaid expense is blue (`#dbeafe`). The two existing question sentences each have a 💭 prefix; their wording, card structure and calculation inputs remain unchanged.
+
+The Hub navigation now orders **返回 Guided Flow → 三個醫療計劃 → 保費參考 → 索償案例／索償示範** in a single navigation container. The old separate return row is removed. Browser checks verify Return immediately to the left of Plans on the same row, and all four controls on one row for the tested iPad and unfolded-HONOR viewports. Mobile retains natural wrapping without overflow. Exact-page return and all existing state-persistence checks still pass.
+
+R05 is accepted by the Product Owner and received no presentation or calculation changes in this refinement. Its renderer functions and claim engine are unchanged from the accepted head, and **all five regenerated R05 PNG files are byte-for-byte identical**. Nine R03/Hub screenshots were updated. All previous regression coverage is retained; the question assertions now include the requested emoji prefix, and the browser suite adds palette and navigation-row checks for a total of 456 passing assertions. All 30 Node scripts, the existing Ready browser suite, syntax checks, Pages validation and static build passed again. Physical-device/installed-PWA acceptance remains outside these emulated browser results.
 
 ## Official verification gaps — required before activating live deductible credit
 
@@ -47,7 +55,7 @@ No verification flags or synthetic product values were written to production. No
 | JavaScript/module syntax | PASS | All frontend JS/MJS and Node test files |
 | Pages validation contract | PASS | Executed existing validate job locally |
 | Static site build | PASS | Existing Pages assembly copied the complete shell and generated release/build identity in a local scratch artifact; no deployment |
-| Guided Plan Hub Chromium suite | PASS | 374 assertions: eight selections; exact-page returns across both journeys; input/section/reload persistence; retired-ID migration; all verified cases; two exact questions; company reimbursement cases; deductible examples; controls and responsive QA |
+| Guided Plan Hub Chromium suite | PASS | 456 assertions: eight selections; exact-page returns across both journeys; input/section/reload persistence; retired-ID migration; all verified cases; two exact questions; company reimbursement cases; deductible examples; controls and responsive QA |
 | Existing Ready Chromium suite | PASS | Premium/deductible/gender/discount/payment handling, P7 Wise states, Back state, User Edit, Preview, Save Local and custom comparison items |
 | Responsive rendering | PASS | Chromium 154.0.8037.57: iPad landscape 1180×820; iPad portrait 820×1180; HONOR Magic V5 unfolded CSS viewport 795×720; mobile 390×844; boundaries 650/651 and 1000/1001px. Existing suite additionally checks 720/1500px |
 | Diff and protected-file review | PASS | No changes to premium engine/data, Official sync engine, GAS, Firebase configuration/rules, media connector implementation, other repositories, storage keys or backup format |

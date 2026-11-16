@@ -10,8 +10,8 @@
 .inline-select { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: 14px; font-weight: 700; }
 .inline-select select { min-height: 44px; max-width: 100%; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; font: inherit; }
 .claim-bar { min-height: 36px; }
-.claim-bar .customer { background: #dbeafe; }
-.claim-bar .plan { background: #dcfce7; }
+.claim-bar .customer, .company-reimbursement-bar .customer { background: #dbeafe; }
+.claim-bar .plan, .company-reimbursement-bar .plan { background: #dcfce7; }
 .claim-bar-labels { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 700; flex-wrap: wrap; }
 .you-pay strong { overflow-wrap: anywhere; }
 .product-positioning, .product-comparison-grid, .premium-results { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
@@ -60,6 +60,4 @@
 .company-reflection-questions p { margin: 0; font-size: var(--ava-type-section); font-weight: var(--ava-weight-bold); line-height: var(--ava-line-copy); overflow-wrap: anywhere; }
 .company-breakdown { margin-top: var(--ava-gap-section); }
 .company-reimbursement-bar { margin-top: var(--ava-space-16); }
-.company-reimbursement-bar .plan { background: var(--ava-color-success-soft); }
-.company-reimbursement-bar .customer { background: var(--ava-color-warning-soft); }
 .claim-flow strong, .company-breakdown strong { overflow-wrap: anywhere; }

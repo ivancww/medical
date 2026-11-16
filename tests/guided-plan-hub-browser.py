@@ -73,11 +73,13 @@ def run():
             page.locator('[data-key="concern"]').click()
             page.locator('[data-key="no_medical"]').click()
             check(page.evaluate('state.renderedPageId') == 'R05', 'No medical skips conditional R03 and retired R04')
+            r05_palette = page.locator('.claim-bar').first.evaluate("e=>['plan','customer'].map(c=>getComputedStyle(e.querySelector('.'+c)).backgroundColor)")
             page.locator('#backBtn').click()
             page.locator('[data-key="company_medical"]').click()
             check(page.evaluate('state.renderedPageId') == 'R03', 'Company medical includes R03')
-            check(page.locator('.company-reflection-questions article').count() == 2 and page.locator('.company-reflection-questions p').all_inner_texts() == QUESTIONS, 'Exactly two reflection cards with exact Chinese wording')
-            check(page.locator('.company-reflection-questions').inner_text().replace('\n', '') == ''.join(QUESTIONS), 'Question area has no subtitles or extra text')
+            check(page.locator('.company-reflection-questions article').count() == 2 and page.locator('.company-reflection-questions p').all_inner_texts() == ['💭 '+q for q in QUESTIONS], 'Exactly two reflection cards with emoji and exact Chinese wording')
+            check(page.locator('.company-reflection-questions').inner_text().replace('\n', '') == ''.join('💭 '+q for q in QUESTIONS), 'Question area has only the two emoji-prefixed sentences')
+            check(page.locator('.company-reimbursement-bar').evaluate("e=>['plan','customer'].map(c=>getComputedStyle(e.querySelector('.'+c)).backgroundColor)") == r05_palette, 'R03 insurer/customer colors match the accepted R05 palette')
             for cost, coverage, rate, paid in [(100000,80000,80,64000),(50000,80000,80,40000),(100000,80000,0,0),(100000,80000,100,80000),(100000,0,80,0),(0,80000,80,0)]:
                 page.locator('#companyMedicalExpense').fill(str(cost))
                 page.locator('#companyCoverage').fill(str(coverage))
@@ -209,6 +211,15 @@ def fixture_money(n):
 
 
 def check_visual(page,label):
+    if page.locator('.plan-hub-nav').count():
+        nav=page.locator('.plan-hub-nav')
+        check(nav.locator(':scope > button').all_inner_texts()==['返回 Guided Flow','三個醫療計劃','保費參考','索償案例／索償示範'],label+' navigation order is Return, Plans, Premium, Claims in one container')
+        check(page.locator('#returnGuidedFlowBtn').count()==1 and page.locator('.nav-actions #returnGuidedFlowBtn').count()==0,label+' has no separate return-button row')
+        if page.viewport_size['width']>650:
+            boxes=nav.locator(':scope > button').evaluate_all('es=>es.map(e=>({x:e.getBoundingClientRect().x,y:e.getBoundingClientRect().y}))')
+            check(boxes[0]['x']<boxes[1]['x'] and abs(boxes[0]['y']-boxes[1]['y'])<1,label+' Return and Plans share the navigation row')
+            if page.viewport_size['width']>=795:
+                check(all(abs(b['y']-boxes[0]['y'])<1 for b in boxes),label+' all four navigation controls share the iPad/unfolded row')
     check(page.evaluate('document.documentElement.scrollWidth<=innerWidth'),label+' has no horizontal overflow')
     check(page.evaluate('''()=>[...document.querySelectorAll('.claim-flow strong,.case-metrics strong,.you-pay strong,.premium-result .metric')].every(e=>e.scrollWidth<=e.clientWidth+1)'''),label+' has no clipped amounts')
     for selector in ['#backBtn','#viewPlansBtn','#nextBtn','#returnGuidedFlowBtn','[data-hub-section]']:
