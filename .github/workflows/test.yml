@@ -144,7 +144,7 @@ jobs:
           node tests/notready-cost-funding-routing-regression.js
       - name: Verify PWA and fixed contracts
         run: |
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js?v=1.2.12','medical-firebase-bootstrap.js?v=1.2.12','medical-official-sync.js?v=1.2.12','ava-admin-connector.mjs?v=1.2.12','medical-firebase.js?v=1.2.12','medical-firebase-module.js?v=1.2.12','product-data.js','ready-product.css','release-version.json'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js?v=1.2.12','medical-firebase-bootstrap.js?v=1.2.12','medical-official-sync.js?v=1.2.12','medical-firebase.js?v=1.2.12','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||m.scope!=='/medical/')process.exit(1);const sw=fs.readFileSync('sw.js','utf8');for(const asset of ['claim-engine.js','medical-admin-auth.js?v=1.2.13','medical-firebase-bootstrap.js?v=1.2.13','medical-official-sync.js?v=1.2.13','ava-admin-connector.mjs?v=1.2.13','medical-firebase.js?v=1.2.13','medical-firebase-module.js?v=1.2.13','product-data.js','ready-product.css','release-version.json'])if(!sw.includes(asset))process.exit(1);const html=fs.readFileSync('index.html','utf8');for(const asset of ['medical-admin-auth.js?v=1.2.13','medical-firebase-bootstrap.js?v=1.2.13','medical-official-sync.js?v=1.2.13','medical-firebase.js?v=1.2.13','product-data.js','ready-product.css'])if(!html.includes(asset))process.exit(1);const p=fs.readFileSync('docs/PRODUCT-RULES.md','utf8');for(const s of ['Adult Medical only','Fixed pages','Ready journey','Not Ready journey'])if(!p.includes(s))process.exit(1);"
 
 
   browser-regression:
@@ -168,14 +168,14 @@ jobs:
       - name: Test Ready journey, Plan Hub and responsive presentation
         env:
           AVA_MOTHER_ROOT: ${{ github.workspace }}/.qa-mother
-          MEDICAL_QA_SCREENSHOTS: ${{ runner.temp }}/medical-v1.2.12-screenshots
+          MEDICAL_QA_SCREENSHOTS: ${{ runner.temp }}/medical-v1.2.13-screenshots
         run: |
           python tests/ready-product-browser.py
           python tests/guided-plan-hub-browser.py
       - name: Verify comparison cache/UI with a captured live payload (read only)
         env:
           AVA_MOTHER_ROOT: ${{ github.workspace }}/.qa-mother
-          MEDICAL_QA_SCREENSHOTS: ${{ runner.temp }}/medical-v1.2.12-screenshots
+          MEDICAL_QA_SCREENSHOTS: ${{ runner.temp }}/medical-v1.2.13-screenshots
           MEDICAL_LIVE_OFFICIAL_PATH: ${{ runner.temp }}/medical-official.json
         run: |
           curl -fsSL --retry 2 --max-time 20 "https://script.google.com/macros/s/AKfycbzOOtrQy-LfaMlTuLhJJD0ibfSuns4mkF4rWhn6BBTekb09O_UG9-aYH-JGMDZ1lekejw/exec" -o "$MEDICAL_LIVE_OFFICIAL_PATH"
@@ -184,5 +184,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: medical-v1.2.12-browser-screenshots
-          path: ${{ runner.temp }}/medical-v1.2.12-screenshots
+          name: medical-v1.2.13-browser-screenshots
+          path: ${{ runner.temp }}/medical-v1.2.13-screenshots
