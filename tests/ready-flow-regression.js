@@ -5,7 +5,7 @@ const app = fs.readFileSync('app.js', 'utf8');
 const css = fs.readFileSync('ready-product.css', 'utf8');
 const rules = fs.readFileSync('docs/PRODUCT-RULES.md', 'utf8');
 
-assert.match(app, /const READY_PAGE_ORDER=\['R01','R02','R03','R04','R05','R07','R09','R08','FINAL_SUMMARY'\]/);
+assert.match(app, /const READY_PAGE_ORDER=\['R01','R02','R03','R05','R07','R08','FINAL_SUMMARY'\]/);
 assert.match(app, /function goBack\(\)\{if\(!state\.journey\)\{renderHome\(\);return\}/);
 assert.match(app, /state\.index>0&&ps\.length\)\{navigateJourney\(-1\);return\}/);
 assert.match(app, /state\.returnJourney/);
@@ -42,7 +42,7 @@ assert.match(app, /\$\('#backBtn'\)\.onclick=goBack/);
 assert.doesNotMatch(css, /@media\(max-width:1000px\)[^\n]*premium-results[^\n]*repeat\(2/);
 assert.match(css, /\.premium-results \{[^}]*grid-template-columns: repeat\(3/);
 assert.match(css, /@media\(max-width:650px\)[^}]*premium-results[^}]*grid-template-columns: 1fr/);
-assert.match(rules, /R01 Concern Setup → R02 Existing Medical[\s\S]*R07 Plan Coverage & Features[\s\S]*R09 Premium[\s\S]*R08 Concern Reflection \(final Ready page\)/);
+assert.match(rules, /R01 Concern Setup → R02 Existing Medical[\s\S]*R07 Plan Hub[\s\S]*Premium[\s\S]*R08 Concern Reflection \(final Ready page\)/);
 
 console.log('Ready flow UX regression contract PASS');
 

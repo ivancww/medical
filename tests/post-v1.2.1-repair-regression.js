@@ -54,7 +54,7 @@ const sessionResult = vm.runInNewContext(`
   state.official={pages:[
     {page_id:'R01',enabled:true},{page_id:'R02',enabled:true},{page_id:'R03',enabled:true},{page_id:'R04',enabled:true},{page_id:'R05',enabled:true}
   ],options:[]};
-  state.journey='ready'; state.answers={R02:'company_medical'}; state.index=4; state.companyCoverage=123000; state.wiseConditions={hospital:true,networkDoctor:false,preapproval:true};
+  state.journey='ready'; state.answers={R02:'company_medical'}; state.index=3; state.companyCoverage=123000; state.wiseConditions={hospital:true,networkDoctor:false,preapproval:true};
   persistJourneySession();
   const first=JSON.parse(sessionStorage.getItem(JOURNEY_SESSION_KEY));
   state.journey=null; state.index=0; state.answers={}; state.companyCoverage=80000; state.wiseConditions={hospital:true,networkDoctor:true,preapproval:true};
@@ -68,10 +68,10 @@ assert.equal(sessionResult.first.pageId, 'R05', 'session stores the current logi
 assert.equal(sessionResult.company.pageId, 'R05');
 assert.equal(sessionResult.company.coverage, 123000);
 assert.equal(sessionResult.company.wise, false);
-assert.equal(sessionResult.noMedical.pageId, 'R04', 'conditional restoration uses logical page identity');
+assert.equal(sessionResult.noMedical.pageId, 'R05', 'conditional restoration uses logical page identity');
 assert.equal(sessionResult.noMedical.hasR03, false);
 assert.match(app, /function startJourney\(j,\{returnJourney=null,returnJourneyEntryPage=null\}=\{\}\)\{clearJourneySession\(\);resetJourneyPresentationState\(\)/, 'starting a new journey clears the resume pointer and state');
-assert.match(app, /function renderHome\(\)\{clearJourneySession\(\)/, 'deliberate Home navigation clears the resume pointer');
+assert.match(app, /function renderHome\(\)\{[^\n]*clearJourneySession\(\)/, 'deliberate Home navigation clears the resume pointer');
 assert.match(app, /persistJourneySession\(\);\s*try\{sessionStorage\.setItem\(SW_RELOAD_KEY/, 'service-worker reload persists the active conversation first');
 
 console.log('Post-v1.2.10 Wise, brochure plan-ID and journey-resume regressions PASS');

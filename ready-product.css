@@ -10,8 +10,8 @@
 .inline-select { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: 14px; font-weight: 700; }
 .inline-select select { min-height: 44px; max-width: 100%; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; font: inherit; }
 .claim-bar { min-height: 36px; }
-.claim-bar .customer { background: #dbeafe; }
-.claim-bar .plan { background: #dcfce7; }
+.claim-bar .customer, .company-reimbursement-bar .customer { background: #dbeafe; }
+.claim-bar .plan, .company-reimbursement-bar .plan { background: #dcfce7; }
 .claim-bar-labels { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 700; flex-wrap: wrap; }
 .you-pay strong { overflow-wrap: anywhere; }
 .product-positioning, .product-comparison-grid, .premium-results { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
@@ -54,3 +54,19 @@
 .plan-brochure-action { margin-top: auto; padding-top: 14px; }
 .plan-brochure-action .plan-brochure-link { width: 100%; justify-content: center; text-decoration: none; }
 .home-direct-actions { justify-content: flex-end; margin-top: 16px; }
+.plan-hub-nav { display: flex; flex-wrap: wrap; gap: var(--ava-gap-component); margin-block: var(--ava-space-16); }
+.plan-hub-nav [aria-current="page"] { color: var(--ava-color-brand); background: var(--ava-color-selected); border-color: var(--ava-color-brand); }
+.company-reflection-questions { display: grid; gap: var(--ava-gap-component); margin-top: var(--ava-gap-section); }
+.company-reflection-questions p { margin: 0; font-size: var(--ava-type-section); font-weight: var(--ava-weight-bold); line-height: var(--ava-line-copy); overflow-wrap: anywhere; }
+.company-breakdown { margin-top: var(--ava-gap-section); }
+.company-reimbursement-bar { margin-top: var(--ava-space-16); direction: ltr; flex-direction: row; }
+.claim-flow strong, .company-breakdown strong { overflow-wrap: anywhere; }
+
+/* Segment labels disappear only when their own measured segment cannot fit them.
+   Ordered amount labels below remain available at every width, including zero. */
+.company-reimbursement-bar > span { padding-inline: 0; flex-shrink: 0; container-type: inline-size; }
+.company-bar-label { white-space: nowrap; }
+@container (max-width: 32px) { .company-bar-label { visibility: hidden; } }
+.company-bar-amounts { direction: ltr; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.company-bar-amounts > span { min-width: 0; overflow-wrap: anywhere; }
+.company-bar-amounts > span:last-child { text-align: right; }

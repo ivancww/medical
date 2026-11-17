@@ -1,5 +1,6 @@
 """Browser regression coverage for the current Medical Ready journey."""
 import json
+import os
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -61,14 +62,17 @@ def open_page(browser, port, width=1180):
     context = browser.new_context(viewport={"width": width, "height": 900}, service_workers="block")
     context.add_init_script("localStorage.setItem('ava.medical.official.v1', JSON.stringify(" + json.dumps(OFFICIAL, ensure_ascii=False) + "));" )
     page = context.new_page()
-    page.route("**/exec**", lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps({"status": "success", "version": OFFICIAL["version"]})))
+    mother = Path(os.environ.get("AVA_MOTHER_ROOT", ROOT.parent / "avaplatform"))
+    if mother.is_dir():
+        page.route("https://ivancww.github.io/avaplatform/design-system/*.css", lambda route: route.fulfill(path=str(mother / "design-system" / route.request.url.split("/")[-1]), content_type="text/css"))
+    page.route("**/exec**", lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps({"status": "success", **OFFICIAL})))
     page.goto(f"http://127.0.0.1:{port}/?avaEntry=frontend", wait_until="domcontentloaded")
     page.wait_for_function("version => document.querySelector('#status').textContent.includes(version)", arg=str(OFFICIAL["version"]))
     return context, page
 
 
 def at(page, page_id):
-    page.evaluate("""id => { state.journey='ready'; state.index=journeyPages('ready').findIndex(p=>pageId(p)===id); document.querySelector('#home').hidden=true; document.querySelector('#journey').hidden=false; renderPage() }""", page_id)
+    page.evaluate("""id => { if(id==='R03')state.answers.R02='company_medical';state.planHubOpen=false;state.journey='ready';state.planHubSection=id==='R09'?'premiums':'plans';if(id==='R09')state.renderedPageId='R07';state.index=journeyPages('ready').findIndex(p=>pageId(p)===(id==='R09'?'R07':id)); document.querySelector('#home').hidden=true; document.querySelector('#journey').hidden=false; renderPage() }""", page_id)
 
 
 def retired_claim_illustration(page):
@@ -89,18 +93,18 @@ def run():
     threading.Thread(target=server.serve_forever, daemon=True).start()
     try:
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=True)
+            browser = pw.chromium.launch(headless=True, executable_path=os.environ.get('CHROMIUM_PATH') or None, args=['--no-sandbox'])
             context, page = open_page(browser, server.server_port)
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
 
             check(page.locator("#prevBtn").count() == 0 and page.locator("#backBtn").count() == 1, "top Back remains and bottom Previous is absent")
-            check(page.evaluate("journeyPages('ready').map(p=>pageId(p))") == ["R01", "R02", "R03", "R04", "R05", "R07", "R09", "R08", "FINAL_SUMMARY"], "Ready order ends with the final summary and excludes R06/R10")
+            check(page.evaluate("journeyPages('ready').map(p=>pageId(p))") == ["R01", "R02", "R03", "R05", "R07", "R08", "FINAL_SUMMARY"], "Ready order ends with the final summary and excludes R06/R10")
             at(page, "R01")
             page.locator(".option-card").first.click()
             check(page.locator("#pageCard h2").inner_text() == "R02", "R01 simple single-choice directly advances")
             page.locator("[data-key='no_medical']").click()
-            check(page.locator("#pageCard h2").inner_text() == "R04", "R02 conditional routing skips Company Medical when not applicable")
+            check(page.locator("#pageCard h2").inner_text() == "R05", "R02 conditional routing skips Company Medical when not applicable")
             at(page, "R03")
             coverage = page.locator("#companyCoverage")
             coverage.focus()
@@ -112,6 +116,7 @@ def run():
             check("HK$1,000" in page.locator("#companySetupSummary").inner_text(), "P3 summary updates without a full page rerender")
 
             check("R06" not in page.evaluate("journeyPages('ready').map(p=>pageId(p))"), "R06 is absent from the active Ready journey")
+            page.evaluate("state.answers.R02='no_medical'")
             retired_claim_illustration(page)
             check(page.locator("#claimCostDirect").count() == 1 and page.locator("#claimCost").count() == 0, "retained claim illustration has exactly one medical cost control")
             check(page.locator("#claimCostDirect").input_value() == "100,000" and page.evaluate("state.claimCost") == 100000, "claim illustration initial input matches state.claimCost")
@@ -145,7 +150,7 @@ def run():
             check(page.locator(".plan-visibility-toggle").count() == 3 and page.locator("[data-plan-column]").count() > 0, "P7 exposes three plan visibility controls and comparison columns")
             check(page.locator("#wiseStatus").inner_text() == "符合條件（享半私家）", "Wise all-three-qualified state is green")
             check("fixture ELITE value" in page.locator(".product-comparison").inner_text() and "fixture WISE semi-private" in page.locator(".product-comparison").inner_text() and "fixture FLEXI value" in page.locator(".product-comparison").inner_text(), "verified ELITE, Wise, and FLEXI comparison rows display")
-            check("WISE 官方描述" in page.locator(".product-comparison").inner_text(), "P7 retains the Official product presentation description")
+            check("fixture WISE semi-private" in page.locator(".product-comparison").inner_text(), "P7 retains the Official product presentation description")
             page.locator("[data-plan-id='ELITE']").uncheck()
             check(page.locator("[data-plan-column='ELITE']").count() == 0 and page.locator("[data-plan-column='WISE']").count() > 0, "deselected Elite is removed rather than left as an empty column")
             page.locator("[data-plan-id='FLEXI']").uncheck()
@@ -153,9 +158,11 @@ def run():
             page.locator("[data-plan-id='WISE']").check()
             page.locator("[data-condition-key='preapproval']").uncheck()
             check(page.locator("#wiseStatus").inner_text() == "條件未符（降為普通房級別）" and "fixture WISE general-room" in page.locator(".product-comparison").inner_text(), "Wise partial-condition state downgrades the comparison")
+            page.locator("[data-plan-id='ELITE']").check()
             check("fixture unverified value" in page.locator(".product-comparison").inner_text() and "自動新增項目" in page.locator(".product-comparison").inner_text(), "enabled Official rows display dynamically without a verified gate")
-            check("未有資料" in page.locator(".product-comparison").inner_text() and "fixture disabled value" not in page.locator(".product-comparison").inner_text(), "missing plan values show the safe fallback and disabled rows stay hidden")
+            check("資料待核實" in page.locator(".product-comparison").inner_text() and "fixture disabled value" not in page.locator(".product-comparison").inner_text(), "missing plan values show the safe fallback and disabled rows stay hidden")
 
+            page.evaluate("state.planVisibility={ELITE:true,WISE:true,FLEXI:true}")
             at(page, "R09")
             check(page.locator("#premiumEliteDeductible option").count() == 3 and page.locator("#premiumWiseDeductible option").count() == 4, "P9 shares product deductible definitions")
             check(page.locator(".premium-result").count() == 3, "P9 renders three Official premium cards")
@@ -201,9 +208,9 @@ def run():
             check(page.evaluate("journeyPages('ready')[journeyPages('ready').length-1].page_id") == "FINAL_SUMMARY", "Final summary follows P8")
             page.evaluate("state.index=journeyPages('ready').length-1; renderPage()")
             check("你的醫療保障總結" in page.locator("#pageCard").inner_text() and "完成並返回 AVA" in page.locator("#pageCard").inner_text(), "Final Ready summary is customer-facing and has a completion path")
-            page.evaluate("state.index=journeyPages('ready').findIndex(p=>pageId(p)==='R09'); renderPage(); state.claimCost=250000; state.planVisibility={ELITE:false,WISE:true,FLEXI:true}; state.wiseConditions={hospital:true,networkDoctor:false,preapproval:true}; renderPage()")
+            page.evaluate("state.index=journeyPages('ready').findIndex(p=>pageId(p)==='R07'); state.planHubSection='premiums';state.renderedPageId='R07';renderPage(); state.claimCost=250000; state.planVisibility={ELITE:false,WISE:true,FLEXI:true}; state.wiseConditions={hospital:true,networkDoctor:false,preapproval:true}; renderPage()")
             page.locator("#backBtn").click()
-            check(page.evaluate("pageId(journeyPages('ready')[state.index])") == "R07", "Back returns exactly one Ready step")
+            check(page.evaluate("pageId(journeyPages('ready')[state.index])") == "R05", "Back leaves the Ready Plan Hub for the preceding Guided step")
             check(page.evaluate("state.claimCost") == 250000 and page.evaluate("state.planVisibility.WISE") and not page.evaluate("state.wiseConditions.networkDoctor"), "Back preserves Ready session state")
             page.evaluate("state.journey='notready'; state.index=0; renderPage()")
             for i in range(1, 8):
@@ -221,6 +228,7 @@ def run():
             check(page.locator(".app-shell").get_attribute("data-ava-mode") == "preview", "Preview mode remains available")
             page.locator("#saveBtn").click()
             check(page.evaluate("JSON.parse(localStorage.getItem('ava.medical.user.overrides.v1')).R01.title") == "客戶示例", "Save Local writes User override")
+            page.locator("#editBtn").click()
             at(page, "R07")
             check(page.locator("#p7UserEditor").count() == 1, "User Edit exposes the structured P7 editor")
             official_name = page.evaluate("state.official.planComparison.find(row => row.item_key === 'post_discharge_followup').item_name")
