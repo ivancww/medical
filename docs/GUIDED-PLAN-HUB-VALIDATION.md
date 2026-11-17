@@ -33,22 +33,41 @@ The Hub navigation now orders **返回 Guided Flow → 三個醫療計劃 → �
 
 R05 is accepted by the Product Owner and received no presentation or calculation changes in this refinement. Its renderer functions and claim engine are unchanged from the accepted head, and **all five regenerated R05 PNG files are byte-for-byte identical**. Nine R03/Hub screenshots were updated. All previous regression coverage is retained; the question assertions now include the requested emoji prefix, and the browser suite adds palette and navigation-row checks for a total of 456 passing assertions. All 30 Node scripts, the existing Ready browser suite, syntax checks, Pages validation and static build passed again. Physical-device/installed-PWA acceptance remains outside these emulated browser results.
 
-## Official verification gaps — required before activating live deductible credit
+## R05 simplified illustration — Product Owner confirmed release scope
 
-The repository's published Claim_Rules contract provides `illustration_method`, `default_rate`, `deductible_enabled` and notes. It does **not** establish a verified per-plan company-reimbursement deductible-credit permission or the eligibility of a particular claim.
+The Product Owner deferred future Claims/Official claim dataset updates. R05 must
+continue to calculate with the existing Official Claim_Rules fields
+(`plan_id`, `illustration_method`, `default_rate`, `deductible_enabled`)
+and the current medical expense, company reimbursement and selected deductible.
 
-The frontend engine therefore consumes two optional **Official-only** boolean fields:
+For ELITE and WISE's existing `deductible_then_cover` simplified illustration,
+eligible company reimbursement counts toward the deductible:
 
-- `company_deductible_offset_verified`: the plan and current illustration assumptions have been verified against the authoritative contract.
-- `company_deductible_offset_allowed`: whether that verified rule permits credit.
+- `credit = min(selectedDeductible, eligibleCompanyPaid)`
+- `remainingDeductible = max(0, selectedDeductible - credit)`
+- `personalPlanPaid = min(unpaidBill, max(0, unpaidBill - remainingDeductible) * planRate)`
+- `customerPaid = medicalExpense - companyPaid - personalPlanPaid`
 
-Both an explicit true/false permission and verification are required. Verified allowed rules apply `min(original deductible, eligible company reimbursement)` as credit; verified disallowed rules retain the full deductible. An optional engine input `eligibleCompanyPaid` limits the creditable portion of the company payment. Non-deductible percentage plans ignore these fields entirely.
+`eligibleCompanyPaid` defaults to the current company medical reimbursement for
+the simplified illustration and may be supplied explicitly to narrow credit.
+FLEXI remains on its existing percentage illustration. Monetary results are
+bounded to prevent double payment or negative amounts.
 
-When company payment and a remaining deductible make the unknown coordination rule material, the engine returns `planPay: null` and `youPay: null`, and the existing R05 card reports **公司醫保抵銷條款待核實 / 待核實**. It does not display either an unsupported payout or the former double-deductible result. With no company payment, zero deductible or no unpaid bill, the known arithmetic remains available.
+The new `company_deductible_offset_verified` and
+`company_deductible_offset_allowed` columns are **not** required for this
+customer-facing simplified calculation. The new null-result gate was removed.
+This is a communication illustration, **not** a contract-specific claim
+adjudication or guaranteed actual settlement. Real Claim Cases and contract
+verification remain separate future work; no production Sheet/GAS writes
+are required by this change.
 
-**Elite and Wise contract verification is outstanding.** Confirm which company reimbursements qualify, policy-year/deductible timing, exclusions and applicable benefit limits before publishing verified values through a separately approved Official-data change. Existing Wise network/room/follow-up limitations remain as documented in CLAIM-RULES-MIGRATION.md; this PR does not claim to encode a full benefit-by-benefit claim adjudication engine. Flexi's existing approximate percentage illustration remains unchanged.
+### Review limits
 
-No verification flags or synthetic product values were written to production. No production Google Sheet, GAS, Firebase configuration or Storage Rules were changed. The existing read path can preserve Official columns, but adding/publishing new Official fields or Admin write mappings is a separate approval, outside this PR.
+The code change and updated Node/Chromium tests cover calculation without
+new Official columns. A fresh GitHub CI pass on the updated head is required
+before approving any merge. Physical-device and installed-PWA acceptance
+remain outstanding. Previously captured R05 screenshots from the gated
+version are historical QA artifacts; regenerate them before release if needed.
 
 ## Executed validation
 
