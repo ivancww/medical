@@ -129,6 +129,20 @@ def run():
             check(page.evaluate('state.renderedPageId') == 'R05' and page.locator('.claim-flow strong').all_inner_texts() == ['HK$120,000','HK$64,000','HK$56,000'], 'R03 advances directly to R05 and passes actual reimbursement')
             check(page.locator('[data-product-id="ELITE"] .you-pay strong').inner_text() == fixture_money(0), 'Existing Official columns calculate company-deductible credit without new claim-sheet flags')
             check('待核實' not in page.locator('[data-product-id="ELITE"] .you-pay').inner_text(), 'Simplified claim illustration remains usable before Claims Sheet update')
+
+            # Regression: each iPad keyboard keystroke must retain focus and the
+            # same DOM input; summary and three plans update without full rerender.
+            page.locator('#claimCost').fill('')
+            page.locator('#claimCost').focus()
+            page.evaluate("window.__r05TypingInput=document.querySelector('#claimCost')")
+            for digit in '200000':
+                page.keyboard.type(digit)
+                check(page.evaluate("document.activeElement===window.__r05TypingInput && document.querySelector('#claimCost')===window.__r05TypingInput"), f'R05 input stays focused and mounted after digit {digit}')
+            check(page.locator('#claimCost').input_value() == '200000', 'R05 supports continuous six-digit entry')
+            check(page.locator('.claim-flow strong').all_inner_texts() == ['HK$200,000','HK$64,000','HK$136,000'], 'R05 amounts update immediately without losing focus')
+            check(page.locator('[data-product-id="ELITE"] .you-pay strong').inner_text() == fixture_money(0), 'R05 plan claim amounts update as customer types')
+            page.locator('#claimCost').fill('120000')
+
             screenshot(page, 'ipad-landscape-r05-unverified')
             # Use the normal production-shaped Claim_Rules fixture; no offset flags.
             page.evaluate("state.claimCost=100000;state.companyCoverage=80000;state.companyRate=100;renderPage()")

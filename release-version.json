@@ -1,5 +1,5 @@
 {
-  "appVersion": "v1.2.12",
+  "appVersion": "v1.2.13",
   "releaseType": "patch",
-  "scope": "Guided Flow navigation, Plan Hub and company medical coordination"
+  "scope": "R05 input focus and live claim illustration without keyboard dismissal"
 }
