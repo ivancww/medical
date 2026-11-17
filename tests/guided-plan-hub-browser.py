@@ -127,10 +127,11 @@ def run():
             check(page.evaluate('state.renderedPageId==="R03"&&!state.planHubOpen') and page.locator('#companyMedicalExpense').input_value() == '120,000' and page.locator('#companyRate').input_value() == '80', 'Hub returns to exact R03 with live edited inputs')
             page.locator('#nextBtn').click()
             check(page.evaluate('state.renderedPageId') == 'R05' and page.locator('.claim-flow strong').all_inner_texts() == ['HK$120,000','HK$64,000','HK$56,000'], 'R03 advances directly to R05 and passes actual reimbursement')
-            check('待核實' in page.locator('[data-product-id="ELITE"] .you-pay').inner_text(), 'Unverified contract is not displayed as guaranteed payout')
+            check(page.locator('[data-product-id="ELITE"] .you-pay strong').inner_text() == fixture_money(0), 'Existing Official columns calculate company-deductible credit without new claim-sheet flags')
+            check('待核實' not in page.locator('[data-product-id="ELITE"] .you-pay').inner_text(), 'Simplified claim illustration remains usable before Claims Sheet update')
             screenshot(page, 'ipad-landscape-r05-unverified')
-            # These flags are explicit synthetic verification fixtures, not assertions about real contracts.
-            page.evaluate("state.official.claimRules.forEach(r=>{r.company_deductible_offset_verified=true;r.company_deductible_offset_allowed=true});state.claimCost=100000;state.companyCoverage=80000;state.companyRate=100;renderPage()")
+            # Use the normal production-shaped Claim_Rules fixture; no offset flags.
+            page.evaluate("state.claimCost=100000;state.companyCoverage=80000;state.companyRate=100;renderPage()")
             for company, expected in [(80000,0),(10000,6000),(0,16000),(16000,0),(20000,0)]:
                 page.evaluate('paid=>{state.companyCoverage=paid;state.eliteDeductible=16000;renderPage()}', company)
                 check(page.locator('[data-product-id="ELITE"] .you-pay strong').inner_text() == fixture_money(expected), f'R05 original cards use corrected deductible coordination at company {company}')
